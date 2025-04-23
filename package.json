@@ -1,0 +1,51 @@
+{
+  "name": "zicket-backend",
+  "version": "1.0.0",
+  "description": "Backend services for Zicket",
+  "main": "server.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec npx ts-node src/server.ts",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BuidlZone-Labs/zicket-backend.git"
+  },
+  "keywords": [
+    "zicket",
+    "event",
+    "ticket",
+    "backend"
+  ],
+  "author": "Dio Liam",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BuidlZone-Labs/zicket-backend/issues"
+  },
+  "homepage": "https://github.com/BuidlZone-Labs/zicket-backend#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "handlebars": "^4.7.8",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.2",
+    "nodemailer": "^6.10.1",
+    "nodemon": "^3.1.9",
+    "passport": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/jest": "^29.5.14",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^22.14.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.5.3",
+    "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
