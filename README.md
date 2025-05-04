@@ -14,14 +14,16 @@ Before you begin, make sure you have the following installed:
 
 
 ## 📁 Project Structure
-src/ 
-  ├── config/ # Environment config and DB setup 
-  ├── controllers/ # Request handlers 
-  ├── models/ # Mongoose schemas 
-  ├── routes/ # Express route definitions ├── services/ # Business logic layer ├── tests/ # Jest test files 
-  ├── utils/ # Utility functions 
-  └── app.ts # Application grade
-  └── server.ts # Application entry point
+src/ <br>
+  ├── config/ # Environment config and DB setup <br>
+  ├── controllers/ # Request handlers <br>
+  ├── models/ # Mongoose schemas <br>
+  ├── routes/ # Express route definitions <br>
+  ├── services/ # Business logic layer <br>
+  ├── tests/ # Jest test files <br>
+  ├── utils/ # Utility functions <br>
+  └── app.ts # Application grade <br>
+  └── server.ts # Application entry point <br>
 ---
 
 
@@ -31,11 +33,13 @@ src/
 ## 📦 Installation
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/BuidlZone-Labs/zicket-backend.git
+# 1. Fork the repository
+Click fork
+# 2. Clone it
+git clone https://github.com/username/zicket-backend.git
 cd zicket-backend
 
-# 2. Install dependencies
+# 3. Install dependencies
 npm install
 ```
 ---
