@@ -33,11 +33,13 @@ src/ <br>
 ## 📦 Installation
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/BuidlZone-Labs/zicket-backend.git
+# 1. Fork the repository
+Click fork
+# 2. Clone it
+git clone https://github.com/username/zicket-backend.git
 cd zicket-backend
 
-# 2. Install dependencies
+# 3. Install dependencies
 npm install
 ```
 ---
