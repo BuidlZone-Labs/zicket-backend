@@ -1,24 +1,35 @@
-import { Request, Response } from 'express';
+import { RequestHandler } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/user';
 
-export const loginController = async (req: Request, res: Response) => {
+export const loginController: RequestHandler = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      res.status(400).json({ message: 'Email and password are required' });
+      return;
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'User not found' });
+      return;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (user.provider === 'google') {
+      res.status(400).json({ 
+        message: 'Please login with Google',
+        provider: 'google' 
+      });
+      return;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password!);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      res.status(401).json({ message: 'Invalid credentials' });
+      return;
     }
 
     const token = jwt.sign(
