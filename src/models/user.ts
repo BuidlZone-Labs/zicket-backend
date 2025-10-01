@@ -9,6 +9,8 @@ export interface IUser extends Document {
     otp?: number;
     otpExpires?: Date;
     emailVerifiedAt?: Date;
+    magicToken?: string;
+    magicTokenExpires?: Date;
 }
 
 const userSchema = new Schema<IUser>({
@@ -20,6 +22,8 @@ const userSchema = new Schema<IUser>({
     otp: { type: Number, required: false },
     otpExpires: { type: Date, required: false },
     emailVerifiedAt: { type: Date, required: false },
+    magicToken: { type: String, required: false },
+    magicTokenExpires: { type: Date, required: false },
 }, { timestamps: true });
 
 const User = mongoose.model<IUser>('User', userSchema);
