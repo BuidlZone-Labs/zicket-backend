@@ -5,14 +5,27 @@ import { resendOtpController } from '../controllers/resendotp.controller';
 import passport from 'passport';
 import { generateToken } from '../config/passport';
 import dotenv from 'dotenv';
+import { getLimiter } from '../middlewares/rateLimiter';
 
 dotenv.config();
 
 const authRoute = express.Router();
 
-authRoute.post('/signup', signupController);
-authRoute.post('/login', loginController);
-authRoute.post('/resend-otp', resendOtpController);
+authRoute.post('/signup', 
+  getLimiter('signup'), 
+  signupController
+);
+
+authRoute.post('/login', 
+  getLimiter('login'), 
+  loginController
+);
+
+authRoute.post('/resend-otp',
+  getLimiter('otp'),
+  resendOtpController
+);
+
 authRoute.get('/google', passport.authenticate('google', {
     scope: ['profile', 'email']
 }));
