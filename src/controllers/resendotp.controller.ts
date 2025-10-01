@@ -18,10 +18,10 @@ export const resendOtpController: RequestHandler = async (req, res) => {
         }
 
         const newOtp = generateOTP();
-        const otpExpires = Date.now() + 10 * 60 * 1000;
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
         user.otp = newOtp;
-        user.otpExpires = new Date(otpExpires).getTime();;
+        user.otpExpires = otpExpires;
         await user.save();
 
         res.status(200).json({ message: 'OTP resent successfully' });

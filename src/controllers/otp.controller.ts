@@ -13,7 +13,7 @@ export const otpVerificationController = async (req: Request, res: Response) => 
             res.status(400).json({ message: "Invalid OTP" });
             return;
         }
-        const currentTime = Date.now();
+        const currentTime = new Date();
         if (user.otpExpires && currentTime > user.otpExpires) {
             res.status(400).json({ message: "OTP has expired" });
             return;

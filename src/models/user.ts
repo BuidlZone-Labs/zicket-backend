@@ -7,7 +7,7 @@ export interface IUser extends Document {
     googleId?: string;
     provider: 'local' | 'google';
     otp?: number;
-    otpExpires?: number;
+    otpExpires?: Date;
     emailVerifiedAt?: Date;
 }
 
@@ -18,7 +18,7 @@ const userSchema = new Schema<IUser>({
     googleId: { type: String, required: false },
     provider: { type: String, required: true, enum: ['local', 'google'], default: 'local' },
     otp: { type: Number, required: false },
-    otpExpires: { type: Number, required: false },
+    otpExpires: { type: Date, required: false },
     emailVerifiedAt: { type: Date, required: false },
 }, { timestamps: true });
 
