@@ -2,6 +2,7 @@ import express from 'express';
 import { signupController } from '../controllers/signup.controller';
 import { loginController } from '../controllers/login.controller';
 import { resendOtpController } from '../controllers/resendotp.controller';
+import { requestMagicLinkController, verifyMagicLinkController } from '../controllers/magiclink.controller';
 import passport from 'passport';
 import { generateToken } from '../config/passport';
 import dotenv from 'dotenv';
@@ -24,6 +25,15 @@ authRoute.post('/login',
 authRoute.post('/resend-otp',
   getLimiter('otp'),
   resendOtpController
+);
+
+authRoute.post('/magic-link-request',
+  getLimiter('magicLink'),
+  requestMagicLinkController
+);
+
+authRoute.get('/magic',
+  verifyMagicLinkController
 );
 
 authRoute.get('/google', passport.authenticate('google', {
