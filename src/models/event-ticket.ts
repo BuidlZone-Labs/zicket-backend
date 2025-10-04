@@ -6,7 +6,7 @@ export interface IEventTicket extends Document {
     price: number; // 0 for free events, >0 for paid events
     privacyLevel: number; // 0 - anonymous, 1 - wallet-required, 2 - verified-access
     eventCategory: string; // the category this event ticket belongs to (e.g., web3 & crypto meetups, hackathons)
-    organizedBy: mongoose.Types.ObjectId[]; // references to User model
+    organizedBy: mongoose.Types.ObjectId; // references to User model
     eventDate: Date; // date and time of the event
     location: string;
     ticketType: string[]; // based on price (e.g., free, paid), with free being 0 price and paid being >0 price
@@ -24,7 +24,7 @@ const eventTicketSchema = new Schema<IEventTicket>({
     price: { type: Number, required: true, min: 0 },
     privacyLevel: { type: Number, required: true, enum: [0, 1, 2], default: 1 },
     eventCategory: { type: String, required: true },
-    organizedBy: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
+    organizedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     eventDate: { type: Date, required: true },
     location: { type: String, required: true, default: 'Virtual' },
     ticketType: [{ type: String, required: true }],
