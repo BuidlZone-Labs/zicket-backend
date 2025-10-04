@@ -4,6 +4,7 @@ import otpRoute from './routes/otp.route';
 import authRoute from './routes/auth.route';
 import passport from './config/passport';
 import { authLimiter } from './middlewares/rateLimiter';
+import eventTicketRoute from './routes/event-ticket.route';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/auth', authLimiter);
 // Routes
 app.use('/auth', authRoute);
 app.use('/auth', otpRoute);
+app.use('/event-tickets', eventTicketRoute);
 app.use(protectedRoute);
 
 // Global error handler for rate limiting
@@ -39,7 +41,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
             retryAfter: err.retryAfter || 60
         });
     }
-    
+
     // Handle other errors
     console.error('Server error:', err);
     res.status(err.status || 500).json({
