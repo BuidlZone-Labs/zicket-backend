@@ -1,9 +1,9 @@
 import { Router } from "express";
 
-const eventTicketRoute = Router();
+const eventTicketRoutes = Router();
 
-eventTicketRoute.get('/', (req, res) => {
+eventTicketRoutes.get('/', (req, res) => {
     res.send('Event Tickets Home');
 });
 
-export default eventTicketRoute;
+export default eventTicketRoutes;
