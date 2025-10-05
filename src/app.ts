@@ -32,7 +32,13 @@ app.use('/event-tickets', eventTicketRoutes);
 app.use(protectedRoute);
 
 // Global error handler for rate limiting
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use(
+  (
+    err: HttpError,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ): express.Response => {
     // Handle rate limit errors
     if (err.status === 429) {
         return res.status(429).json({
