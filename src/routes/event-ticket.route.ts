@@ -1,9 +1,9 @@
 import { Router } from "express";
+import { getEventTickets } from "../controllers/event-ticket.controller";
 
 const eventTicketRoutes = Router();
 
-eventTicketRoutes.get('/', (req, res) => {
-    res.send('Event Tickets Home');
-});
+// GET /api/event-tickets - Fetch paginated event tickets
+eventTicketRoutes.get('/', getEventTickets);
 
 export default eventTicketRoutes;
