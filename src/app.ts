@@ -32,21 +32,15 @@ app.use('/event-tickets', eventTicketRoutes);
 app.use(protectedRoute);
 
 // Global error handler for rate limiting
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    // Handle rate limit errors
-    if (err.status === 429) {
-        return res.status(429).json({
-            error: 'Too many requests',
-            message: err.message || 'Rate limit exceeded',
-            retryAfter: err.retryAfter || 60
-        });
-    }
-
-    // Handle other errors
-    console.error('Server error:', err);
-    res.status(err.status || 500).json({
-        error: 'Internal server error'
-    });
-});
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    return res.status(500).send(err.message);
+  } as express.ErrorRequestHandler
+);
 
 export default app;
