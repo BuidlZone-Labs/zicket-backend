@@ -90,6 +90,45 @@ export class EventTicketService {
     }
 
     /**
+     * Fetches event tickets by category with pagination
+     */
+    static async getEventTicketsByCategory(category: string, page: number = 1, limit: number = this.DEFAULT_LIMIT): Promise<PaginatedEventTicketsResponse> {
+        try {
+            // Validate pagination parameters
+            const validPage = Math.max(1, page);
+            const validLimit = Math.min(Math.max(1, limit), 50); // Cap at 50 for performance
+
+            // Calculate skip value
+            const skip = (validPage - 1) * validLimit;
+
+            // Create case-insensitive filter for category
+            const filter = { eventCategory: { $regex: new RegExp(`^${category}$`, 'i') } };
+
+            // Get tickets and total count
+            const [tickets, total] = await Promise.all([
+                EventTicket.find(filter)
+                    .sort({ eventDate: 1 }) // Sort by event date
+                    .skip(skip)
+                    .limit(validLimit)
+                    .lean(),
+                EventTicket.countDocuments(filter)
+            ]);
+
+            // Transform tickets to response format
+            const transformedTickets = tickets.map(ticket => this.transformEventTicket(ticket as unknown as IEventTicket));
+
+            return {
+                page: validPage,
+                limit: validLimit,
+                total,
+                tickets: transformedTickets
+            };
+        } catch (error) {
+            throw new Error(`Failed to fetch event tickets by category: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+
+    /**
      * Fetches event tickets with pagination
      */
     static async getEventTickets(page: number = 1, limit: number = this.DEFAULT_LIMIT): Promise<PaginatedEventTicketsResponse> {
