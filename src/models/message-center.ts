@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IMessageCenter extends Document {
+  userId: mongoose.Types.ObjectId;
   title: string;
   content: string;
   audience: string[];
@@ -11,6 +12,7 @@ export interface IMessageCenter extends Document {
 
 const messageCenterSchema = new Schema<IMessageCenter>(
   {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     title: { type: String, required: true },
     content: { type: String, required: true },
     audience: { type: [String], required: true },
