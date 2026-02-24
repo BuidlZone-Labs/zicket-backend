@@ -5,6 +5,7 @@ import authRoute from './routes/auth.route';
 import passport from './config/passport';
 import { authLimiter } from './middlewares/rateLimiter';
 import eventTicketRoutes from './routes/event-ticket.route';
+import messageCenterRoute from './routes/message-center.route';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/auth', authLimiter);
 app.use('/auth', authRoute);
 app.use('/auth', otpRoute);
 app.use('/event-tickets', eventTicketRoutes);
+app.use('/message-center', messageCenterRoute);
 app.use(protectedRoute);
 
 // Global error handler for rate limiting
