@@ -5,9 +5,9 @@ import passport from 'passport';
 const messageCenterRoute = express.Router();
 
 messageCenterRoute.delete(
-    '/:messageId',
-    passport.authenticate('jwt', { session: false }),
-    deleteMessageController,
+  '/:messageId',
+  passport.authenticate('jwt', { session: false }),
+  deleteMessageController,
 );
 
 export default messageCenterRoute;
