@@ -1,12 +1,15 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IMessageCenter extends Document {
+  _id: Types.ObjectId;
   title: string;
   content: string;
   audience: string[];
   status: 'sent' | 'pending' | 'failed';
   sentAt?: Date;
   scheduledAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const messageCenterSchema = new Schema<IMessageCenter>(

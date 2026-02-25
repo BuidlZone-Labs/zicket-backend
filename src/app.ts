@@ -30,7 +30,7 @@ app.use('/auth', authLimiter);
 app.use('/auth', authRoute);
 app.use('/auth', otpRoute);
 app.use('/event-tickets', eventTicketRoutes);
-app.use('/message-center', messageCenterRoute);
+app.use('/zk-message-center', messageCenterRoute);
 app.use(protectedRoute);
 
 // Global error handler for rate limiting
