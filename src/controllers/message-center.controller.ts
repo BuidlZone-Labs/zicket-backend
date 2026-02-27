@@ -117,7 +117,8 @@ export const editMessage: RequestHandler = async (req, res) => {
     if (Object.keys(payload).length === 0) {
       return res.status(400).json({
         error: 'Invalid payload',
-        message: 'At least one of title, content, or scheduledAt must be provided',
+        message:
+          'At least one of title, content, or scheduledAt must be provided',
       });
     }
 
