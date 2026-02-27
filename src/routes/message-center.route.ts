@@ -1,16 +1,22 @@
-import express from 'express';
-import { deleteMessageController } from '../controllers/message-center.controller';
+import Router from 'express';
 import {
+  sendMessage,
   getPastMessages,
   getScheduledMessages,
+  editMessage,
+  deleteMessage
 } from '../controllers/message-center.controller';
 import { authGuard } from '../middlewares/auth';
 
-const messageCenterRoute = express.Router();
+const messageCenterRoutes = Router();
 
-messageCenterRoute.delete('/:messageId', authGuard, deleteMessageController);
+messageCenterRoutes.delete('/:messageId', authGuard, deleteMessage);
+messageCenterRoutes.post('/', authGuard, sendMessage);
+messageCenterRoutes.get('/past', authGuard, getPastMessages);
+messageCenterRoutes.get('/scheduled', authGuard, getScheduledMessages);
+messageCenterRoutes.patch('/:messageId', authGuard, editMessage);
 
-messageCenterRoute.get('/past', authGuard, getPastMessages);
-messageCenterRoute.get('/scheduled', authGuard, getScheduledMessages);
+messageCenterRoutes.get('/past', authGuard, getPastMessages);
+messageCenterRoutes.get('/scheduled', authGuard, getScheduledMessages);
 
-export default messageCenterRoute;
+export default messageCenterRoutes;
