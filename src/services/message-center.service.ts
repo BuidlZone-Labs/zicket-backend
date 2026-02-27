@@ -28,6 +28,12 @@ export interface PaginatedMessageCenterResponse {
   messages: MessageCenterResponse[];
 }
 
+export interface UpdateMessagePayload {
+  title?: string;
+  content?: string;
+  scheduledAt?: Date;
+}
+
 export class MessageCenterService {
   private static readonly PAGE_LIMIT = 5;
 
