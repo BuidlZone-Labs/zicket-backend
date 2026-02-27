@@ -2,6 +2,7 @@ import {
   sendMessage,
   getPastMessages,
   getScheduledMessages,
+  editMessage,
 } from '../src/controllers/message-center.controller';
 import { MessageCenterService } from '../src/services/message-center.service';
 

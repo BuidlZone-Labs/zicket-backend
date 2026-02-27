@@ -8,6 +8,12 @@ export interface CreateMessagePayload {
   scheduledAt?: string;
 }
 
+export interface UpdateMessagePayload {
+  title?: string;
+  content?: string;
+  scheduledAt?: Date;
+}
+
 export interface MessageCenterResponse {
   id: string;
   title: string;
@@ -148,5 +154,22 @@ export class MessageCenterService {
     } finally {
       await session.endSession();
     }
+  }
+
+  static async updateMessage(
+    messageId: string,
+    payload: UpdateMessagePayload,
+  ): Promise<MessageCenterResponse | null> {
+    const doc = await MessageCenter.findById(messageId);
+    if (!doc) return null;
+    if (payload.scheduledAt !== undefined && doc.status === 'sent') {
+      throw new Error('ScheduledAtNotAllowedForSent');
+    }
+    if (payload.title !== undefined) doc.title = payload.title;
+    if (payload.content !== undefined) doc.content = payload.content;
+    if (payload.scheduledAt !== undefined)
+      doc.scheduledAt = payload.scheduledAt;
+    await doc.save();
+    return this.transformMessage(doc);
   }
 }

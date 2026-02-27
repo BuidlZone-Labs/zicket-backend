@@ -3,6 +3,7 @@ import {
   sendMessage,
   getPastMessages,
   getScheduledMessages,
+  editMessage,
 } from '../controllers/message-center.controller';
 import { authGuard } from '../middlewares/auth';
 

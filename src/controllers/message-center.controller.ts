@@ -1,7 +1,9 @@
 import { RequestHandler } from 'express';
+import mongoose from 'mongoose';
 import {
   MessageCenterService,
   CreateMessagePayload,
+  UpdateMessagePayload,
 } from '../services/message-center.service';
 
 function validateCreateMessageBody(
@@ -150,10 +152,12 @@ export const getScheduledMessages: RequestHandler = async (req, res) => {
 
 export const editMessage: RequestHandler = async (req, res) => {
   try {
-    const messageId = req.params.messageId;
+    const rawId = req.params.messageId;
+    const messageId =
+      typeof rawId === 'string' ? rawId : Array.isArray(rawId) ? rawId[0] : '';
     const body = req.body as Record<string, unknown>;
 
-    if (!isValidObjectId(messageId)) {
+    if (!messageId || !mongoose.Types.ObjectId.isValid(messageId)) {
       return res.status(400).json({
         error: 'Invalid message ID',
         message: 'Message ID must be a valid 24-character hex string',
