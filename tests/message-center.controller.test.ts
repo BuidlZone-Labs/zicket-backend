@@ -152,7 +152,9 @@ describe('message-center controller', () => {
     });
 
     it('returns 500 when createMessage throws', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       const req = {
         body: { audience: ['a'], title: 'Hi', content: 'Content' },
       };
@@ -239,7 +241,9 @@ describe('message-center controller', () => {
   });
 
   it('returns 500 when scheduled messages service throws', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
     const req = {
       query: {
         page: '1',
