@@ -1,4 +1,18 @@
+import mongoose from 'mongoose';
 import MessageCenter, { IMessageCenter } from '../models/message-center';
+
+export interface CreateMessagePayload {
+  audience: string[];
+  title: string;
+  content: string;
+  scheduledAt?: string;
+}
+
+export interface UpdateMessagePayload {
+  title?: string;
+  content?: string;
+  scheduledAt?: Date;
+}
 
 export interface MessageCenterResponse {
   id: string;
@@ -108,43 +122,54 @@ export class MessageCenterService {
     );
   }
 
+  /**
+   * Creates a new message within a MongoDB transaction so that failures roll back safely.
+   */
+  static async createMessage(
+    payload: CreateMessagePayload,
+  ): Promise<MessageCenterResponse> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const scheduledAt = payload.scheduledAt
+        ? new Date(payload.scheduledAt)
+        : undefined;
+      const [doc] = await MessageCenter.create(
+        [
+          {
+            title: payload.title,
+            content: payload.content,
+            audience: payload.audience,
+            status: 'pending',
+            scheduledAt,
+          },
+        ],
+        { session },
+      );
+      await session.commitTransaction();
+      return this.transformMessage(doc);
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      await session.endSession();
+    }
+  }
+
   static async updateMessage(
     messageId: string,
     payload: UpdateMessagePayload,
   ): Promise<MessageCenterResponse | null> {
-    const message = await MessageCenter.findById(messageId).lean();
-
-    if (!message) {
-      return null;
+    const doc = await MessageCenter.findById(messageId);
+    if (!doc) return null;
+    if (payload.scheduledAt !== undefined && doc.status === 'sent') {
+      throw new Error('ScheduledAtNotAllowedForSent');
     }
-
-    const updateData: Record<string, unknown> = {};
-
-    if (payload.title !== undefined) {
-      updateData.title = payload.title;
-    }
-    if (payload.content !== undefined) {
-      updateData.content = payload.content;
-    }
-    if (payload.scheduledAt !== undefined) {
-      if ((message as unknown as IMessageCenter).status === 'sent') {
-        throw new Error('ScheduledAtNotAllowedForSent');
-      }
-      updateData.scheduledAt = payload.scheduledAt;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return this.transformMessage(message as unknown as IMessageCenter);
-    }
-
-    const updated = await MessageCenter.findByIdAndUpdate(
-      messageId,
-      { $set: updateData },
-      { new: true },
-    ).lean();
-
-    return updated
-      ? this.transformMessage(updated as unknown as IMessageCenter)
-      : null;
+    if (payload.title !== undefined) doc.title = payload.title;
+    if (payload.content !== undefined) doc.content = payload.content;
+    if (payload.scheduledAt !== undefined)
+      doc.scheduledAt = payload.scheduledAt;
+    await doc.save();
+    return this.transformMessage(doc);
   }
 }

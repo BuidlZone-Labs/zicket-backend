@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import MessageCenter from '../src/models/message-center';
 import { MessageCenterService } from '../src/services/message-center.service';
 
@@ -6,17 +7,23 @@ jest.mock('../src/models/message-center', () => ({
   default: {
     find: jest.fn(),
     countDocuments: jest.fn(),
-    findById: jest.fn(),
-    findByIdAndUpdate: jest.fn(),
+    create: jest.fn(),
   },
 }));
+
+jest.mock('mongoose', () => {
+  const actual = jest.requireActual<typeof import('mongoose')>('mongoose');
+  return {
+    ...actual,
+    startSession: jest.fn(),
+  };
+});
 
 describe('MessageCenterService', () => {
   const messageCenterModel = MessageCenter as unknown as {
     find: jest.Mock;
     countDocuments: jest.Mock;
-    findById: jest.Mock;
-    findByIdAndUpdate: jest.Mock;
+    create: jest.Mock;
   };
 
   const mockLean = jest.fn();
@@ -24,9 +31,21 @@ describe('MessageCenterService', () => {
   const mockSkip = jest.fn(() => ({ limit: mockLimit }));
   const mockSort = jest.fn(() => ({ skip: mockSkip }));
 
+  const mockEndSession = jest.fn().mockResolvedValue(undefined);
+  const mockAbortTransaction = jest.fn().mockResolvedValue(undefined);
+  const mockCommitTransaction = jest.fn().mockResolvedValue(undefined);
+  const mockStartTransaction = jest.fn().mockResolvedValue(undefined);
+  const mockSession = {
+    startTransaction: mockStartTransaction,
+    commitTransaction: mockCommitTransaction,
+    abortTransaction: mockAbortTransaction,
+    endSession: mockEndSession,
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     messageCenterModel.find.mockReturnValue({ sort: mockSort });
+    (mongoose.startSession as jest.Mock).mockResolvedValue(mockSession);
   });
 
   it('returns paginated past messages with fixed limit of 5', async () => {
@@ -96,156 +115,106 @@ describe('MessageCenterService', () => {
     expect(mockLimit).toHaveBeenCalledWith(5);
   });
 
-  describe('updateMessage', () => {
-    const messageId = '65f9f9e4c51058f58d05d9aa';
-    const mockFindByIdLean = jest.fn();
-    const mockFindByIdAndUpdateLean = jest.fn();
-
-    beforeEach(() => {
-      jest.clearAllMocks();
-      messageCenterModel.findById.mockReturnValue({ lean: mockFindByIdLean });
-      messageCenterModel.findByIdAndUpdate.mockReturnValue({
-        lean: mockFindByIdAndUpdateLean,
-      });
-    });
-
-    it('returns null when message not found', async () => {
-      mockFindByIdLean.mockResolvedValue(null);
-
-      const result = await MessageCenterService.updateMessage(messageId, {
-        title: 'Updated',
-      });
-
-      expect(messageCenterModel.findById).toHaveBeenCalledWith(messageId);
-      expect(result).toBeNull();
-      expect(messageCenterModel.findByIdAndUpdate).not.toHaveBeenCalled();
-    });
-
-    it('updates title and content for pending message', async () => {
-      const existingMessage = {
+  describe('createMessage', () => {
+    it('creates a message within a transaction and returns transformed response', async () => {
+      const messageId = '65f9f9e4c51058f58d05d9bb';
+      const createdDoc = {
         _id: { toString: () => messageId },
-        title: 'Old',
-        content: 'Old content',
-        audience: ['all'],
+        title: 'Hello',
+        content: 'World',
+        audience: ['user@example.com'],
         status: 'pending',
         scheduledAt: new Date('2026-03-01T12:00:00.000Z'),
-        createdAt: new Date('2026-01-31T12:00:00.000Z'),
-        updatedAt: new Date('2026-01-31T12:00:00.000Z'),
+        createdAt: new Date('2026-02-27T10:00:00.000Z'),
+        updatedAt: new Date('2026-02-27T10:00:00.000Z'),
       };
-      const updatedMessage = {
-        ...existingMessage,
-        title: 'New',
-        content: 'New content',
-        updatedAt: new Date('2026-02-25T12:00:00.000Z'),
-      };
+      messageCenterModel.create.mockResolvedValue([createdDoc]);
 
-      mockFindByIdLean.mockResolvedValue(existingMessage);
-      mockFindByIdAndUpdateLean.mockResolvedValue(updatedMessage);
-
-      const result = await MessageCenterService.updateMessage(messageId, {
-        title: 'New',
-        content: 'New content',
+      const result = await MessageCenterService.createMessage({
+        audience: ['user@example.com'],
+        title: 'Hello',
+        content: 'World',
+        scheduledAt: '2026-03-01T12:00:00.000Z',
       });
 
-      expect(messageCenterModel.findByIdAndUpdate).toHaveBeenCalledWith(
-        messageId,
-        { $set: { title: 'New', content: 'New content' } },
-        { new: true },
+      expect(mongoose.startSession).toHaveBeenCalled();
+      expect(mockStartTransaction).toHaveBeenCalled();
+      expect(messageCenterModel.create).toHaveBeenCalledWith(
+        [
+          {
+            title: 'Hello',
+            content: 'World',
+            audience: ['user@example.com'],
+            status: 'pending',
+            scheduledAt: new Date('2026-03-01T12:00:00.000Z'),
+          },
+        ],
+        { session: mockSession },
       );
+      expect(mockCommitTransaction).toHaveBeenCalled();
+      expect(mockEndSession).toHaveBeenCalled();
       expect(result).toEqual({
         id: messageId,
-        title: 'New',
-        content: 'New content',
-        audience: ['all'],
+        title: 'Hello',
+        content: 'World',
+        audience: ['user@example.com'],
         status: 'pending',
         sentAt: undefined,
         scheduledAt: new Date('2026-03-01T12:00:00.000Z'),
-        createdAt: new Date('2026-01-31T12:00:00.000Z'),
-        updatedAt: new Date('2026-02-25T12:00:00.000Z'),
+        createdAt: new Date('2026-02-27T10:00:00.000Z'),
+        updatedAt: new Date('2026-02-27T10:00:00.000Z'),
       });
     });
 
-    it('updates scheduledAt for pending message', async () => {
-      const existingMessage = {
+    it('creates message without scheduledAt when omitted', async () => {
+      const messageId = '65f9f9e4c51058f58d05d9cc';
+      const createdDoc = {
         _id: { toString: () => messageId },
-        title: 'Title',
+        title: 'No schedule',
         content: 'Content',
-        audience: ['all'],
+        audience: ['a', 'b'],
         status: 'pending',
-        scheduledAt: new Date('2026-03-01T12:00:00.000Z'),
-        createdAt: new Date('2026-01-31T12:00:00.000Z'),
-        updatedAt: new Date('2026-01-31T12:00:00.000Z'),
+        scheduledAt: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
-      const newScheduledAt = new Date('2026-03-15T14:00:00.000Z');
-      const updatedMessage = {
-        ...existingMessage,
-        scheduledAt: newScheduledAt,
-      };
+      messageCenterModel.create.mockResolvedValue([createdDoc]);
 
-      mockFindByIdLean.mockResolvedValue(existingMessage);
-      mockFindByIdAndUpdateLean.mockResolvedValue(updatedMessage);
-
-      await MessageCenterService.updateMessage(messageId, {
-        scheduledAt: newScheduledAt,
+      await MessageCenterService.createMessage({
+        audience: ['a', 'b'],
+        title: 'No schedule',
+        content: 'Content',
       });
 
-      expect(messageCenterModel.findByIdAndUpdate).toHaveBeenCalledWith(
-        messageId,
-        { $set: { scheduledAt: newScheduledAt } },
-        { new: true },
+      expect(messageCenterModel.create).toHaveBeenCalledWith(
+        [
+          {
+            title: 'No schedule',
+            content: 'Content',
+            audience: ['a', 'b'],
+            status: 'pending',
+            scheduledAt: undefined,
+          },
+        ],
+        { session: mockSession },
       );
+      expect(mockCommitTransaction).toHaveBeenCalled();
     });
 
-    it('throws when updating scheduledAt for sent message', async () => {
-      const sentMessage = {
-        _id: { toString: () => messageId },
-        title: 'Title',
-        content: 'Content',
-        audience: ['all'],
-        status: 'sent',
-        sentAt: new Date('2026-02-01T12:00:00.000Z'),
-        createdAt: new Date('2026-01-31T12:00:00.000Z'),
-        updatedAt: new Date('2026-02-01T12:00:00.000Z'),
-      };
-
-      mockFindByIdLean.mockResolvedValue(sentMessage);
+    it('aborts transaction and rethrows when create fails', async () => {
+      messageCenterModel.create.mockRejectedValue(new Error('DB error'));
 
       await expect(
-        MessageCenterService.updateMessage(messageId, {
-          scheduledAt: new Date('2026-03-15T14:00:00.000Z'),
+        MessageCenterService.createMessage({
+          audience: ['x'],
+          title: 'T',
+          content: 'C',
         }),
-      ).rejects.toThrow('ScheduledAtNotAllowedForSent');
+      ).rejects.toThrow('DB error');
 
-      expect(messageCenterModel.findByIdAndUpdate).not.toHaveBeenCalled();
-    });
-
-    it('returns message unchanged when payload has no updatable fields', async () => {
-      const existingMessage = {
-        _id: { toString: () => messageId },
-        title: 'Title',
-        content: 'Content',
-        audience: ['all'],
-        status: 'pending',
-        createdAt: new Date('2026-01-31T12:00:00.000Z'),
-        updatedAt: new Date('2026-01-31T12:00:00.000Z'),
-      };
-
-      mockFindByIdLean.mockResolvedValue(existingMessage);
-
-      const result = await MessageCenterService.updateMessage(messageId, {});
-
-      expect(messageCenterModel.findByIdAndUpdate).not.toHaveBeenCalled();
-      expect(result).toEqual({
-        id: messageId,
-        title: 'Title',
-        content: 'Content',
-        audience: ['all'],
-        status: 'pending',
-        sentAt: undefined,
-        scheduledAt: undefined,
-        createdAt: new Date('2026-01-31T12:00:00.000Z'),
-        updatedAt: new Date('2026-01-31T12:00:00.000Z'),
-      });
+      expect(mockAbortTransaction).toHaveBeenCalled();
+      expect(mockCommitTransaction).not.toHaveBeenCalled();
+      expect(mockEndSession).toHaveBeenCalled();
     });
   });
 });
