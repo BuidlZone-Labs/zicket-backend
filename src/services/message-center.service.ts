@@ -20,6 +20,12 @@ export interface PaginatedMessageCenterResponse {
   messages: MessageCenterResponse[];
 }
 
+export interface UpdateMessagePayload {
+  title?: string;
+  content?: string;
+  scheduledAt?: Date;
+}
+
 export class MessageCenterService {
   private static readonly PAGE_LIMIT = 5;
 
@@ -100,5 +106,45 @@ export class MessageCenterService {
       { scheduledAt: 1, createdAt: 1 },
       page,
     );
+  }
+
+  static async updateMessage(
+    messageId: string,
+    payload: UpdateMessagePayload,
+  ): Promise<MessageCenterResponse | null> {
+    const message = await MessageCenter.findById(messageId).lean();
+
+    if (!message) {
+      return null;
+    }
+
+    const updateData: Record<string, unknown> = {};
+
+    if (payload.title !== undefined) {
+      updateData.title = payload.title;
+    }
+    if (payload.content !== undefined) {
+      updateData.content = payload.content;
+    }
+    if (payload.scheduledAt !== undefined) {
+      if ((message as unknown as IMessageCenter).status === 'sent') {
+        throw new Error('ScheduledAtNotAllowedForSent');
+      }
+      updateData.scheduledAt = payload.scheduledAt;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return this.transformMessage(message as unknown as IMessageCenter);
+    }
+
+    const updated = await MessageCenter.findByIdAndUpdate(
+      messageId,
+      { $set: updateData },
+      { new: true },
+    ).lean();
+
+    return updated
+      ? this.transformMessage(updated as unknown as IMessageCenter)
+      : null;
   }
 }
