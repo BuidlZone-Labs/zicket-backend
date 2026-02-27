@@ -4,7 +4,7 @@ import {
   getPastMessages,
   getScheduledMessages,
   editMessage,
-  deleteMessage
+  deleteMessage,
 } from '../controllers/message-center.controller';
 import { authGuard } from '../middlewares/auth';
 
