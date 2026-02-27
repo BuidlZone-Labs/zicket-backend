@@ -1,4 +1,12 @@
+import mongoose from 'mongoose';
 import MessageCenter, { IMessageCenter } from '../models/message-center';
+
+export interface CreateMessagePayload {
+  audience: string[];
+  title: string;
+  content: string;
+  scheduledAt?: string;
+}
 
 export interface MessageCenterResponse {
   id: string;
@@ -100,5 +108,39 @@ export class MessageCenterService {
       { scheduledAt: 1, createdAt: 1 },
       page,
     );
+  }
+
+  /**
+   * Creates a new message within a MongoDB transaction so that failures roll back safely.
+   */
+  static async createMessage(
+    payload: CreateMessagePayload,
+  ): Promise<MessageCenterResponse> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const scheduledAt = payload.scheduledAt
+        ? new Date(payload.scheduledAt)
+        : undefined;
+      const [doc] = await MessageCenter.create(
+        [
+          {
+            title: payload.title,
+            content: payload.content,
+            audience: payload.audience,
+            status: 'pending',
+            scheduledAt,
+          },
+        ],
+        { session },
+      );
+      await session.commitTransaction();
+      return this.transformMessage(doc);
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      await session.endSession();
+    }
   }
 }
