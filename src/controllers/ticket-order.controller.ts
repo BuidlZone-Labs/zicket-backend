@@ -10,8 +10,7 @@ export const getMyOrders = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const userId =
-      (req.user as any)?._id?.toString() ?? (req.user as any)?.id;
+    const userId = (req.user as any)?._id?.toString() ?? (req.user as any)?.id;
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;

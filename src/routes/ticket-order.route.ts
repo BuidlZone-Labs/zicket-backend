@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { authGuard } from '../middlewares/auth';
-import { getMyOrders, getOrganizerOrders } from '../controllers/ticket-order.controller';
+import {
+  getMyOrders,
+  getOrganizerOrders,
+} from '../controllers/ticket-order.controller';
 
 const ticketOrderRoutes = Router();
 

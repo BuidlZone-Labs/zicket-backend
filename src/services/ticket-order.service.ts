@@ -30,9 +30,23 @@ export interface PaginatedOrdersResponse {
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
 
-function toOrderResponse(doc: ITicketOrder): TicketOrderResponse {
+/** Shape needed to build TicketOrderResponse (works with both Document and lean query results) */
+type OrderDoc = Pick<
+  ITicketOrder,
+  | 'ticketType'
+  | 'eventName'
+  | 'status'
+  | 'quantity'
+  | 'amount'
+  | 'zkIdMatch'
+  | 'privacyLevel'
+  | 'hasReceipt'
+  | 'datePurchased'
+> & { _id: mongoose.Types.ObjectId; transactionId?: string };
+
+function toOrderResponse(doc: OrderDoc): TicketOrderResponse {
   return {
-    id: (doc._id as mongoose.Types.ObjectId).toString(),
+    id: doc._id.toString(),
     ticketType: doc.ticketType,
     eventName: doc.eventName,
     status: doc.status,
@@ -123,7 +137,7 @@ export class TicketOrderService {
       page: validPage,
       limit: validLimit,
       total,
-      orders: orders.map((o) => toOrderResponse(o as ITicketOrder)),
+      orders: orders.map((o) => toOrderResponse(o as OrderDoc)),
     };
   }
 
@@ -159,7 +173,7 @@ export class TicketOrderService {
       page: validPage,
       limit: validLimit,
       total,
-      orders: orders.map((o) => toOrderResponse(o as ITicketOrder)),
+      orders: orders.map((o) => toOrderResponse(o as OrderDoc)),
     };
   }
 }
