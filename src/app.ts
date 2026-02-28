@@ -5,7 +5,9 @@ import authRoute from './routes/auth.route';
 import passport from './config/passport';
 import { authLimiter } from './middlewares/rateLimiter';
 import eventTicketRoutes from './routes/event-ticket.route';
+import eventsRouter from './routes/events.route';
 import messageCenterRoutes from './routes/message-center.route';
+import mediaRoutes from './routes/media.route';
 
 const app = express();
 
@@ -30,10 +32,12 @@ app.use('/auth', authLimiter);
 app.use('/auth', authRoute);
 app.use('/auth', otpRoute);
 app.use('/event-tickets', eventTicketRoutes);
+app.use('/api/events', eventsRouter);
+app.use('/media', mediaRoutes);
 app.use('/zk-message-center', messageCenterRoutes);
 app.use(protectedRoute);
 
-// Global error handler for rate limiting
+// Global error handler for rate limiting and multer (upload) errors
 app.use(
   (
     err: any,
@@ -47,6 +51,23 @@ app.use(
         error: 'Too many requests',
         message: err.message || 'Rate limit exceeded',
         retryAfter: err.retryAfter || 60,
+      });
+    }
+
+    // Handle multer errors (file type/size validation)
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Image must be less than 5MB',
+      });
+    }
+    if (
+      err.message &&
+      /Unsupported file type|Invalid image type/.test(err.message)
+    ) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: err.message,
       });
     }
 

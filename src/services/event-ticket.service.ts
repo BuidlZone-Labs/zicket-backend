@@ -1,4 +1,6 @@
 import EventTicket, { IEventTicket } from '../models/event-ticket';
+import { cloudinaryService } from '../lib/cloudinary';
+import type { CreateEventTicketInput } from '../validators/event.validator';
 
 export interface EventTicketResponse {
   title: string;
@@ -181,6 +183,152 @@ export class EventTicketService {
         `Failed to fetch event tickets: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
+  }
+
+  /**
+   * Create a new event ticket with image (cloudinary_public_id and imageUrl stored).
+   */
+  static async createEventTicket(
+    organizerId: string,
+    data: CreateEventTicketInput,
+    imageBuffer: Buffer,
+  ): Promise<IEventTicket> {
+    const uploadResult = await cloudinaryService.uploadTicketImage(
+      imageBuffer,
+      'events/tickets',
+    );
+
+    const ticket = new EventTicket({
+      name: data.name,
+      about: data.about,
+      price: data.price,
+      privacyLevel: data.privacyLevel,
+      eventCategory: data.eventCategory,
+      organizedBy: organizerId,
+      eventDate: new Date(data.eventDate),
+      location: data.location || 'Virtual',
+      ticketType: data.ticketType,
+      totalTickets: data.totalTickets,
+      availableTickets: data.totalTickets,
+      soldTickets: 0,
+      eventStatus: 'upcoming',
+      imageUrl: uploadResult.secureUrl,
+      cloudinary_public_id: uploadResult.publicId,
+      tags: data.tags || [],
+      isTrending: false,
+    });
+
+    return ticket.save();
+  }
+
+  /**
+   * Update event ticket. If new image buffer provided, uploads new image,
+   * destroys old one, and invalidates CDN cache.
+   */
+  static async updateEventTicket(
+    ticketId: string,
+    organizerId: string,
+    data: Partial<CreateEventTicketInput>,
+    imageBuffer?: Buffer,
+  ): Promise<IEventTicket | null> {
+    const ticket = await EventTicket.findOne({
+      _id: ticketId,
+      organizedBy: organizerId,
+    });
+    if (!ticket) return null;
+
+    if (imageBuffer) {
+      const uploadResult = await cloudinaryService.uploadTicketImage(
+        imageBuffer,
+        'events/tickets',
+      );
+      if (ticket.cloudinary_public_id) {
+        try {
+          await cloudinaryService.destroyImage(ticket.cloudinary_public_id);
+        } catch (err) {
+          console.error('Failed to destroy old ticket image:', err);
+        }
+      }
+      ticket.imageUrl = uploadResult.secureUrl;
+      ticket.cloudinary_public_id = uploadResult.publicId;
+    } else if (ticket.cloudinary_public_id) {
+      try {
+        await cloudinaryService.invalidateImage(ticket.cloudinary_public_id);
+      } catch (err) {
+        console.error('Failed to invalidate ticket image cache:', err);
+      }
+    }
+
+    if (data.name !== undefined) ticket.name = data.name;
+    if (data.about !== undefined) ticket.about = data.about;
+    if (data.price !== undefined) ticket.price = data.price;
+    if (data.privacyLevel !== undefined)
+      ticket.privacyLevel = data.privacyLevel;
+    if (data.eventCategory !== undefined)
+      ticket.eventCategory = data.eventCategory;
+    if (data.eventDate !== undefined)
+      ticket.eventDate = new Date(data.eventDate);
+    if (data.location !== undefined) ticket.location = data.location;
+    if (data.ticketType !== undefined) ticket.ticketType = data.ticketType;
+    if (data.totalTickets !== undefined) {
+      const diff = data.totalTickets - ticket.totalTickets;
+      ticket.totalTickets = data.totalTickets;
+      ticket.availableTickets = Math.max(0, ticket.availableTickets + diff);
+    }
+    if (data.tags !== undefined) ticket.tags = data.tags;
+
+    return ticket.save();
+  }
+
+  /**
+   * Delete event ticket and destroy its image from Cloudinary (no orphaned assets).
+   */
+  static async deleteEventTicket(
+    ticketId: string,
+    organizerId: string,
+  ): Promise<boolean> {
+    const ticket = await EventTicket.findOne({
+      _id: ticketId,
+      organizedBy: organizerId,
+    });
+    if (!ticket) return false;
+
+    if (ticket.cloudinary_public_id) {
+      try {
+        await cloudinaryService.destroyImage(ticket.cloudinary_public_id);
+      } catch (err) {
+        console.error('Failed to destroy ticket image on delete:', err);
+      }
+    }
+    await EventTicket.deleteOne({ _id: ticketId, organizedBy: organizerId });
+    return true;
+  }
+
+  /**
+   * Cleanup job: destroy Cloudinary images that are not linked to any ticket (orphaned).
+   */
+  static async cleanupOrphanedTicketImages(): Promise<{
+    destroyed: number;
+    errors: string[];
+  }> {
+    const inDb = await EventTicket.distinct('cloudinary_public_id');
+    const inDbSet = new Set(inDb);
+    const inCloud =
+      await cloudinaryService.listResourcesInFolder('events/tickets');
+    const toDestroy = inCloud.filter((id) => !inDbSet.has(id));
+    const errors: string[] = [];
+    let destroyed = 0;
+    for (const publicId of toDestroy) {
+      try {
+        await cloudinaryService.destroyImage(publicId);
+        destroyed++;
+      } catch (err) {
+        errors.push(
+          `${publicId}: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        );
+      }
+    }
+    return { destroyed, errors };
   }
 
   /**

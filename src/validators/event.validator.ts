@@ -45,3 +45,40 @@ export const CreateEventStepOneSchema = z
   );
 
 export type CreateEventStepOneInput = z.infer<typeof CreateEventStepOneSchema>;
+
+/** Schema for POST /api/events/tickets multipart body (image comes from file field) */
+export const CreateEventTicketSchema = z.object({
+  name: z.string().min(3, 'Title must be at least 3 characters').max(100),
+  about: z.string().min(10, 'Description must be at least 10 characters'),
+  price: z.coerce.number().min(0),
+  privacyLevel: z.coerce.number().int().min(0).max(2),
+  eventCategory: z.string().min(1),
+  eventDate: z
+    .string()
+    .refine((d) => !isNaN(Date.parse(d)), 'Invalid event date'),
+  location: z.string().min(1).default('Virtual'),
+  ticketType: z
+    .string()
+    .min(1)
+    .transform((s) =>
+      s
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.string()).min(1, 'At least one ticket type required')),
+  totalTickets: z.coerce.number().int().min(0),
+  tags: z
+    .string()
+    .optional()
+    .transform((s) =>
+      s
+        ? s
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
+    ),
+});
+
+export type CreateEventTicketInput = z.infer<typeof CreateEventTicketSchema>;
