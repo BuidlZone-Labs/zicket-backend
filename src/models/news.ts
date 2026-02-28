@@ -1,7 +1,6 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INews extends Document {
-  _id: Types.ObjectId;
   title: string;
   content: string;
   createdAt?: Date;
