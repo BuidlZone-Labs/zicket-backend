@@ -8,7 +8,7 @@ const extractToken = (req: any): string | null => {
 
 const validateAndGetUser = async (token: string) => {
   const decoded = JwtVerify(token);
-  const user = await User.findOne({ id: decoded.id });
+  const user = await User.findById(decoded.id);
 
   if (!user) {
     throw new Error('Token is blacklisted');
