@@ -1,7 +1,10 @@
 import { RequestHandler } from 'express';
 import mongoose from 'mongoose';
-import { CreateMessagePayload, MessageCenterService, UpdateMessagePayload } from '../services/message-center.service';
-
+import {
+  CreateMessagePayload,
+  MessageCenterService,
+  UpdateMessagePayload,
+} from '../services/message-center.service';
 
 function validateCreateMessageBody(
   body: unknown,
