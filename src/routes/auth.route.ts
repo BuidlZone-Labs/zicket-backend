@@ -43,7 +43,12 @@ authRoute.get(
     session: false,
   }),
   (req, res) => {
-    const token = generateToken(req.user);
+    if (!req.user) {
+      res.status(401).json({ message: 'Authentication failed' });
+      return;
+    }
+
+    const token = generateToken(req.user as any);
 
     // Redirect to frontend with token
     res.redirect(`${process.env.FRONTEND_URL}/oauth?token=${token}`);
