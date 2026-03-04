@@ -2,6 +2,7 @@ import express from 'express';
 import { signupController } from '../controllers/signup.controller';
 import { loginController } from '../controllers/login.controller';
 import { resendOtpController } from '../controllers/resendotp.controller';
+import { verifyAccountController } from '../controllers/verify.controller';
 import {
   requestMagicLinkController,
   verifyMagicLinkController,
@@ -18,6 +19,8 @@ const authRoute = express.Router();
 authRoute.post('/signup', getLimiter('signup'), signupController);
 
 authRoute.post('/login', getLimiter('login'), loginController);
+
+authRoute.post('/verify-account', getLimiter('otp'), verifyAccountController);
 
 authRoute.post('/resend-otp', getLimiter('otp'), resendOtpController);
 
