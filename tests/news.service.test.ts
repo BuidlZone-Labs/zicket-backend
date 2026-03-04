@@ -52,7 +52,9 @@ describe('NewsService', () => {
         isDeleted: false,
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
       newsModel.findByIdAndUpdate.mockReturnValue({
         session: jest.fn().mockResolvedValue({
           ...mockNews,
@@ -94,7 +96,9 @@ describe('NewsService', () => {
     it('throws error when news article not found', async () => {
       const newsId = '65f9f9e4c51058f58d05d9aa';
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(null) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(null),
+      });
 
       await expect(NewsService.deleteNewsById(newsId)).rejects.toThrow(
         'News article not found',
@@ -112,7 +116,9 @@ describe('NewsService', () => {
         isDeleted: true,
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
 
       await expect(NewsService.deleteNewsById(newsId)).rejects.toThrow(
         'News article has already been deleted',
@@ -130,7 +136,9 @@ describe('NewsService', () => {
         isDeleted: false,
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
       newsModel.findByIdAndUpdate.mockImplementation(() => {
         throw new Error('Database error');
       });
@@ -153,7 +161,9 @@ describe('NewsService', () => {
         deletedAt: new Date(),
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
       newsModel.findByIdAndDelete.mockReturnValue({
         session: jest.fn().mockResolvedValue(mockNews),
       });
@@ -164,7 +174,9 @@ describe('NewsService', () => {
       expect(mockStartTransaction).toHaveBeenCalled();
       expect(newsModel.findById).toHaveBeenCalledWith(newsId);
       expect(newsModel.findByIdAndDelete).toHaveBeenCalledWith(newsId);
-      expect(newsModel.findByIdAndDelete.mock.results[0].value.session).toHaveBeenCalledWith(mockSession);
+      expect(
+        newsModel.findByIdAndDelete.mock.results[0].value.session,
+      ).toHaveBeenCalledWith(mockSession);
       expect(mockCommitTransaction).toHaveBeenCalled();
       expect(mockEndSession).toHaveBeenCalled();
       expect(result.success).toBe(true);
@@ -179,7 +191,9 @@ describe('NewsService', () => {
         isDeleted: false,
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
 
       await expect(NewsService.hardDeleteNewsById(newsId)).rejects.toThrow(
         'must be soft deleted before hard deletion',
@@ -197,7 +211,9 @@ describe('NewsService', () => {
         isDeleted: false,
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
       newsModel.findByIdAndDelete.mockReturnValue({
         session: jest.fn().mockResolvedValue(mockNews),
       });
@@ -219,7 +235,9 @@ describe('NewsService', () => {
         deletedAt: new Date(),
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
       newsModel.findByIdAndUpdate.mockReturnValue({
         session: jest.fn().mockResolvedValue({
           ...mockNews,
@@ -255,7 +273,9 @@ describe('NewsService', () => {
         isDeleted: false,
       };
 
-      newsModel.findById.mockReturnValue({ session: jest.fn().mockResolvedValue(mockNews) });
+      newsModel.findById.mockReturnValue({
+        session: jest.fn().mockResolvedValue(mockNews),
+      });
 
       await expect(NewsService.restoreNewsById(newsId)).rejects.toThrow(
         'News article is not deleted',

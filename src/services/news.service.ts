@@ -93,7 +93,6 @@ export class NewsService {
     session.startTransaction();
 
     try {
-
       // Find the news article within the transaction
       const news = await News.findById(id).session(session);
 
@@ -151,7 +150,6 @@ export class NewsService {
     session.startTransaction();
 
     try {
-
       // Find the news article within the transaction
       const news = await News.findById(id).session(session);
 
