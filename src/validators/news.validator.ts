@@ -25,3 +25,16 @@ export const CreateNewsSchema = z.object({
 });
 
 export type CreateNewsInput = z.infer<typeof CreateNewsSchema>;
+
+export const NewsSlugSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .min(3, 'Slug must be at least 3 characters long')
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'Slug must contain only lowercase letters, numbers, and hyphens',
+    ),
+});
+
+export type NewsSlugInput = z.infer<typeof NewsSlugSchema>;

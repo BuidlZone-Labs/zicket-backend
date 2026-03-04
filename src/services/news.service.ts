@@ -89,3 +89,9 @@ export class NewsroomService {
     };
   }
 }
+
+export class NewsService {
+  static async getSingleNewsBySlug(slug: string): Promise<INews | null> {
+    return News.findOne({ slug });
+  }
+}
