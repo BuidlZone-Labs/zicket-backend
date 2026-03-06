@@ -9,7 +9,7 @@ export interface INews extends Document {
   publishedBy?: string; // optional field to indicate the source or author of the news
   readCount?: number; // optional field to track how many times the news article has been read
   timeSpentReading?: number; // optional field to track the average time spent reading the news article in seconds
-  deviceStats?: { [deviceType: string]: number }; // optional field to track the number of readers by device type (e.g., mobile: 10, desktop: 5, tablet: 2)
+  deviceStats?: { [deviceType: string]: number }; // optional field to track the number of readers by device type
   createdAt?: Date;
   updatedAt?: Date;
 }
