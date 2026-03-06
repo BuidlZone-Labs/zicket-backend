@@ -1,7 +1,11 @@
 import { RequestHandler } from 'express';
 import z, { ZodError } from 'zod';
 import { NewsNotFoundError, NewsroomService } from '../services/news.service';
-import { CreateNewsSchema, NewsIdParamSchema, UpdateNewsSchema } from '../validators/news.validator';
+import {
+  CreateNewsSchema,
+  NewsIdParamSchema,
+  UpdateNewsSchema,
+} from '../validators/news.validator';
 
 export const createNews: RequestHandler = async (req, res) => {
   try {
@@ -106,7 +110,9 @@ export const updateNews: RequestHandler = async (req, res) => {
     return res.status(500).json({
       error: 'Internal server error',
       message:
-        error instanceof Error ? error.message : 'Failed to update news article',
+        error instanceof Error
+          ? error.message
+          : 'Failed to update news article',
     });
   }
 };

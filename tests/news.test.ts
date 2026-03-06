@@ -2,7 +2,10 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../src/app';
 import News from '../src/models/news';
-import { NewsNotFoundError, NewsroomService } from '../src/services/news.service';
+import {
+  NewsNotFoundError,
+  NewsroomService,
+} from '../src/services/news.service';
 
 // ---------------------------------------------------------------------------
 // Unit Tests: NewsroomService
@@ -127,7 +130,6 @@ describe('NewsroomService', () => {
       ).rejects.toThrow('DB failure');
     });
   });
-
 });
 
 // ---------------------------------------------------------------------------
@@ -244,7 +246,9 @@ describe('PATCH /news/:id', () => {
   it('should return 200 with the updated article', async () => {
     mockSession();
     const updatedDoc = { ...baseDoc, title: 'New Title' };
-    jest.spyOn(News, 'findByIdAndUpdate').mockResolvedValueOnce(updatedDoc as any);
+    jest
+      .spyOn(News, 'findByIdAndUpdate')
+      .mockResolvedValueOnce(updatedDoc as any);
 
     const res = await request(app)
       .patch(`/news/${validId}`)
@@ -319,7 +323,9 @@ describe('PATCH /news/:id', () => {
   it('should allow partial updates (only category)', async () => {
     mockSession();
     const updatedDoc = { ...baseDoc, category: 'Health' };
-    jest.spyOn(News, 'findByIdAndUpdate').mockResolvedValueOnce(updatedDoc as any);
+    jest
+      .spyOn(News, 'findByIdAndUpdate')
+      .mockResolvedValueOnce(updatedDoc as any);
 
     const res = await request(app)
       .patch(`/news/${validId}`)
@@ -329,4 +335,3 @@ describe('PATCH /news/:id', () => {
     expect(res.body.data.category).toBe('Health');
   });
 });
-
