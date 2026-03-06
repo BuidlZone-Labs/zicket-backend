@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const urlSchema = z.url('Must be a valid URL');
+
 export const CreateNewsSchema = z.object({
   title: z
     .string()
@@ -25,3 +27,28 @@ export const CreateNewsSchema = z.object({
 });
 
 export type CreateNewsInput = z.infer<typeof CreateNewsSchema>;
+
+export const UpdateNewsSchema = z
+  .object({
+    title: z
+      .string()
+      .min(3, 'Title must be at least 3 characters')
+      .max(300, 'Title must not exceed 300 characters')
+      .optional(),
+    content: z.string().min(1, 'Content must not be empty').optional(),
+    category: z.string().min(1, 'Category must not be empty').optional(),
+    imageUrl: urlSchema.optional().nullable(),
+    publishAvatarUrl: urlSchema.optional().nullable(),
+    publishedBy: z.string().optional().nullable(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided for update',
+  });
+
+export type UpdateNewsInput = z.infer<typeof UpdateNewsSchema>;
+
+export const NewsIdParamSchema = z.object({
+  id: z.string().refine((val) => /^[a-f\d]{24}$/i.test(val), {
+    message: 'Invalid news article ID',
+  }),
+});

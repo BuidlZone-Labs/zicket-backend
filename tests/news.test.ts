@@ -2,7 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../src/app';
 import News from '../src/models/news';
-import { NewsroomService } from '../src/services/news.service';
+import { NewsNotFoundError, NewsroomService } from '../src/services/news.service';
 
 // ---------------------------------------------------------------------------
 // Unit Tests: NewsroomService
@@ -56,10 +56,82 @@ describe('NewsroomService', () => {
       );
     });
   });
+
+  describe('NewsroomService.updateNews', () => {
+    const validId = new mongoose.Types.ObjectId().toHexString();
+
+    const existingDoc = {
+      _id: new mongoose.Types.ObjectId(validId),
+      title: 'Original Title',
+      content: '<p>Original content.</p>',
+      category: 'Technology',
+    };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should update and return the modified news article', async () => {
+      const updatedDoc = { ...existingDoc, title: 'Updated Title' };
+      jest
+        .spyOn(News, 'findByIdAndUpdate')
+        .mockResolvedValueOnce(updatedDoc as any);
+
+      // Mock session
+      const mockSession = {
+        withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
+        endSession: jest.fn(),
+      };
+      jest
+        .spyOn(mongoose, 'startSession')
+        .mockResolvedValueOnce(mockSession as any);
+
+      const result = await NewsroomService.updateNews(validId, {
+        title: 'Updated Title',
+      });
+
+      expect(result.title).toBe('Updated Title');
+    });
+
+    it('should throw NewsNotFoundError when article does not exist', async () => {
+      jest.spyOn(News, 'findByIdAndUpdate').mockResolvedValueOnce(null);
+
+      const mockSession = {
+        withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
+        endSession: jest.fn(),
+      };
+      jest
+        .spyOn(mongoose, 'startSession')
+        .mockResolvedValueOnce(mockSession as any);
+
+      await expect(
+        NewsroomService.updateNews(validId, { title: 'Ghost Article' }),
+      ).rejects.toThrow(NewsNotFoundError);
+    });
+
+    it('should propagate unexpected database errors', async () => {
+      jest
+        .spyOn(News, 'findByIdAndUpdate')
+        .mockRejectedValueOnce(new Error('DB failure'));
+
+      const mockSession = {
+        withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
+        endSession: jest.fn(),
+      };
+      jest
+        .spyOn(mongoose, 'startSession')
+        .mockResolvedValueOnce(mockSession as any);
+
+      await expect(
+        NewsroomService.updateNews(validId, { title: 'Any Title' }),
+      ).rejects.toThrow('DB failure');
+    });
+  });
+
 });
 
 // ---------------------------------------------------------------------------
-// Integration Tests: POST /news
+// Integration Tests
 // ---------------------------------------------------------------------------
 
 describe('POST /news', () => {
@@ -144,3 +216,117 @@ describe('POST /news', () => {
     expect(res.body.message).toBe('Unexpected DB failure');
   });
 });
+
+describe('PATCH /news/:id', () => {
+  const validId = new mongoose.Types.ObjectId().toHexString();
+
+  const baseDoc = {
+    _id: new mongoose.Types.ObjectId(validId),
+    title: 'Original Title',
+    content: '<p>Original content.</p>',
+    category: 'Technology',
+  };
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // Helper: mock session used by the service
+  function mockSession() {
+    const session = {
+      withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
+      endSession: jest.fn(),
+    };
+    jest.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
+    return session;
+  }
+
+  it('should return 200 with the updated article', async () => {
+    mockSession();
+    const updatedDoc = { ...baseDoc, title: 'New Title' };
+    jest.spyOn(News, 'findByIdAndUpdate').mockResolvedValueOnce(updatedDoc as any);
+
+    const res = await request(app)
+      .patch(`/news/${validId}`)
+      .send({ title: 'New Title' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('News article updated successfully');
+    expect(res.body.data.title).toBe('New Title');
+  });
+
+  it('should return 404 when the article does not exist', async () => {
+    mockSession();
+    jest.spyOn(News, 'findByIdAndUpdate').mockResolvedValueOnce(null);
+
+    const res = await request(app)
+      .patch(`/news/${validId}`)
+      .send({ title: 'Ghost' });
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('Not found');
+  });
+
+  it('should return 400 for an invalid MongoDB ID', async () => {
+    const res = await request(app)
+      .patch('/news/not-a-valid-id')
+      .send({ title: 'Any' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid request parameter');
+  });
+
+  it('should return 400 when no fields are provided', async () => {
+    const res = await request(app).patch(`/news/${validId}`).send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+  });
+
+  it('should return 400 when title is too short', async () => {
+    const res = await request(app)
+      .patch(`/news/${validId}`)
+      .send({ title: 'Hi' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.messages.properties).toHaveProperty('title');
+  });
+
+  it('should return 400 when imageUrl is not a valid URL', async () => {
+    const res = await request(app)
+      .patch(`/news/${validId}`)
+      .send({ imageUrl: 'not-a-url' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.messages.properties).toHaveProperty('imageUrl');
+  });
+
+  it('should return 500 on unexpected service errors', async () => {
+    mockSession();
+    jest
+      .spyOn(News, 'findByIdAndUpdate')
+      .mockRejectedValueOnce(new Error('Unexpected DB failure'));
+
+    const res = await request(app)
+      .patch(`/news/${validId}`)
+      .send({ title: 'Valid Title Here' });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal server error');
+    expect(res.body.message).toBe('Unexpected DB failure');
+  });
+
+  it('should allow partial updates (only category)', async () => {
+    mockSession();
+    const updatedDoc = { ...baseDoc, category: 'Health' };
+    jest.spyOn(News, 'findByIdAndUpdate').mockResolvedValueOnce(updatedDoc as any);
+
+    const res = await request(app)
+      .patch(`/news/${validId}`)
+      .send({ category: 'Health' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.category).toBe('Health');
+  });
+});
+
