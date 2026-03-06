@@ -14,7 +14,8 @@ export interface IEventTicket extends Document {
   availableTickets: number; // number of tickets still available
   soldTickets: number; // number of tickets sold
   eventStatus: string; // upcoming, ongoing, completed, cancelled
-  imageUrl: string; // image representing the event
+  imageUrl: string; // image representing the event (Cloudinary URL)
+  cloudinary_public_id?: string; // Cloudinary public ID for invalidation/destroy (required for new tickets)
   tags: string[]; // tags for better searchability
   isTrending: boolean; // flag to indicate if the event is trending
 }
@@ -40,6 +41,7 @@ const eventTicketSchema = new Schema<IEventTicket>(
       default: 'upcoming',
     },
     imageUrl: { type: String, required: true },
+    cloudinary_public_id: { type: String, required: false },
     tags: [{ type: String }],
     isTrending: { type: Boolean, default: false },
   },

@@ -33,7 +33,6 @@ export const CreateEventStepOneSchema = z
   })
   .refine(
     (data) => {
-      // Logic to ensure end is after start
       const start = new Date(`${data.startDate}T${data.startTime}`);
       const end = new Date(`${data.endDate}T${data.endTime}`);
       return end > start;
