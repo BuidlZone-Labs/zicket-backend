@@ -123,6 +123,58 @@ class EmailService {
       text,
     });
   }
+
+  async sendVerificationOtp(email: string, otp: number): Promise<void> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+            .otp-box { font-size: 28px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 20px; background-color: #e5e7eb; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎫 Zicket</h1>
+            </div>
+            <div class="content">
+              <h2>Verify your account</h2>
+              <p>Thanks for signing up. Use the code below to verify your email address:</p>
+              <div class="otp-box">${otp}</div>
+              <p>This code expires in 10 minutes. If you didn't create an account, you can ignore this email.</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email from Zicket. Please do not reply.</p>
+              <p>&copy; ${new Date().getFullYear()} Zicket. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const text = `
+      Zicket - Verify your account
+
+      Thanks for signing up. Use this code to verify your email: ${otp}
+
+      This code expires in 10 minutes. If you didn't create an account, you can ignore this email.
+
+      © ${new Date().getFullYear()} Zicket. All rights reserved.
+    `;
+
+    await this.sendEmail({
+      to: email,
+      subject: 'Verify your Zicket account',
+      html,
+      text,
+    });
+  }
 }
 
 export default new EmailService();
