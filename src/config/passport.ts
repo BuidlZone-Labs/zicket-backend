@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/user';
-import jwt from 'jsonwebtoken';
+import { generateAccessToken } from '../utils/token';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -65,12 +65,7 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-export const generateToken = (user: any) => {
-  return jwt.sign(
-    { id: user._id, email: user.email },
-    process.env.JWT_SECRET || 'default_secret',
-    { expiresIn: '1h' },
-  );
-};
+// Re-export the token generation utility for backward compatibility
+export { generateAccessToken as generateToken } from '../utils/token';
 
 export default passport;

@@ -2,6 +2,7 @@ import express from 'express';
 import { signupController } from '../controllers/signup.controller';
 import { loginController } from '../controllers/login.controller';
 import { resendOtpController } from '../controllers/resendotp.controller';
+import { verifyAccountController } from '../controllers/verify.controller';
 import {
   requestMagicLinkController,
   verifyMagicLinkController,
@@ -18,6 +19,8 @@ const authRoute = express.Router();
 authRoute.post('/signup', getLimiter('signup'), signupController);
 
 authRoute.post('/login', getLimiter('login'), loginController);
+
+authRoute.post('/verify-account', getLimiter('otp'), verifyAccountController);
 
 authRoute.post('/resend-otp', getLimiter('otp'), resendOtpController);
 
@@ -43,7 +46,12 @@ authRoute.get(
     session: false,
   }),
   (req, res) => {
-    const token = generateToken(req.user);
+    if (!req.user) {
+      res.status(401).json({ message: 'Authentication failed' });
+      return;
+    }
+
+    const token = generateToken(req.user as any);
 
     // Redirect to frontend with token
     res.redirect(`${process.env.FRONTEND_URL}/oauth?token=${token}`);

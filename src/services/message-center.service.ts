@@ -1,4 +1,18 @@
+import mongoose from 'mongoose';
 import MessageCenter, { IMessageCenter } from '../models/message-center';
+
+export interface CreateMessagePayload {
+  audience: string[];
+  title: string;
+  content: string;
+  scheduledAt?: string;
+}
+
+export interface UpdateMessagePayload {
+  title?: string;
+  content?: string;
+  scheduledAt?: Date;
+}
 
 export interface MessageCenterResponse {
   id: string;
@@ -18,6 +32,12 @@ export interface PaginatedMessageCenterResponse {
   total: number;
   totalPages: number;
   messages: MessageCenterResponse[];
+}
+
+export interface UpdateMessagePayload {
+  title?: string;
+  content?: string;
+  scheduledAt?: Date;
 }
 
 export class MessageCenterService {
@@ -69,6 +89,14 @@ export class MessageCenterService {
     };
   }
 
+  static async deleteMessage(messageId: string) {
+    const message = await MessageCenter.findByIdAndDelete(messageId);
+    if (!message) {
+      throw new Error('Message not found');
+    }
+    return message;
+  }
+
   static async getPastMessages(
     page: number = 1,
   ): Promise<PaginatedMessageCenterResponse> {
@@ -100,5 +128,56 @@ export class MessageCenterService {
       { scheduledAt: 1, createdAt: 1 },
       page,
     );
+  }
+
+  /**
+   * Creates a new message within a MongoDB transaction so that failures roll back safely.
+   */
+  static async createMessage(
+    payload: CreateMessagePayload,
+  ): Promise<MessageCenterResponse> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const scheduledAt = payload.scheduledAt
+        ? new Date(payload.scheduledAt)
+        : undefined;
+      const [doc] = await MessageCenter.create(
+        [
+          {
+            title: payload.title,
+            content: payload.content,
+            audience: payload.audience,
+            status: 'pending',
+            scheduledAt,
+          },
+        ],
+        { session },
+      );
+      await session.commitTransaction();
+      return this.transformMessage(doc);
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  static async updateMessage(
+    messageId: string,
+    payload: UpdateMessagePayload,
+  ): Promise<MessageCenterResponse | null> {
+    const doc = await MessageCenter.findById(messageId);
+    if (!doc) return null;
+    if (payload.scheduledAt !== undefined && doc.status === 'sent') {
+      throw new Error('ScheduledAtNotAllowedForSent');
+    }
+    if (payload.title !== undefined) doc.title = payload.title;
+    if (payload.content !== undefined) doc.content = payload.content;
+    if (payload.scheduledAt !== undefined)
+      doc.scheduledAt = payload.scheduledAt;
+    await doc.save();
+    return this.transformMessage(doc);
   }
 }
