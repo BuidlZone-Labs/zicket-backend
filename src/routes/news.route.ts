@@ -1,4 +1,5 @@
 import { Router } from 'express';
+<<<<<<< HEAD
 import {
   deleteNewsById,
   hardDeleteNewsById,
@@ -15,5 +16,12 @@ newsRoutes.delete('/:id/permanent', hardDeleteNewsById);
 
 // PATCH /api/news/:id/restore - Restore a soft-deleted news article
 newsRoutes.patch('/:id/restore', restoreNewsById);
+=======
+import { createNews } from '../controllers/news.controller';
+
+const newsRoutes = Router();
+
+newsRoutes.post('/', createNews);
+>>>>>>> upstream/main
 
 export default newsRoutes;

@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import User from '../models/user';
+import { generateAccessToken } from '../utils/token';
 
 export const loginController: RequestHandler = async (req, res, next) => {
   try {
@@ -39,11 +39,7 @@ export const loginController: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET || 'default_secret',
-      { expiresIn: '1h' },
-    );
+    const token = generateAccessToken(user);
 
     res.status(200).json({ message: 'Login successful', token });
   } catch (error: any) {
