@@ -1,8 +1,8 @@
 import { RequestHandler } from 'express';
 import mongoose from 'mongoose';
 import {
-  MessageCenterService,
   CreateMessagePayload,
+  MessageCenterService,
   UpdateMessagePayload,
 } from '../services/message-center.service';
 
