@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import z, { ZodError } from 'zod';
+import { ZodError } from 'zod';
 import { NewsroomService } from '../services/news.service';
 import { CreateNewsSchema } from '../validators/news.validator';
 
@@ -10,7 +10,7 @@ export const createNews: RequestHandler = async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({
         error: 'Validation failed',
-        messages: z.treeifyError(parsed.error),
+        messages: parsed.error.errors,
       });
     }
 
@@ -33,7 +33,7 @@ export const createNews: RequestHandler = async (req, res) => {
     if (error instanceof ZodError) {
       return res.status(400).json({
         error: 'Validation failed',
-        messages: z.treeifyError(error),
+        messages: error.errors,
       });
     }
 
