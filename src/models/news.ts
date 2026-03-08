@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface INews extends Document {
   title: string;
+  slug: string;
   content: string; // content contains html formatted string for rich text representation of the news article
   category: string;
   imageUrl?: string; // optional field for an image associated with the news
@@ -17,6 +18,7 @@ export interface INews extends Document {
 const newsSchema = new Schema<INews>(
   {
     title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true, index: true },
     content: { type: String, required: true },
     category: { type: String, required: true },
     imageUrl: { type: String, required: false },
