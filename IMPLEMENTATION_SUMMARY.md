@@ -3,6 +3,7 @@
 ## ✅ Completed Implementation
 
 ### 1. Updated Model (`src/models/event-ticket.ts`)
+
 - Added privacy-related enums:
   - `PrivacyLevel`: anonymous, wallet-required, verified-access
   - `EventType`: FREE, PAID
@@ -14,6 +15,7 @@
 - Added boolean fields: offerReceipts, hasZkEmailUpdates, hasEventReminders, isPublished
 
 ### 2. Updated Service (`src/services/event-ticket.service.ts`)
+
 - Added `CreateEventTicketPayload` and `EventTicketPrivacyPayload` interfaces
 - Implemented `createEventTicket()` method with full validation
 - Implemented `updateEventTicketPrivacy()` method for partial updates
@@ -24,6 +26,7 @@
   - Validates ticket type structure and values
 
 ### 3. Updated Controller (`src/controllers/event-ticket.controller.ts`)
+
 - Added `createEventTicket` endpoint handler with comprehensive validation
 - Added `updateEventTicketPrivacy` endpoint handler
 - Implemented validation functions:
@@ -32,19 +35,23 @@
 - Proper error handling and response formatting
 
 ### 4. Updated Routes (`src/routes/event-ticket.route.ts`)
+
 - POST `/event-tickets` - Create event with privacy settings
 - PATCH `/event-tickets/:ticketId/privacy` - Update privacy settings
 
 ### 5. Added Utilities
+
 - `src/utils/event-ticket-validation.ts` - Reusable validation helpers
 - `src/validators/event.validator.ts` - Zod schemas for step one and step two
 
 ### 6. Documentation
+
 - `docs/PRIVACY_SETTINGS.md` - API documentation
 
 ## 🔧 Required Actions
 
 ### Install Dependencies
+
 ```bash
 npm install
 ```
@@ -52,6 +59,7 @@ npm install
 This will install the correct version of zod (^3.23.8) that was updated in package.json.
 
 ### Build Project
+
 ```bash
 npm run build
 ```
@@ -68,6 +76,7 @@ After installing dependencies, the build should succeed without errors.
 ## 🎯 API Examples
 
 ### Create Event Ticket
+
 ```bash
 POST /event-tickets
 Content-Type: application/json
@@ -103,6 +112,7 @@ Content-Type: application/json
 ```
 
 ### Update Privacy Settings
+
 ```bash
 PATCH /event-tickets/:ticketId/privacy
 Content-Type: application/json

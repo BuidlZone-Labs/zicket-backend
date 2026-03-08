@@ -245,7 +245,10 @@ function validatePrivacySettingsPayload(
       };
     }
 
-    if (typeof ticket.ticketName !== 'string' || ticket.ticketName.trim() === '') {
+    if (
+      typeof ticket.ticketName !== 'string' ||
+      ticket.ticketName.trim() === ''
+    ) {
       return {
         valid: false,
         error: `Ticket at index ${i} must have a valid ticketName`,
@@ -336,7 +339,10 @@ function validateCreateEventTicketPayload(
     };
   }
 
-  if (typeof b.organizedBy !== 'string' || !mongoose.Types.ObjectId.isValid(b.organizedBy)) {
+  if (
+    typeof b.organizedBy !== 'string' ||
+    !mongoose.Types.ObjectId.isValid(b.organizedBy)
+  ) {
     return {
       valid: false,
       error: 'organizedBy is required and must be a valid ObjectId',
@@ -443,7 +449,9 @@ export const createEventTicket: RequestHandler = async (req, res) => {
     return res.status(500).json({
       error: 'Internal server error',
       message:
-        error instanceof Error ? error.message : 'Failed to create event ticket',
+        error instanceof Error
+          ? error.message
+          : 'Failed to create event ticket',
     });
   }
 };
@@ -454,7 +462,12 @@ export const createEventTicket: RequestHandler = async (req, res) => {
 export const updateEventTicketPrivacy: RequestHandler = async (req, res) => {
   try {
     const rawTicketId = req.params.ticketId;
-    const ticketId = typeof rawTicketId === 'string' ? rawTicketId : Array.isArray(rawTicketId) ? rawTicketId[0] : '';
+    const ticketId =
+      typeof rawTicketId === 'string'
+        ? rawTicketId
+        : Array.isArray(rawTicketId)
+          ? rawTicketId[0]
+          : '';
 
     if (!ticketId || !mongoose.Types.ObjectId.isValid(ticketId)) {
       return res.status(400).json({

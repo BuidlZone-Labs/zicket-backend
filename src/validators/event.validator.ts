@@ -7,9 +7,7 @@ const CreateEventStepOneBaseSchema = z.object({
     .min(3, 'Title must be at least 3 characters')
     .max(100, 'Title is too long'),
 
-  description: z
-    .string()
-    .min(10, 'Description must be at least 10 characters'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
 
   tags: z.array(z.string()).min(1, 'At least one tag is required'),
 
@@ -59,7 +57,8 @@ export const CreateEventStepTwoSchema = z
   .object({
     privacyLevel: z.enum(['anonymous', 'wallet-required', 'verified-access'], {
       errorMap: () => ({
-        message: 'Privacy level must be one of: anonymous, wallet-required, verified-access',
+        message:
+          'Privacy level must be one of: anonymous, wallet-required, verified-access',
       }),
     }),
 
@@ -100,9 +99,21 @@ export const CreateEventStepTwoSchema = z
     isPublished: z.boolean(),
   })
   .refine(
-    (data: { eventType: 'FREE' | 'PAID'; privacyLevel: string; ticketType: Array<{ ticketName: string; quantity: number; currencyOrToken: string; price: number }> }) => {
+    (data: {
+      eventType: 'FREE' | 'PAID';
+      privacyLevel: string;
+      ticketType: Array<{
+        ticketName: string;
+        quantity: number;
+        currencyOrToken: string;
+        price: number;
+      }>;
+    }) => {
       // Rule: PAID events require wallet-required privacy level
-      if (data.eventType === 'PAID' && data.privacyLevel !== 'wallet-required') {
+      if (
+        data.eventType === 'PAID' &&
+        data.privacyLevel !== 'wallet-required'
+      ) {
         return false;
       }
       return true;
@@ -113,10 +124,15 @@ export const CreateEventStepTwoSchema = z
     },
   )
   .refine(
-    (data: { eventType: 'FREE' | 'PAID'; ticketType: Array<{ price: number }> }) => {
+    (data: {
+      eventType: 'FREE' | 'PAID';
+      ticketType: Array<{ price: number }>;
+    }) => {
       // Rule: FREE events cannot have tickets with price > 0
       if (data.eventType === 'FREE') {
-        return data.ticketType.every((ticket: { price: number }) => ticket.price === 0);
+        return data.ticketType.every(
+          (ticket: { price: number }) => ticket.price === 0,
+        );
       }
       return true;
     },
@@ -126,15 +142,21 @@ export const CreateEventStepTwoSchema = z
     },
   )
   .refine(
-    (data: { eventType: 'FREE' | 'PAID'; ticketType: Array<{ price: number }> }) => {
+    (data: {
+      eventType: 'FREE' | 'PAID';
+      ticketType: Array<{ price: number }>;
+    }) => {
       // Rule: PAID events must have at least one ticket with price > 0
       if (data.eventType === 'PAID') {
-        return data.ticketType.some((ticket: { price: number }) => ticket.price > 0);
+        return data.ticketType.some(
+          (ticket: { price: number }) => ticket.price > 0,
+        );
       }
       return true;
     },
     {
-      message: 'PAID events must have at least one ticket with price greater than 0',
+      message:
+        'PAID events must have at least one ticket with price greater than 0',
       path: ['ticketType'],
     },
   );

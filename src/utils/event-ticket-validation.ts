@@ -9,7 +9,7 @@ import {
 
 /**
  * Validation utility for event ticket privacy settings
- * 
+ *
  * Business Rules:
  * 1. PAID events MUST have privacyLevel set to 'wallet-required'
  * 2. FREE events cannot have tickets with price > 0
@@ -26,7 +26,9 @@ export interface ValidationResult<T> {
 /**
  * Validates privacy level enum value
  */
-export function validatePrivacyLevel(value: unknown): ValidationResult<PrivacyLevel> {
+export function validatePrivacyLevel(
+  value: unknown,
+): ValidationResult<PrivacyLevel> {
   if (!value || typeof value !== 'string') {
     return {
       valid: false,
@@ -47,7 +49,9 @@ export function validatePrivacyLevel(value: unknown): ValidationResult<PrivacyLe
 /**
  * Validates attendance mode enum value
  */
-export function validateAttendanceMode(value: unknown): ValidationResult<AttendanceMode> {
+export function validateAttendanceMode(
+  value: unknown,
+): ValidationResult<AttendanceMode> {
   if (!value || typeof value !== 'string') {
     return {
       valid: false,
@@ -89,7 +93,9 @@ export function validateEventType(value: unknown): ValidationResult<EventType> {
 /**
  * Validates location type enum value
  */
-export function validateLocationType(value: unknown): ValidationResult<LocationType> {
+export function validateLocationType(
+  value: unknown,
+): ValidationResult<LocationType> {
   if (!value || typeof value !== 'string') {
     return {
       valid: false,
@@ -110,7 +116,9 @@ export function validateLocationType(value: unknown): ValidationResult<LocationT
 /**
  * Validates payment privacy enum value
  */
-export function validatePaymentPrivacy(value: unknown): ValidationResult<PaymentPrivacy> {
+export function validatePaymentPrivacy(
+  value: unknown,
+): ValidationResult<PaymentPrivacy> {
   if (!value || typeof value !== 'string') {
     return {
       valid: false,
@@ -131,7 +139,10 @@ export function validatePaymentPrivacy(value: unknown): ValidationResult<Payment
 /**
  * Validates MongoDB ObjectId
  */
-export function validateObjectId(value: unknown, fieldName: string): ValidationResult<string> {
+export function validateObjectId(
+  value: unknown,
+  fieldName: string,
+): ValidationResult<string> {
   if (typeof value !== 'string') {
     return {
       valid: false,
@@ -152,7 +163,10 @@ export function validateObjectId(value: unknown, fieldName: string): ValidationR
 /**
  * Validates ISO date string
  */
-export function validateISODate(value: unknown, fieldName: string): ValidationResult<Date> {
+export function validateISODate(
+  value: unknown,
+  fieldName: string,
+): ValidationResult<Date> {
   if (typeof value !== 'string') {
     return {
       valid: false,
@@ -178,7 +192,10 @@ export function validatePaidEventPrivacy(
   eventType: EventType,
   privacyLevel: PrivacyLevel,
 ): ValidationResult<void> {
-  if (eventType === EventType.PAID && privacyLevel !== PrivacyLevel.WALLET_REQUIRED) {
+  if (
+    eventType === EventType.PAID &&
+    privacyLevel !== PrivacyLevel.WALLET_REQUIRED
+  ) {
     return {
       valid: false,
       error: 'PAID events require privacy level to be wallet-required',

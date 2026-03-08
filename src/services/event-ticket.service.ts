@@ -257,7 +257,9 @@ export class EventTicketService {
   /**
    * Validates privacy settings business rules
    */
-  private static validatePrivacySettings(payload: EventTicketPrivacyPayload): void {
+  private static validatePrivacySettings(
+    payload: EventTicketPrivacyPayload,
+  ): void {
     // Rule: PAID events require privacyLevel to be wallet-required
     if (
       payload.eventType === EventType.PAID &&
@@ -311,7 +313,9 @@ export class EventTicketService {
         (ticket) => ticket.price > 0,
       );
       if (!hasPaidTickets) {
-        throw new Error('PAID events must have at least one ticket with price > 0');
+        throw new Error(
+          'PAID events must have at least one ticket with price > 0',
+        );
       }
     }
   }
