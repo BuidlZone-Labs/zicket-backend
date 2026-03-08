@@ -30,8 +30,7 @@ describe('news controller', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       error: 'Validation error',
-      message:
-        'Slug must contain only lowercase letters, numbers, and hyphens',
+      message: 'Slug must contain only lowercase letters, numbers, and hyphens',
     });
     expect(newsService.getSingleNewsBySlug).not.toHaveBeenCalled();
   });
@@ -72,7 +71,9 @@ describe('news controller', () => {
   });
 
   it('returns 500 when service throws', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
     const req = { params: { slug: 'crypto-art-lagos-2025' } };
     const res = createResponse();
     newsService.getSingleNewsBySlug.mockRejectedValue(new Error('db down'));
