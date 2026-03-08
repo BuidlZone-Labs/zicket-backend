@@ -108,4 +108,4 @@ export const getAllNews: RequestHandler = async (req, res) => {
         error instanceof Error ? error.message : 'Failed to retrieve news',
     });
   }
-}
+};

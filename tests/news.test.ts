@@ -108,9 +108,7 @@ describe('NewsroomService', () => {
         sort: jest.fn().mockReturnValueOnce({
           skip: jest.fn().mockReturnValueOnce({
             limit: jest.fn().mockReturnValueOnce({
-              exec: jest
-                .fn()
-                .mockResolvedValueOnce([mockNewsArticles[0]]),
+              exec: jest.fn().mockResolvedValueOnce([mockNewsArticles[0]]),
             }),
           }),
         }),
@@ -118,11 +116,7 @@ describe('NewsroomService', () => {
 
       jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(1);
 
-      const result = await NewsroomService.getAllNews(
-        1,
-        10,
-        'Technology',
-      );
+      const result = await NewsroomService.getAllNews(1, 10, 'Technology');
 
       expect(result.total).toBe(1);
       expect(result.data).toHaveLength(1);
@@ -133,9 +127,7 @@ describe('NewsroomService', () => {
         sort: jest.fn().mockReturnValueOnce({
           skip: jest.fn().mockReturnValueOnce({
             limit: jest.fn().mockReturnValueOnce({
-              exec: jest
-                .fn()
-                .mockResolvedValueOnce(mockNewsArticles),
+              exec: jest.fn().mockResolvedValueOnce(mockNewsArticles),
             }),
           }),
         }),
@@ -154,9 +146,7 @@ describe('NewsroomService', () => {
         sort: jest.fn().mockReturnValueOnce({
           skip: jest.fn().mockReturnValueOnce({
             limit: jest.fn().mockReturnValueOnce({
-              exec: jest
-                .fn()
-                .mockResolvedValueOnce([]),
+              exec: jest.fn().mockResolvedValueOnce([]),
             }),
           }),
         }),
@@ -171,11 +161,9 @@ describe('NewsroomService', () => {
     });
 
     it('should propagate database errors', async () => {
-      jest
-        .spyOn(News, 'find')
-        .mockImplementationOnce(() => {
-          throw new Error('DB connection error');
-        });
+      jest.spyOn(News, 'find').mockImplementationOnce(() => {
+        throw new Error('DB connection error');
+      });
 
       await expect(NewsroomService.getAllNews()).rejects.toThrow(
         'DB connection error',
@@ -304,9 +292,7 @@ describe('GET /news', () => {
       sort: jest.fn().mockReturnValueOnce({
         skip: jest.fn().mockReturnValueOnce({
           limit: jest.fn().mockReturnValueOnce({
-            exec: jest
-              .fn()
-              .mockResolvedValueOnce(mockNewsData),
+            exec: jest.fn().mockResolvedValueOnce(mockNewsData),
           }),
         }),
       }),
@@ -332,9 +318,7 @@ describe('GET /news', () => {
       sort: jest.fn().mockReturnValueOnce({
         skip: jest.fn().mockReturnValueOnce({
           limit: jest.fn().mockReturnValueOnce({
-            exec: jest
-              .fn()
-              .mockResolvedValueOnce([mockNewsData[0]]),
+            exec: jest.fn().mockResolvedValueOnce([mockNewsData[0]]),
           }),
         }),
       }),
@@ -342,9 +326,7 @@ describe('GET /news', () => {
 
     jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(5);
 
-    const res = await request(app)
-      .get('/news')
-      .query({ page: 2, limit: 5 });
+    const res = await request(app).get('/news').query({ page: 2, limit: 5 });
 
     expect(res.status).toBe(200);
     expect(res.body.pagination.page).toBe(2);
@@ -357,9 +339,7 @@ describe('GET /news', () => {
       sort: jest.fn().mockReturnValueOnce({
         skip: jest.fn().mockReturnValueOnce({
           limit: jest.fn().mockReturnValueOnce({
-            exec: jest
-              .fn()
-              .mockResolvedValueOnce([mockNewsData[0]]),
+            exec: jest.fn().mockResolvedValueOnce([mockNewsData[0]]),
           }),
         }),
       }),
@@ -377,9 +357,7 @@ describe('GET /news', () => {
   });
 
   it('should return 400 with invalid page parameter', async () => {
-    const res = await request(app)
-      .get('/news')
-      .query({ page: 0 });
+    const res = await request(app).get('/news').query({ page: 0 });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Invalid pagination');
@@ -387,9 +365,7 @@ describe('GET /news', () => {
   });
 
   it('should return 400 with invalid limit parameter', async () => {
-    const res = await request(app)
-      .get('/news')
-      .query({ limit: 101 });
+    const res = await request(app).get('/news').query({ limit: 101 });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Invalid pagination');
@@ -397,9 +373,7 @@ describe('GET /news', () => {
   });
 
   it('should return 400 with invalid sort order', async () => {
-    const res = await request(app)
-      .get('/news')
-      .query({ sortOrder: 'invalid' });
+    const res = await request(app).get('/news').query({ sortOrder: 'invalid' });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Invalid sort order');
@@ -430,11 +404,9 @@ describe('GET /news', () => {
   });
 
   it('should return 500 on unexpected service errors', async () => {
-    jest
-      .spyOn(News, 'find')
-      .mockImplementationOnce(() => {
-        throw new Error('Unexpected database error');
-      });
+    jest.spyOn(News, 'find').mockImplementationOnce(() => {
+      throw new Error('Unexpected database error');
+    });
 
     const res = await request(app).get('/news');
 
