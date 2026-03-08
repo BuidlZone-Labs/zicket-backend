@@ -102,7 +102,8 @@ export const getAllNews: RequestHandler = async (req, res) => {
 
     return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Failed to retrieve news',
+      message:
+        error instanceof Error ? error.message : 'Failed to retrieve news',
     });
   }
 };
@@ -131,7 +132,8 @@ export const getSingleNews: RequestHandler = async (req, res) => {
     console.error('Error fetching single news:', error);
     return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Failed to fetch news article',
+      message:
+        error instanceof Error ? error.message : 'Failed to fetch news article',
     });
   }
 };
