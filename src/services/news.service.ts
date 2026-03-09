@@ -97,17 +97,8 @@ export class NewsroomService {
       await session.endSession();
     }
   }
-}
 
-/** Typed error thrown when a news article cannot be found. */
-export class NewsNotFoundError extends Error {
-  constructor(id: string) {
-    super(`News article with ID "${id}" not found`);
-    this.name = 'NewsNotFoundError';
-  }
-}
-
- /**  * Retrieves all news articles with pagination and optional filtering.
+  /**  * Retrieves all news articles with pagination and optional filtering.
    *
    * @param page - Page number (default: 1)
    * @param limit - Number of results per page (default: 10, max: 100)
@@ -152,6 +143,14 @@ export class NewsNotFoundError extends Error {
       limit: validLimit,
       pages,
     };
+  }
+}
+
+/** Typed error thrown when a news article cannot be found. */
+export class NewsNotFoundError extends Error {
+  constructor(id: string) {
+    super(`News article with ID "${id}" not found`);
+    this.name = 'NewsNotFoundError';
   }
 }
 

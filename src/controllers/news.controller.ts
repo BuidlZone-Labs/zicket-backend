@@ -115,9 +115,10 @@ export const updateNews: RequestHandler = async (req, res) => {
         error instanceof Error
           ? error.message
           : 'Failed to update news article',
-       });
+    });
   }
-  
+}
+
 export const getAllNews: RequestHandler = async (req, res) => {
   try {
     const pageParam = req.query.page as string;
