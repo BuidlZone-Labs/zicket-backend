@@ -16,6 +16,21 @@ export interface DeleteResult {
   newsId: string;
   deletedAt?: Date;
 }
+      
+export interface NewsResponse {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  imageUrl?: string;
+  publishAvatarUrl?: string;
+  publishedBy?: string;
+  readCount: number;
+  timeSpentReading?: number;
+  deviceStats?: { [deviceType: string]: number };
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 // Internal helper for image uploads
 async function uploadImage(file: string): Promise<string> {
@@ -24,6 +39,23 @@ async function uploadImage(file: string): Promise<string> {
 }
 
 export class NewsService {
+  
+  private static transformNews(news: INews): NewsResponse {
+    return {
+      id: news._id.toString(),
+      title: news.title,
+      content: news.content,
+      category: news.category,
+      imageUrl: news.imageUrl,
+      publishAvatarUrl: news.publishAvatarUrl,
+      publishedBy: news.publishedBy,
+      readCount: news.readCount || 0,
+      timeSpentReading: news.timeSpentReading,
+      deviceStats: news.deviceStats,
+      createdAt: news.createdAt,
+      updatedAt: news.updatedAt,
+    };
+  }
   
   /**
    * Creates a news article.
@@ -253,6 +285,31 @@ export class NewsService {
       throw new Error(
         `Failed to hard delete news article: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
+    } finally {
+      await session.endSession();
+    }
+  }
+      
+  static async incrementReadCount(
+    newsId: string,
+  ): Promise<NewsResponse | null> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const news = await News.findByIdAndUpdate(
+        newsId,
+        { $inc: { readCount: 1 } },
+        { new: true, session },
+      );
+      if (!news) {
+        await session.abortTransaction();
+        return null;
+      }
+      await session.commitTransaction();
+      return this.transformNews(news);
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
     } finally {
       await session.endSession();
     }

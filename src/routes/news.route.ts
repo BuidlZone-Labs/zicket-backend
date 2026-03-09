@@ -7,6 +7,7 @@ import {
   deleteNewsById,
   hardDeleteNewsById,
   restoreNewsById,
+  incrementReadCount,
 } from '../controllers/news.controller';
 
 const newsRoutes = Router();
@@ -16,6 +17,8 @@ newsRoutes.post('/', createNews);
 
 newsRoutes.patch('/:id', updateNews);
 newsRoutes.get('/:slug', getSingleNews);
+
+newsRoutes.patch('/:id/read', incrementReadCount);
 
 // DELETE /api/news/:id - Soft delete a news article by ID
 newsRoutes.delete('/:id', deleteNewsById);
