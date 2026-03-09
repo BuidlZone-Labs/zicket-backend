@@ -133,7 +133,9 @@ export const searchEventTickets: RequestHandler = async (req, res) => {
     res.status(500).json({
       error: 'Internal server error',
       message:
-        error instanceof Error ? error.message : 'Failed to search event tickets',
+        error instanceof Error
+          ? error.message
+          : 'Failed to search event tickets',
     });
   }
 };
