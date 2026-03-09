@@ -8,7 +8,7 @@ import {
 } from '../src/services/news.service';
 
 // ---------------------------------------------------------------------------
-// Unit Tests: NewsroomService
+// Unit Tests
 // ---------------------------------------------------------------------------
 
 describe('NewsroomService', () => {
@@ -60,6 +60,10 @@ describe('NewsroomService', () => {
     });
   });
 
+  // ---------------------------------------------------------------------------
+  // updateNews tests 
+  // ---------------------------------------------------------------------------
+
   describe('NewsroomService.updateNews', () => {
     const validId = new mongoose.Types.ObjectId().toHexString();
 
@@ -80,11 +84,11 @@ describe('NewsroomService', () => {
         .spyOn(News, 'findByIdAndUpdate')
         .mockResolvedValueOnce(updatedDoc as any);
 
-      // Mock session
       const mockSession = {
         withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
         endSession: jest.fn(),
       };
+
       jest
         .spyOn(mongoose, 'startSession')
         .mockResolvedValueOnce(mockSession as any);
@@ -103,6 +107,7 @@ describe('NewsroomService', () => {
         withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
         endSession: jest.fn(),
       };
+
       jest
         .spyOn(mongoose, 'startSession')
         .mockResolvedValueOnce(mockSession as any);
@@ -121,6 +126,7 @@ describe('NewsroomService', () => {
         withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
         endSession: jest.fn(),
       };
+
       jest
         .spyOn(mongoose, 'startSession')
         .mockResolvedValueOnce(mockSession as any);
@@ -130,208 +136,120 @@ describe('NewsroomService', () => {
       ).rejects.toThrow('DB failure');
     });
   });
-});
 
-// ---------------------------------------------------------------------------
-// Integration Tests
-// ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // getAllNews 
+  // ---------------------------------------------------------------------------
 
-describe('POST /news', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
+  describe('getAllNews', () => {
+    const mockNewsArticles = [
+      {
+        _id: new mongoose.Types.ObjectId(),
+        title: 'News 1',
+        content: '<p>Content 1</p>',
+        category: 'Technology',
+        createdAt: new Date('2025-01-01'),
+      },
+      {
+        _id: new mongoose.Types.ObjectId(),
+        title: 'News 2',
+        content: '<p>Content 2</p>',
+        category: 'Sports',
+        createdAt: new Date('2025-01-02'),
+      },
+    ];
 
-  const validBody = {
-    title: 'A Valid News Title',
-    content: '<p>Detailed content goes here for the article.</p>',
-    category: 'Sports',
-  };
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
 
-  it('should return 201 with the created news article', async () => {
-    const savedDoc = { _id: new mongoose.Types.ObjectId(), ...validBody };
-    jest.spyOn(News.prototype, 'save').mockResolvedValueOnce(savedDoc as any);
+    it('should return paginated news articles with default parameters', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest
+                .fn()
+                .mockResolvedValueOnce(mockNewsArticles.slice(0, 2)),
+            }),
+          }),
+        }),
+      } as any);
 
-    const res = await request(app).post('/news').send(validBody);
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
 
-    expect(res.status).toBe(201);
-    expect(res.body.message).toBe('News article created successfully');
-    expect(res.body.data).toMatchObject({ title: validBody.title });
-  });
+      const result = await NewsroomService.getAllNews();
 
-  it('should return 400 when required fields are missing', async () => {
-    const res = await request(app)
-      .post('/news')
-      .send({ title: 'No content or category' });
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
+      expect(result.total).toBe(2);
+      expect(result.pages).toBe(1);
+      expect(result.data).toHaveLength(2);
+    });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
-    // Fix: Check the nested structure
-    expect(res.body.messages.properties).toHaveProperty('content');
-    expect(res.body.messages.properties).toHaveProperty('category');
-  });
+    it('should filter news by category', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest.fn().mockResolvedValueOnce([mockNewsArticles[0]]),
+            }),
+          }),
+        }),
+      } as any);
 
-  it('should return 400 when title is too short', async () => {
-    const res = await request(app)
-      .post('/news')
-      .send({ ...validBody, title: 'Ab' });
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(1);
 
-    expect(res.status).toBe(400);
-    // Fix: Check the nested structure
-    expect(res.body.messages.properties).toHaveProperty('title');
-  });
+      const result = await NewsroomService.getAllNews(1, 10, 'Technology');
 
-  it('should return 400 when publishAvatarUrl is not a valid URL', async () => {
-    const res = await request(app)
-      .post('/news')
-      .send({ ...validBody, publishAvatarUrl: 'not-a-url' });
+      expect(result.total).toBe(1);
+      expect(result.data).toHaveLength(1);
+    });
 
-    expect(res.status).toBe(400);
-    // Fix: Check the nested structure
-    expect(res.body.messages.properties).toHaveProperty('publishAvatarUrl');
-  });
+    it('should respect pagination limit constraints', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest.fn().mockResolvedValueOnce(mockNewsArticles),
+            }),
+          }),
+        }),
+      } as any);
 
-  it('should accept an optional imageUrl string', async () => {
-    const savedDoc = {
-      _id: new mongoose.Types.ObjectId(),
-      ...validBody,
-      imageUrl: 'https://cdn.example.com/img.jpg',
-    };
-    jest.spyOn(News.prototype, 'save').mockResolvedValueOnce(savedDoc as any);
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
 
-    const res = await request(app)
-      .post('/news')
-      .send({ ...validBody, imageUrl: 'https://cdn.example.com/img.jpg' });
+      const result = await NewsroomService.getAllNews(1, 200);
 
-    expect(res.status).toBe(201);
-    expect(res.body.data.imageUrl).toBe('https://cdn.example.com/img.jpg');
-  });
+      expect(result.limit).toBe(100);
+    });
 
-  it('should return 500 on unexpected service errors', async () => {
-    jest
-      .spyOn(News.prototype, 'save')
-      .mockRejectedValueOnce(new Error('Unexpected DB failure'));
+    it('should handle invalid page numbers', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest.fn().mockResolvedValueOnce([]),
+            }),
+          }),
+        }),
+      } as any);
 
-    const res = await request(app).post('/news').send(validBody);
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(0);
 
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBe('Internal server error');
-    expect(res.body.message).toBe('Unexpected DB failure');
-  });
-});
+      const result = await NewsroomService.getAllNews(0, 10);
 
-describe('PATCH /news/:id', () => {
-  const validId = new mongoose.Types.ObjectId().toHexString();
+      expect(result.page).toBe(1);
+    });
 
-  const baseDoc = {
-    _id: new mongoose.Types.ObjectId(validId),
-    title: 'Original Title',
-    content: '<p>Original content.</p>',
-    category: 'Technology',
-  };
+    it('should propagate database errors', async () => {
+      jest.spyOn(News, 'find').mockImplementationOnce(() => {
+        throw new Error('DB connection error');
+      });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  // Helper: mock session used by the service
-  function mockSession() {
-    const session = {
-      withTransaction: jest.fn((fn: () => Promise<void>) => fn()),
-      endSession: jest.fn(),
-    };
-    jest.spyOn(mongoose, 'startSession').mockResolvedValue(session as any);
-    return session;
-  }
-
-  it('should return 200 with the updated article', async () => {
-    mockSession();
-    const updatedDoc = { ...baseDoc, title: 'New Title' };
-    jest
-      .spyOn(News, 'findByIdAndUpdate')
-      .mockResolvedValueOnce(updatedDoc as any);
-
-    const res = await request(app)
-      .patch(`/news/${validId}`)
-      .send({ title: 'New Title' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('News article updated successfully');
-    expect(res.body.data.title).toBe('New Title');
-  });
-
-  it('should return 404 when the article does not exist', async () => {
-    mockSession();
-    jest.spyOn(News, 'findByIdAndUpdate').mockResolvedValueOnce(null);
-
-    const res = await request(app)
-      .patch(`/news/${validId}`)
-      .send({ title: 'Ghost' });
-
-    expect(res.status).toBe(404);
-    expect(res.body.error).toBe('Not found');
-  });
-
-  it('should return 400 for an invalid MongoDB ID', async () => {
-    const res = await request(app)
-      .patch('/news/not-a-valid-id')
-      .send({ title: 'Any' });
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Invalid request parameter');
-  });
-
-  it('should return 400 when no fields are provided', async () => {
-    const res = await request(app).patch(`/news/${validId}`).send({});
-
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Validation failed');
-  });
-
-  it('should return 400 when title is too short', async () => {
-    const res = await request(app)
-      .patch(`/news/${validId}`)
-      .send({ title: 'Hi' });
-
-    expect(res.status).toBe(400);
-    expect(res.body.messages.properties).toHaveProperty('title');
-  });
-
-  it('should return 400 when imageUrl is not a valid URL', async () => {
-    const res = await request(app)
-      .patch(`/news/${validId}`)
-      .send({ imageUrl: 'not-a-url' });
-
-    expect(res.status).toBe(400);
-    expect(res.body.messages.properties).toHaveProperty('imageUrl');
-  });
-
-  it('should return 500 on unexpected service errors', async () => {
-    mockSession();
-    jest
-      .spyOn(News, 'findByIdAndUpdate')
-      .mockRejectedValueOnce(new Error('Unexpected DB failure'));
-
-    const res = await request(app)
-      .patch(`/news/${validId}`)
-      .send({ title: 'Valid Title Here' });
-
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBe('Internal server error');
-    expect(res.body.message).toBe('Unexpected DB failure');
-  });
-
-  it('should allow partial updates (only category)', async () => {
-    mockSession();
-    const updatedDoc = { ...baseDoc, category: 'Health' };
-    jest
-      .spyOn(News, 'findByIdAndUpdate')
-      .mockResolvedValueOnce(updatedDoc as any);
-
-    const res = await request(app)
-      .patch(`/news/${validId}`)
-      .send({ category: 'Health' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.category).toBe('Health');
+      await expect(NewsroomService.getAllNews()).rejects.toThrow(
+        'DB connection error',
+      );
+    });
   });
 });

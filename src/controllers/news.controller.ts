@@ -1,11 +1,13 @@
 import { RequestHandler } from 'express';
 import z, { ZodError } from 'zod';
-import { NewsNotFoundError, NewsroomService } from '../services/news.service';
+import { NewsNotFoundError, NewsroomService, NewsService } from '../services/news.service';
 import {
   CreateNewsSchema,
   NewsIdParamSchema,
   UpdateNewsSchema,
+  NewsSlugSchema,
 } from '../validators/news.validator';
+
 
 export const createNews: RequestHandler = async (req, res) => {
   try {
@@ -113,6 +115,96 @@ export const updateNews: RequestHandler = async (req, res) => {
         error instanceof Error
           ? error.message
           : 'Failed to update news article',
+       });
+  }
+  
+export const getAllNews: RequestHandler = async (req, res) => {
+  try {
+    const pageParam = req.query.page as string;
+    const limitParam = req.query.limit as string;
+    const category = (req.query.category as string) || undefined;
+    const sortBy = (req.query.sortBy as string) || 'createdAt';
+    const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
+
+    const page = pageParam ? parseInt(pageParam) : 1;
+    const limit = limitParam ? parseInt(limitParam) : 10;
+
+    if (page < 1) {
+      return res.status(400).json({
+        error: 'Invalid pagination',
+        message: 'Page must be at least 1',
+      });
+    }
+
+    if (limit < 1 || limit > 100) {
+      return res.status(400).json({
+        error: 'Invalid pagination',
+        message: 'Limit must be between 1 and 100',
+      });
+    }
+
+    if (!['asc', 'desc'].includes(sortOrder)) {
+      return res.status(400).json({
+        error: 'Invalid sort order',
+        message: 'sortOrder must be "asc" or "desc"',
+      });
+    }
+
+    const result = await NewsroomService.getAllNews(
+      page,
+      limit,
+      category,
+      sortBy,
+      sortOrder,
+    );
+
+    return res.status(200).json({
+      message: 'News articles retrieved successfully',
+      data: result.data,
+      pagination: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        pages: result.pages,
+      },
+    });
+  } catch (error) {
+    console.error('Error retrieving news articles:', error);
+
+    return res.status(500).json({
+      error: 'Internal server error',
+      message:
+        error instanceof Error ? error.message : 'Failed to retrieve news',
+    });
+  }
+};
+
+export const getSingleNews: RequestHandler = async (req, res) => {
+  const result = NewsSlugSchema.safeParse(req.params);
+  if (!result.success) {
+    return res.status(400).json({
+      error: 'Validation error',
+      message: result.error.issues[0]?.message || 'Invalid slug',
+    });
+  }
+
+  try {
+    const news = await NewsService.getSingleNewsBySlug(result.data.slug);
+
+    if (!news) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'News article not found',
+      });
+    }
+
+    return res.status(200).json(news);
+  } catch (error) {
+    console.error('Error fetching single news:', error);
+    return res.status(500).json({
+      error: 'Internal server error',
+      message:
+        error instanceof Error ? error.message : 'Failed to fetch news article',
     });
   }
 };
