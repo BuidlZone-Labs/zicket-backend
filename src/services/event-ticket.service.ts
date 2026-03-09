@@ -1,4 +1,5 @@
 import EventTicket, { IEventTicket } from '../models/event-ticket';
+import { CreateEventStepTwoInput } from '../validators/event.validator';
 
 export interface EventTicketResponse {
   title: string;
@@ -218,6 +219,195 @@ export class EventTicketService {
     }
   }
 
+  /**
+   * Maps privacy level number to attendance mode string
+   */
+  private static mapPrivacyLevelToAttendanceMode(
+    privacyLevel: number,
+  ): string {
+    switch (privacyLevel) {
+      case 0:
+        return 'anonymous';
+      case 1:
+        return 'wallet-required';
+      case 2:
+        return 'verified-access';
+      default:
+        return 'wallet-required';
+    }
+  }
+
+  /**
+   * Creates a new event with step 2 data (privacy settings)
+   */
+  static async createEventWithPrivacySettings(
+    eventData: CreateEventStepTwoInput & {
+      name: string;
+      about: string;
+      price: number;
+      eventCategory: string;
+      organizedBy: string;
+      eventDate: Date;
+      imageUrl: string;
+      cloudinary_public_id?: string;
+      tags: string[];
+    },
+  ): Promise<IEventTicket> {
+    try {
+      const {
+        privacyLevel,
+        eventType,
+        locationType,
+        location,
+        paymentPrivacy,
+        offerReceipts,
+        hasZkEmailUpdates,
+        hasEventReminders,
+        ticketTypes,
+        isPublished,
+        attendanceMode,
+        ...baseEventData
+      } = eventData;
+
+      // Calculate total tickets from ticket types
+      const totalTickets = ticketTypes.reduce(
+        (sum, ticket) => sum + ticket.quantity,
+        0,
+      );
+
+      // Map attendance mode from privacy level if not provided
+      const mappedAttendanceMode =
+        attendanceMode ||
+        this.mapPrivacyLevelToAttendanceMode(privacyLevel);
+
+      // Create the event with all privacy settings
+      const event = await EventTicket.create({
+        ...baseEventData,
+        privacyLevel,
+        attendanceMode: mappedAttendanceMode,
+        eventType,
+        locationType,
+        location,
+        paymentPrivacy,
+        offerReceipts,
+        hasZkEmailUpdates,
+        hasEventReminders,
+        ticketType: ticketTypes,
+        totalTickets,
+        availableTickets: totalTickets,
+        soldTickets: 0,
+        isPublished,
+      });
+
+      return event;
+    } catch (error) {
+      throw new Error(
+        `Failed to create event with privacy settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * Updates an existing event with step 2 data (privacy settings)
+   */
+  static async updateEventPrivacySettings(
+    eventId: string,
+    eventData: Partial<CreateEventStepTwoInput>,
+  ): Promise<IEventTicket> {
+    try {
+      const updateData: any = {};
+
+      // Map fields from step 2 input to model fields
+      if (eventData.privacyLevel !== undefined) {
+        updateData.privacyLevel = eventData.privacyLevel;
+        updateData.attendanceMode = this.mapPrivacyLevelToAttendanceMode(
+          eventData.privacyLevel,
+        );
+      }
+
+      if (eventData.eventType !== undefined) {
+        updateData.eventType = eventData.eventType;
+      }
+
+      if (eventData.locationType !== undefined) {
+        updateData.locationType = eventData.locationType;
+      }
+
+      if (eventData.location !== undefined) {
+        updateData.location = eventData.location;
+      }
+
+      if (eventData.paymentPrivacy !== undefined) {
+        updateData.paymentPrivacy = eventData.paymentPrivacy;
+      }
+
+      if (eventData.offerReceipts !== undefined) {
+        updateData.offerReceipts = eventData.offerReceipts;
+      }
+
+      if (eventData.hasZkEmailUpdates !== undefined) {
+        updateData.hasZkEmailUpdates = eventData.hasZkEmailUpdates;
+      }
+
+      if (eventData.hasEventReminders !== undefined) {
+        updateData.hasEventReminders = eventData.hasEventReminders;
+      }
+
+      if (eventData.ticketTypes && eventData.ticketTypes.length > 0) {
+        updateData.ticketType = eventData.ticketTypes;
+        
+        // Recalculate total tickets
+        const totalTickets = eventData.ticketTypes.reduce(
+          (sum, ticket) => sum + ticket.quantity,
+          0,
+        );
+        updateData.totalTickets = totalTickets;
+        
+        // Reset available tickets based on new total minus sold
+        const existingEvent = await EventTicket.findById(eventId);
+        if (existingEvent) {
+          updateData.availableTickets = Math.max(
+            0,
+            totalTickets - existingEvent.soldTickets,
+          );
+        }
+      }
+
+      if (eventData.isPublished !== undefined) {
+        updateData.isPublished = eventData.isPublished;
+      }
+
+      const updatedEvent = await EventTicket.findByIdAndUpdate(
+        eventId,
+        { $set: updateData },
+        { new: true, runValidators: true },
+      );
+
+      if (!updatedEvent) {
+        throw new Error('Event not found');
+      }
+
+      return updatedEvent;
+    } catch (error) {
+      throw new Error(
+        `Failed to update event privacy settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * Gets a single event by ID
+   */
+  static async getEventById(eventId: string): Promise<any | null> {
+    try {
+      const event = await EventTicket.findById(eventId);
+      return event;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch event: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
   /**
    * Searches for event tickets based on a query string
    */
