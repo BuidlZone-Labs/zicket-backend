@@ -6,6 +6,7 @@ import {
   createEventWithPrivacySettings,
   updateEventPrivacySettings,
   getEventById,
+  searchEventTickets,
 } from '../controllers/event-ticket.controller';
 import { authGuard } from '../middlewares/auth';
 
@@ -28,5 +29,7 @@ eventTicketRoutes.post('/create-step-two', authGuard, createEventWithPrivacySett
 
 // PATCH /api/event-tickets/:eventId/update-step-two - Update event privacy settings (Step 2)
 eventTicketRoutes.patch('/:eventId/update-step-two', authGuard, updateEventPrivacySettings);
+// GET /api/event-tickets/search - Search event tickets
+eventTicketRoutes.get('/search', searchEventTickets);
 
 export default eventTicketRoutes;
