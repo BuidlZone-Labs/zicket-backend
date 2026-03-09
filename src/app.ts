@@ -6,7 +6,7 @@ import passport from './config/passport';
 import { authLimiter } from './middlewares/rateLimiter';
 import eventTicketRoutes from './routes/event-ticket.route';
 import messageCenterRoutes from './routes/message-center.route';
-import newsRoute from './routes/news.route';
+import newsRoutes from './routes/news.route';
 import mediaRoutes from './routes/media.route';
 
 const app = express();
@@ -28,7 +28,7 @@ app.use('/auth', otpRoute);
 app.use('/event-tickets', eventTicketRoutes);
 app.use('/media', mediaRoutes);
 app.use('/zk-message-center', messageCenterRoutes);
-app.use('/newsroom', newsRoute);
+app.use('/news', newsRoutes);
 app.use(protectedRoute);
 
 app.use(

@@ -1,8 +1,32 @@
 import { Router } from 'express';
-import { incrementReadCount } from '../controllers/news.controller';
+import {
+  createNews,
+  getAllNews,
+  getSingleNews,
+  updateNews,
+  deleteNewsById,
+  hardDeleteNewsById,
+  restoreNewsById,
+  incrementReadCount,
+} from '../controllers/news.controller';
 
-const newsRoute = Router();
+const newsRoutes = Router();
 
-newsRoute.patch('/news/:id/read', incrementReadCount);
+newsRoutes.get('/', getAllNews);
+newsRoutes.post('/', createNews);
 
-export default newsRoute;
+newsRoutes.patch('/:id', updateNews);
+newsRoutes.get('/:slug', getSingleNews);
+
+newsRoutes.patch('/:id/read', incrementReadCount);
+
+// DELETE /api/news/:id - Soft delete a news article by ID
+newsRoutes.delete('/:id', deleteNewsById);
+
+// DELETE /api/news/:id/permanent - Hard delete a news article by ID (requires soft delete first)
+newsRoutes.delete('/:id/permanent', hardDeleteNewsById);
+
+// PATCH /api/news/:id/restore - Restore a soft-deleted news article
+newsRoutes.patch('/:id/restore', restoreNewsById);
+
+export default newsRoutes;
