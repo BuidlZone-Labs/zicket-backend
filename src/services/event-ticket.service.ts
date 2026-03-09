@@ -217,4 +217,61 @@ export class EventTicketService {
       );
     }
   }
+
+  /**
+   * Searches for event tickets based on a query string
+   */
+  static async searchEventTickets(
+    query: string,
+    page: number = 1,
+    limit: number = this.DEFAULT_LIMIT,
+  ): Promise<PaginatedEventTicketsResponse> {
+    try {
+      // Validate pagination parameters
+      const validPage = Math.max(1, page);
+      const validLimit = Math.min(Math.max(1, limit), 50);
+
+      // Calculate skip value
+      const skip = (validPage - 1) * validLimit;
+
+      // Create search filter
+      // Search in name, about, location, tags, and category
+      const searchRegex = new RegExp(query, 'i');
+      const filter = {
+        $or: [
+          { name: { $regex: searchRegex } },
+          { about: { $regex: searchRegex } },
+          { location: { $regex: searchRegex } },
+          { eventCategory: { $regex: searchRegex } },
+          { tags: { $in: [searchRegex] } },
+        ],
+      };
+
+      // Get tickets and total count
+      const [tickets, total] = await Promise.all([
+        EventTicket.find(filter)
+          .sort({ eventDate: 1 })
+          .skip(skip)
+          .limit(validLimit)
+          .lean(),
+        EventTicket.countDocuments(filter),
+      ]);
+
+      // Transform tickets to response format
+      const transformedTickets = tickets.map((ticket) =>
+        this.transformEventTicket(ticket as unknown as IEventTicket),
+      );
+
+      return {
+        page: validPage,
+        limit: validLimit,
+        total,
+        tickets: transformedTickets,
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to search event tickets: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
 }

@@ -93,3 +93,49 @@ export const getTrendingEventTickets: RequestHandler = async (req, res) => {
     });
   }
 };
+
+export const searchEventTickets: RequestHandler = async (req, res) => {
+  try {
+    // Extract search query and pagination parameters
+    const query = req.query.q as string;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 8;
+
+    // Validate search query
+    if (!query || query.trim() === '') {
+      return res.status(400).json({
+        error: 'Invalid query',
+        message: 'Search query parameter "q" is required',
+      });
+    }
+
+    // Validate pagination parameters
+    if (page < 1) {
+      return res.status(400).json({
+        error: 'Invalid page number',
+        message: 'Page number must be greater than 0',
+      });
+    }
+
+    // Fetch searched event tickets from service
+    const result = await EventTicketService.searchEventTickets(
+      query,
+      page,
+      limit,
+    );
+
+    // Return success response
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error searching event tickets: ', error);
+
+    // Return error response
+    res.status(500).json({
+      error: 'Internal server error',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to search event tickets',
+    });
+  }
+};
