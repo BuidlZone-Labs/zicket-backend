@@ -56,6 +56,120 @@ describe('NewsroomService', () => {
       );
     });
   });
+
+  describe('getAllNews', () => {
+    const mockNewsArticles = [
+      {
+        _id: new mongoose.Types.ObjectId(),
+        title: 'News 1',
+        content: '<p>Content 1</p>',
+        category: 'Technology',
+        createdAt: new Date('2025-01-01'),
+      },
+      {
+        _id: new mongoose.Types.ObjectId(),
+        title: 'News 2',
+        content: '<p>Content 2</p>',
+        category: 'Sports',
+        createdAt: new Date('2025-01-02'),
+      },
+    ];
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return paginated news articles with default parameters', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest
+                .fn()
+                .mockResolvedValueOnce(mockNewsArticles.slice(0, 2)),
+            }),
+          }),
+        }),
+      } as any);
+
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
+
+      const result = await NewsroomService.getAllNews();
+
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
+      expect(result.total).toBe(2);
+      expect(result.pages).toBe(1);
+      expect(result.data).toHaveLength(2);
+    });
+
+    it('should filter news by category', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest.fn().mockResolvedValueOnce([mockNewsArticles[0]]),
+            }),
+          }),
+        }),
+      } as any);
+
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(1);
+
+      const result = await NewsroomService.getAllNews(1, 10, 'Technology');
+
+      expect(result.total).toBe(1);
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should respect pagination limit constraints', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest.fn().mockResolvedValueOnce(mockNewsArticles),
+            }),
+          }),
+        }),
+      } as any);
+
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
+
+      // Test with limit > 100 (should be capped at 100)
+      const result = await NewsroomService.getAllNews(1, 200);
+
+      expect(result.limit).toBe(100);
+    });
+
+    it('should handle invalid page numbers', async () => {
+      jest.spyOn(News, 'find').mockReturnValueOnce({
+        sort: jest.fn().mockReturnValueOnce({
+          skip: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockReturnValueOnce({
+              exec: jest.fn().mockResolvedValueOnce([]),
+            }),
+          }),
+        }),
+      } as any);
+
+      jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(0);
+
+      // Test with page < 1 (should be set to 1)
+      const result = await NewsroomService.getAllNews(0, 10);
+
+      expect(result.page).toBe(1);
+    });
+
+    it('should propagate database errors', async () => {
+      jest.spyOn(News, 'find').mockImplementationOnce(() => {
+        throw new Error('DB connection error');
+      });
+
+      await expect(NewsroomService.getAllNews()).rejects.toThrow(
+        'DB connection error',
+      );
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -142,5 +256,162 @@ describe('POST /news', () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Internal server error');
     expect(res.body.message).toBe('Unexpected DB failure');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Integration Tests: GET /news
+// ---------------------------------------------------------------------------
+
+describe('GET /news', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const mockNewsData = [
+    {
+      _id: new mongoose.Types.ObjectId(),
+      title: 'Tech News 1',
+      content: '<p>Content about technology</p>',
+      category: 'Technology',
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+    },
+    {
+      _id: new mongoose.Types.ObjectId(),
+      title: 'Sports News 1',
+      content: '<p>Content about sports</p>',
+      category: 'Sports',
+      createdAt: new Date('2025-01-02'),
+      updatedAt: new Date('2025-01-02'),
+    },
+  ];
+
+  it('should return paginated news articles with default parameters', async () => {
+    jest.spyOn(News, 'find').mockReturnValueOnce({
+      sort: jest.fn().mockReturnValueOnce({
+        skip: jest.fn().mockReturnValueOnce({
+          limit: jest.fn().mockReturnValueOnce({
+            exec: jest.fn().mockResolvedValueOnce(mockNewsData),
+          }),
+        }),
+      }),
+    } as any);
+
+    jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
+
+    const res = await request(app).get('/news');
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('News articles retrieved successfully');
+    expect(res.body.data).toHaveLength(2);
+    expect(res.body.pagination).toEqual({
+      total: 2,
+      page: 1,
+      limit: 10,
+      pages: 1,
+    });
+  });
+
+  it('should accept custom page and limit parameters', async () => {
+    jest.spyOn(News, 'find').mockReturnValueOnce({
+      sort: jest.fn().mockReturnValueOnce({
+        skip: jest.fn().mockReturnValueOnce({
+          limit: jest.fn().mockReturnValueOnce({
+            exec: jest.fn().mockResolvedValueOnce([mockNewsData[0]]),
+          }),
+        }),
+      }),
+    } as any);
+
+    jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(5);
+
+    const res = await request(app).get('/news').query({ page: 2, limit: 5 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.pagination.page).toBe(2);
+    expect(res.body.pagination.limit).toBe(5);
+    expect(res.body.pagination.pages).toBe(1);
+  });
+
+  it('should filter news by category', async () => {
+    jest.spyOn(News, 'find').mockReturnValueOnce({
+      sort: jest.fn().mockReturnValueOnce({
+        skip: jest.fn().mockReturnValueOnce({
+          limit: jest.fn().mockReturnValueOnce({
+            exec: jest.fn().mockResolvedValueOnce([mockNewsData[0]]),
+          }),
+        }),
+      }),
+    } as any);
+
+    jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(1);
+
+    const res = await request(app)
+      .get('/news')
+      .query({ category: 'Technology' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.pagination.total).toBe(1);
+  });
+
+  it('should return 400 with invalid page parameter', async () => {
+    const res = await request(app).get('/news').query({ page: 0 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid pagination');
+    expect(res.body.message).toBe('Page must be at least 1');
+  });
+
+  it('should return 400 with invalid limit parameter', async () => {
+    const res = await request(app).get('/news').query({ limit: 101 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid pagination');
+    expect(res.body.message).toBe('Limit must be between 1 and 100');
+  });
+
+  it('should return 400 with invalid sort order', async () => {
+    const res = await request(app).get('/news').query({ sortOrder: 'invalid' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Invalid sort order');
+    expect(res.body.message).toBe('sortOrder must be "asc" or "desc"');
+  });
+
+  it('should support custom sorting', async () => {
+    jest.spyOn(News, 'find').mockReturnValueOnce({
+      sort: jest.fn().mockReturnValueOnce({
+        skip: jest.fn().mockReturnValueOnce({
+          limit: jest.fn().mockReturnValueOnce({
+            exec: jest
+              .fn()
+              .mockResolvedValueOnce([mockNewsData[1], mockNewsData[0]]),
+          }),
+        }),
+      }),
+    } as any);
+
+    jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
+
+    const res = await request(app)
+      .get('/news')
+      .query({ sortBy: 'title', sortOrder: 'asc' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(2);
+  });
+
+  it('should return 500 on unexpected service errors', async () => {
+    jest.spyOn(News, 'find').mockImplementationOnce(() => {
+      throw new Error('Unexpected database error');
+    });
+
+    const res = await request(app).get('/news');
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Internal server error');
+    expect(res.body.message).toBe('Unexpected database error');
   });
 });
