@@ -1,13 +1,16 @@
 import { RequestHandler } from 'express';
 import z, { ZodError } from 'zod';
-import { NewsNotFoundError, NewsroomService, NewsService } from '../services/news.service';
+import {
+  NewsNotFoundError,
+  NewsroomService,
+  NewsService,
+} from '../services/news.service';
 import {
   CreateNewsSchema,
   NewsIdParamSchema,
   UpdateNewsSchema,
   NewsSlugSchema,
 } from '../validators/news.validator';
-
 
 export const createNews: RequestHandler = async (req, res) => {
   try {
@@ -117,7 +120,7 @@ export const updateNews: RequestHandler = async (req, res) => {
           : 'Failed to update news article',
     });
   }
-}
+};
 
 export const getAllNews: RequestHandler = async (req, res) => {
   try {
