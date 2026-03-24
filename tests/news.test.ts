@@ -2,10 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../src/app';
 import News from '../src/models/news';
-import {
-  NewsNotFoundError,
-  NewsService,
-} from '../src/services/news.service';
+import { NewsNotFoundError, NewsService } from '../src/services/news.service';
 
 // ---------------------------------------------------------------------------
 // Unit Tests
