@@ -1,9 +1,7 @@
+import mongoose from 'mongoose';
 import { RequestHandler, Request, Response } from 'express';
 import z, { ZodError } from 'zod';
-import {
-  NewsNotFoundError,
-  NewsService,
-} from '../services/news.service';
+import { NewsNotFoundError, NewsService } from '../services/news.service';
 import {
   CreateNewsSchema,
   NewsIdParamSchema,
@@ -41,19 +39,28 @@ export const deleteNewsById: RequestHandler = async (req, res) => {
 
     if (error instanceof Error) {
       if (error.message.includes('Invalid news ID format')) {
-        return res.status(400).json({ error: 'Invalid request', message: error.message });
+        return res
+          .status(400)
+          .json({ error: 'Invalid request', message: error.message });
       }
       if (error.message.includes('News article not found')) {
-        return res.status(404).json({ error: 'Not found', message: error.message });
+        return res
+          .status(404)
+          .json({ error: 'Not found', message: error.message });
       }
       if (error.message.includes('already been deleted')) {
-        return res.status(409).json({ error: 'Conflict', message: error.message });
+        return res
+          .status(409)
+          .json({ error: 'Conflict', message: error.message });
       }
     }
 
     return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Failed to delete news article',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete news article',
     });
   }
 };
@@ -67,7 +74,7 @@ export const createNews: RequestHandler = async (req, res) => {
     const parsed = CreateNewsSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      // Note: z.treeifyError isn't a standard Zod method; 
+      // Note: z.treeifyError isn't a standard Zod method;
       // typically you'd use parsed.error.flatten() or parsed.error.format()
       return res.status(400).json({
         error: 'Validation failed',
@@ -78,11 +85,7 @@ export const createNews: RequestHandler = async (req, res) => {
     const imageFile = req.body.file as string;
     const imageUrl = req.body.imageUrl as string;
 
-    const news = await NewsService.createNews(
-      parsed.data,
-      imageFile,
-      imageUrl,
-    );
+    const news = await NewsService.createNews(parsed.data, imageFile, imageUrl);
 
     return res.status(201).json({
       message: 'News article created successfully',
@@ -100,7 +103,10 @@ export const createNews: RequestHandler = async (req, res) => {
 
     return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Failed to create news article',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to create news article',
     });
   }
 };
@@ -170,7 +176,10 @@ export const updateNews: RequestHandler = async (req, res) => {
  * Hard delete a news article by ID (requires soft delete first)
  * DELETE /api/news/:id/permanent
  */
-export const hardDeleteNewsById: RequestHandler = async (req: Request, res: Response) => {
+export const hardDeleteNewsById: RequestHandler = async (
+  req: Request,
+  res: Response,
+) => {
   try {
     const id = req.params.id as string;
 
@@ -193,19 +202,28 @@ export const hardDeleteNewsById: RequestHandler = async (req: Request, res: Resp
 
     if (error instanceof Error) {
       if (error.message.includes('Invalid news ID format')) {
-        return res.status(400).json({ error: 'Invalid request', message: error.message });
+        return res
+          .status(400)
+          .json({ error: 'Invalid request', message: error.message });
       }
       if (error.message.includes('News article not found')) {
-        return res.status(404).json({ error: 'Not found', message: error.message });
+        return res
+          .status(404)
+          .json({ error: 'Not found', message: error.message });
       }
       if (error.message.includes('must be soft deleted')) {
-        return res.status(400).json({ error: 'Bad request', message: error.message });
+        return res
+          .status(400)
+          .json({ error: 'Bad request', message: error.message });
       }
     }
 
     return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Failed to hard delete news article',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to hard delete news article',
     });
   }
 };
@@ -237,22 +255,31 @@ export const restoreNewsById: RequestHandler = async (req, res) => {
 
     if (error instanceof Error) {
       if (error.message.includes('Invalid news ID format')) {
-        return res.status(400).json({ error: 'Invalid request', message: error.message });
+        return res
+          .status(400)
+          .json({ error: 'Invalid request', message: error.message });
       }
       if (error.message.includes('News article not found')) {
-        return res.status(404).json({ error: 'Not found', message: error.message });
+        return res
+          .status(404)
+          .json({ error: 'Not found', message: error.message });
       }
       if (error.message.includes('is not deleted')) {
-        return res.status(409).json({ error: 'Conflict', message: error.message });
+        return res
+          .status(409)
+          .json({ error: 'Conflict', message: error.message });
       }
     }
 
     return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Failed to restore news article',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to restore news article',
     });
   }
-};      
+};
 
 export const getAllNews: RequestHandler = async (req, res) => {
   try {
@@ -316,12 +343,16 @@ export const getAllNews: RequestHandler = async (req, res) => {
 };
 
 export const getSingleNews: RequestHandler = async (req, res) => {
-  const result = NewsSlugSchema.safeParse(req.params);
-  if (!result.success) {
-    return res.status(400).json({
-      error: 'Validation error',
-      message: result.error.issues[0]?.message || 'Invalid slug',
-      const news = await NewsService.getSingleNewsBySlug(result.data.slug);
+  try {
+    const result = NewsSlugSchema.safeParse(req.params);
+    if (!result.success) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: result.error.issues[0]?.message || 'Invalid slug',
+      });
+    }
+
+    const news = await NewsService.getSingleNewsBySlug(result.data.slug);
 
     if (!news) {
       return res.status(404).json({
@@ -340,7 +371,7 @@ export const getSingleNews: RequestHandler = async (req, res) => {
     });
   }
 };
-      
+
 export const incrementReadCount: RequestHandler = async (req, res) => {
   const rawId = req.params.id;
   const id =

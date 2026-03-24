@@ -1,4 +1,7 @@
-import { getUserOrders, getOrganizerOrders } from '../src/controllers/ticket-order.controller';
+import {
+  getUserOrders,
+  getOrganizerOrders,
+} from '../src/controllers/ticket-order.controller';
 import { TicketOrderService } from '../src/services/ticket-order.service';
 
 jest.mock('../src/services/ticket-order.service', () => ({
@@ -71,7 +74,11 @@ describe('TicketOrder controller', () => {
 
       await getUserOrders(req as any, res as any, jest.fn());
 
-      expect(ticketOrderService.getUserOrders).toHaveBeenCalledWith('user123', 1, 10);
+      expect(ticketOrderService.getUserOrders).toHaveBeenCalledWith(
+        'user123',
+        1,
+        10,
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -107,7 +114,11 @@ describe('TicketOrder controller', () => {
 
       await getOrganizerOrders(req as any, res as any, jest.fn());
 
-      expect(ticketOrderService.getOrganizerOrders).toHaveBeenCalledWith('organizer123', 1, 10);
+      expect(ticketOrderService.getOrganizerOrders).toHaveBeenCalledWith(
+        'organizer123',
+        1,
+        10,
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,

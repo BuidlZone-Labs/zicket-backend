@@ -135,7 +135,14 @@ export const createEventWithPrivacySettings: RequestHandler = async (
     } = req.body;
 
     // Validate required base fields
-    if (!name || !about || !price || !eventCategory || !eventDate || !imageUrl) {
+    if (
+      !name ||
+      !about ||
+      !price ||
+      !eventCategory ||
+      !eventDate ||
+      !imageUrl
+    ) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Missing required base event fields',
@@ -256,11 +263,10 @@ export const updateEventPrivacySettings: RequestHandler = async (
     }
 
     // Update event privacy settings
-    const updatedEvent =
-      await EventTicketService.updateEventPrivacySettings(
-        eventId,
-        validatedData,
-      );
+    const updatedEvent = await EventTicketService.updateEventPrivacySettings(
+      eventId,
+      validatedData,
+    );
 
     res.status(200).json({
       success: true,
@@ -368,10 +374,7 @@ export const getEventById: RequestHandler = async (req, res) => {
     console.error('Error fetching event:', error);
     res.status(500).json({
       error: 'Internal server error',
-      message:
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch event'
+      message: error instanceof Error ? error.message : 'Failed to fetch event',
     });
   }
 };

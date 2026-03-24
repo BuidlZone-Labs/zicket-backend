@@ -110,7 +110,9 @@ export class TicketOrderService {
   /**
    * Creates a new ticket order entry (typically called after a successful payment)
    */
-  static async createOrder(orderData: Partial<ITicketOrder>): Promise<ITicketOrder> {
+  static async createOrder(
+    orderData: Partial<ITicketOrder>,
+  ): Promise<ITicketOrder> {
     try {
       const order = await TicketOrder.create(orderData);
       return order;

@@ -48,5 +48,8 @@ const ticketOrderSchema = new Schema<ITicketOrder>(
 ticketOrderSchema.index({ user: 1, datePurchased: -1 });
 ticketOrderSchema.index({ eventTicket: 1, datePurchased: -1 });
 
-const TicketOrder = mongoose.model<ITicketOrder>('TicketOrder', ticketOrderSchema);
+const TicketOrder = mongoose.model<ITicketOrder>(
+  'TicketOrder',
+  ticketOrderSchema,
+);
 export default TicketOrder;

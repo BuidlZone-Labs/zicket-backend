@@ -25,10 +25,18 @@ eventTicketRoutes.get('/category/:category', getEventTicketsByCategory);
 eventTicketRoutes.get('/:eventId', getEventById);
 
 // POST /api/event-tickets/create-step-two - Create event with privacy settings (Step 2)
-eventTicketRoutes.post('/create-step-two', authGuard, createEventWithPrivacySettings);
+eventTicketRoutes.post(
+  '/create-step-two',
+  authGuard,
+  createEventWithPrivacySettings,
+);
 
 // PATCH /api/event-tickets/:eventId/update-step-two - Update event privacy settings (Step 2)
-eventTicketRoutes.patch('/:eventId/update-step-two', authGuard, updateEventPrivacySettings);
+eventTicketRoutes.patch(
+  '/:eventId/update-step-two',
+  authGuard,
+  updateEventPrivacySettings,
+);
 // GET /api/event-tickets/search - Search event tickets
 eventTicketRoutes.get('/search', searchEventTickets);
 

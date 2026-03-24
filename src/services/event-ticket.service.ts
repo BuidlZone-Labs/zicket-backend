@@ -222,9 +222,7 @@ export class EventTicketService {
   /**
    * Maps privacy level number to attendance mode string
    */
-  private static mapPrivacyLevelToAttendanceMode(
-    privacyLevel: number,
-  ): string {
+  private static mapPrivacyLevelToAttendanceMode(privacyLevel: number): string {
     switch (privacyLevel) {
       case 0:
         return 'anonymous';
@@ -277,8 +275,7 @@ export class EventTicketService {
 
       // Map attendance mode from privacy level if not provided
       const mappedAttendanceMode =
-        attendanceMode ||
-        this.mapPrivacyLevelToAttendanceMode(privacyLevel);
+        attendanceMode || this.mapPrivacyLevelToAttendanceMode(privacyLevel);
 
       // Create the event with all privacy settings
       const event = await EventTicket.create({
@@ -355,14 +352,14 @@ export class EventTicketService {
 
       if (eventData.ticketTypes && eventData.ticketTypes.length > 0) {
         updateData.ticketType = eventData.ticketTypes;
-        
+
         // Recalculate total tickets
         const totalTickets = eventData.ticketTypes.reduce(
           (sum, ticket) => sum + ticket.quantity,
           0,
         );
         updateData.totalTickets = totalTickets;
-        
+
         // Reset available tickets based on new total minus sold
         const existingEvent = await EventTicket.findById(eventId);
         if (existingEvent) {

@@ -16,7 +16,7 @@ export interface DeleteResult {
   newsId: string;
   deletedAt?: Date;
 }
-      
+
 export interface NewsResponse {
   id: string;
   title: string;
@@ -39,7 +39,6 @@ async function uploadImage(file: string): Promise<string> {
 }
 
 export class NewsService {
-  
   private static transformNews(news: INews): NewsResponse {
     return {
       id: news._id.toString(),
@@ -56,7 +55,7 @@ export class NewsService {
       updatedAt: news.updatedAt,
     };
   }
-  
+
   /**
    * Creates a news article.
    */
@@ -78,11 +77,11 @@ export class NewsService {
 
     return news.save();
   }
-  
+
   static async getSingleNewsBySlug(slug: string): Promise<INews | null> {
     return News.findOne({ slug });
   }
-  
+
   /**
    * Updates an existing news article by ID.
    */
@@ -189,8 +188,7 @@ export class NewsService {
       pages,
     };
   }
-  
-  
+
   /**
    * Soft deletes a news article by ID using a transaction
    */
@@ -264,7 +262,9 @@ export class NewsService {
       }
 
       if (!force && !news.isDeleted) {
-        throw new Error('News article must be soft deleted before hard deletion.');
+        throw new Error(
+          'News article must be soft deleted before hard deletion.',
+        );
       }
 
       const result = await News.findByIdAndDelete(id).session(session);
@@ -289,7 +289,7 @@ export class NewsService {
       await session.endSession();
     }
   }
-      
+
   static async incrementReadCount(
     newsId: string,
   ): Promise<NewsResponse | null> {
@@ -364,7 +364,6 @@ export class NewsService {
     }
   }
 }
-
 
 /** Typed error thrown when a news article cannot be found. */
 export class NewsNotFoundError extends Error {
