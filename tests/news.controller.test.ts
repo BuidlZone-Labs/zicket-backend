@@ -1,4 +1,7 @@
-import { incrementReadCount, getSingleNews } from '../src/controllers/news.controller';
+import {
+  incrementReadCount,
+  getSingleNews,
+} from '../src/controllers/news.controller';
 import { NewsService } from '../src/services/news.service';
 
 jest.mock('../src/services/news.service', () => ({
@@ -94,11 +97,15 @@ describe('news controller', () => {
     });
 
     it('returns 500 when service throws error', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       const req = { params: { id: validNewsId } };
       const res = createResponse();
 
-      newsService.incrementReadCount.mockRejectedValue(new Error('Database error'));
+      newsService.incrementReadCount.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       await incrementReadCount(req as any, res as any, jest.fn());
 
@@ -122,7 +129,8 @@ describe('news controller', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         error: 'Validation error',
-        message: 'Slug must contain only lowercase letters, numbers, and hyphens',
+        message:
+          'Slug must contain only lowercase letters, numbers, and hyphens',
       });
 
       expect(newsService.getSingleNewsBySlug).not.toHaveBeenCalled();
@@ -168,7 +176,9 @@ describe('news controller', () => {
     });
 
     it('returns 500 when service throws', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       const req = { params: { slug: 'crypto-art-lagos-2025' } };
       const res = createResponse();
 

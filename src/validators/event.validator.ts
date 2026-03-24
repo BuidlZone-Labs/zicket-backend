@@ -73,27 +73,27 @@ export const CreateEventStepTwoSchema = z
     // Privacy settings
     privacyLevel: PrivacyLevelEnum,
     attendanceMode: z.string().optional(),
-    
+
     // Event type (PAID requires privacy level to be wallet-required)
     eventType: EventTypeEnum,
-    
+
     // Location settings
     locationType: LocationTypeEnum,
     location: z.string().min(1, 'Location is required'),
-    
+
     // Payment privacy (for paid events)
     paymentPrivacy: PaymentPrivacyEnum.optional(),
-    
+
     // Preferences
     offerReceipts: z.boolean().default(false),
     hasZkEmailUpdates: z.boolean().default(false),
     hasEventReminders: z.boolean().default(false),
-    
+
     // Ticket types (array of ticket objects)
     ticketTypes: z
       .array(TicketTypeSchema)
       .min(1, 'At least one ticket type is required'),
-    
+
     // Publication status
     isPublished: z.boolean().default(false),
   })

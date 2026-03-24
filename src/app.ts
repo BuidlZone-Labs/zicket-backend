@@ -8,6 +8,7 @@ import eventTicketRoutes from './routes/event-ticket.route';
 import messageCenterRoutes from './routes/message-center.route';
 import newsRoutes from './routes/news.route';
 import mediaRoutes from './routes/media.route';
+import ticketOrderRoutes from './routes/ticket-order.route';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/event-tickets', eventTicketRoutes);
 app.use('/media', mediaRoutes);
 app.use('/zk-message-center', messageCenterRoutes);
 app.use('/news', newsRoutes);
+app.use('/ticket-orders', ticketOrderRoutes);
 app.use(protectedRoute);
 
 app.use(

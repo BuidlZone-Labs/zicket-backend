@@ -2,16 +2,13 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../src/app';
 import News from '../src/models/news';
-import {
-  NewsNotFoundError,
-  NewsroomService,
-} from '../src/services/news.service';
+import { NewsNotFoundError, NewsService } from '../src/services/news.service';
 
 // ---------------------------------------------------------------------------
 // Unit Tests
 // ---------------------------------------------------------------------------
 
-describe('NewsroomService', () => {
+describe('NewsService', () => {
   describe('createNews', () => {
     const validPayload = {
       title: 'Breaking News Title',
@@ -28,7 +25,7 @@ describe('NewsroomService', () => {
       const savedDoc = { _id: new mongoose.Types.ObjectId(), ...validPayload };
       jest.spyOn(News.prototype, 'save').mockResolvedValueOnce(savedDoc as any);
 
-      const result = await NewsroomService.createNews(validPayload);
+      const result = await NewsService.createNews(validPayload);
 
       expect(result).toMatchObject({ title: validPayload.title });
     });
@@ -44,7 +41,7 @@ describe('NewsroomService', () => {
         return Promise.resolve(this);
       });
 
-      await NewsroomService.createNews(validPayload, undefined, imageUrl);
+      await NewsService.createNews(validPayload, undefined, imageUrl);
 
       expect(savedData.imageUrl).toBe(imageUrl);
     });
@@ -54,7 +51,7 @@ describe('NewsroomService', () => {
         .spyOn(News.prototype, 'save')
         .mockRejectedValueOnce(new Error('DB error'));
 
-      await expect(NewsroomService.createNews(validPayload)).rejects.toThrow(
+      await expect(NewsService.createNews(validPayload)).rejects.toThrow(
         'DB error',
       );
     });
@@ -64,7 +61,7 @@ describe('NewsroomService', () => {
   // updateNews tests
   // ---------------------------------------------------------------------------
 
-  describe('NewsroomService.updateNews', () => {
+  describe('NewsService.updateNews', () => {
     const validId = new mongoose.Types.ObjectId().toHexString();
 
     const existingDoc = {
@@ -93,7 +90,7 @@ describe('NewsroomService', () => {
         .spyOn(mongoose, 'startSession')
         .mockResolvedValueOnce(mockSession as any);
 
-      const result = await NewsroomService.updateNews(validId, {
+      const result = await NewsService.updateNews(validId, {
         title: 'Updated Title',
       });
 
@@ -113,7 +110,7 @@ describe('NewsroomService', () => {
         .mockResolvedValueOnce(mockSession as any);
 
       await expect(
-        NewsroomService.updateNews(validId, { title: 'Ghost Article' }),
+        NewsService.updateNews(validId, { title: 'Ghost Article' }),
       ).rejects.toThrow(NewsNotFoundError);
     });
 
@@ -132,7 +129,7 @@ describe('NewsroomService', () => {
         .mockResolvedValueOnce(mockSession as any);
 
       await expect(
-        NewsroomService.updateNews(validId, { title: 'Any Title' }),
+        NewsService.updateNews(validId, { title: 'Any Title' }),
       ).rejects.toThrow('DB failure');
     });
   });
@@ -178,7 +175,7 @@ describe('NewsroomService', () => {
 
       jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
 
-      const result = await NewsroomService.getAllNews();
+      const result = await NewsService.getAllNews();
 
       expect(result.page).toBe(1);
       expect(result.limit).toBe(10);
@@ -200,7 +197,7 @@ describe('NewsroomService', () => {
 
       jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(1);
 
-      const result = await NewsroomService.getAllNews(1, 10, 'Technology');
+      const result = await NewsService.getAllNews(1, 10, 'Technology');
 
       expect(result.total).toBe(1);
       expect(result.data).toHaveLength(1);
@@ -219,7 +216,7 @@ describe('NewsroomService', () => {
 
       jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(2);
 
-      const result = await NewsroomService.getAllNews(1, 200);
+      const result = await NewsService.getAllNews(1, 200);
 
       expect(result.limit).toBe(100);
     });
@@ -237,7 +234,7 @@ describe('NewsroomService', () => {
 
       jest.spyOn(News, 'countDocuments').mockResolvedValueOnce(0);
 
-      const result = await NewsroomService.getAllNews(0, 10);
+      const result = await NewsService.getAllNews(0, 10);
 
       expect(result.page).toBe(1);
     });
@@ -247,7 +244,7 @@ describe('NewsroomService', () => {
         throw new Error('DB connection error');
       });
 
-      await expect(NewsroomService.getAllNews()).rejects.toThrow(
+      await expect(NewsService.getAllNews()).rejects.toThrow(
         'DB connection error',
       );
     });
