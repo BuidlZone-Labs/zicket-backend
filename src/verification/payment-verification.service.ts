@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import Transaction from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
 import EventTicket from '../models/event-ticket';
-import { BlockchainProvider } from './blockchain.provider';
+import { BlockchainProvider } from '../provider/blockchain.provider';
 
 /**
  * #75 — Wallet Payment Verification
