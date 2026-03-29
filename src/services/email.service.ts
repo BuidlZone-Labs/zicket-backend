@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import queueService from './queue.service';
 
 dotenv.config();
 
@@ -10,170 +10,60 @@ interface EmailOptions {
   text: string;
 }
 
+/**
+ * EmailService - Queue-based email service
+ * Enqueues email jobs for async processing instead of blocking the request cycle
+ * This ensures fast response times and reliable email delivery with retries
+ */
 class EmailService {
-  private transporter: nodemailer.Transporter;
-
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: Number(process.env.EMAIL_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-  }
-
-  async sendEmail(options: EmailOptions): Promise<void> {
+  /**
+   * Queue an email to be sent asynchronously
+   * Returns immediately - does not wait for actual send
+   */
+  async sendEmail(options: EmailOptions): Promise<string> {
     try {
-      const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-      };
-
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Email sent successfully to ${options.to}`);
+      const jobId = await queueService.enqueueEmail(
+        options.to,
+        options.subject,
+        options.html,
+        options.text,
+      );
+      console.log(
+        `Email queued successfully for ${options.to}, Job ID: ${jobId}`,
+      );
+      return jobId;
     } catch (error: any) {
-      console.error('Error sending email:', error.message);
-      throw new Error('Failed to send email');
+      console.error('Error queuing email:', error.message);
+      throw new Error('Failed to queue email');
     }
   }
 
-  async sendMagicLink(email: string, token: string): Promise<void> {
-    const magicLink = `${process.env.FRONTEND_URL}/auth/magic?token=${token}`;
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
-            .button { display: inline-block; padding: 12px 30px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-            .warning { background-color: #FEF3C7; padding: 15px; border-left: 4px solid #F59E0B; margin: 20px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎫 Zicket Login</h1>
-            </div>
-            <div class="content">
-              <h2>Magic Link Login</h2>
-              <p>Hello!</p>
-              <p>You requested a magic link to log in to your Zicket account. Click the button below to securely log in:</p>
-              
-              <div style="text-align: center;">
-                <a href="${magicLink}" class="button">Log In to Zicket</a>
-              </div>
-              
-              <p>Or copy and paste this link into your browser:</p>
-              <p style="word-break: break-all; background-color: #e5e7eb; padding: 10px; border-radius: 3px;">
-                ${magicLink}
-              </p>
-              
-              <div class="warning">
-                <strong>⚠️ Security Notice:</strong>
-                <ul>
-                  <li>This link expires in 15 minutes</li>
-                  <li>It can only be used once</li>
-                  <li>If you didn't request this, please ignore this email</li>
-                </ul>
-              </div>
-            </div>
-            <div class="footer">
-              <p>This is an automated email from Zicket. Please do not reply.</p>
-              <p>&copy; ${new Date().getFullYear()} Zicket. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const text = `
-      Zicket Magic Link Login
-      
-      Hello!
-      
-      You requested a magic link to log in to your Zicket account.
-      
-      Click or copy this link to log in:
-      ${magicLink}
-      
-      Security Notice:
-      - This link expires in 15 minutes
-      - It can only be used once
-      - If you didn't request this, please ignore this email
-      
-      This is an automated email from Zicket. Please do not reply.
-      © ${new Date().getFullYear()} Zicket. All rights reserved.
-    `;
-
-    await this.sendEmail({
-      to: email,
-      subject: 'Your Zicket Magic Link',
-      html,
-      text,
-    });
+  /**
+   * Queue a magic link email for async processing
+   */
+  async sendMagicLink(email: string, token: string): Promise<string> {
+    try {
+      const jobId = await queueService.enqueueMagicLink(email, token);
+      console.log(`Magic link email queued for ${email}, Job ID: ${jobId}`);
+      return jobId;
+    } catch (error: any) {
+      console.error('Error queuing magic link:', error.message);
+      throw new Error('Failed to queue magic link email');
+    }
   }
 
-  async sendVerificationOtp(email: string, otp: number): Promise<void> {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
-            .otp-box { font-size: 28px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 20px; background-color: #e5e7eb; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎫 Zicket</h1>
-            </div>
-            <div class="content">
-              <h2>Verify your account</h2>
-              <p>Thanks for signing up. Use the code below to verify your email address:</p>
-              <div class="otp-box">${otp}</div>
-              <p>This code expires in 10 minutes. If you didn't create an account, you can ignore this email.</p>
-            </div>
-            <div class="footer">
-              <p>This is an automated email from Zicket. Please do not reply.</p>
-              <p>&copy; ${new Date().getFullYear()} Zicket. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const text = `
-      Zicket - Verify your account
-
-      Thanks for signing up. Use this code to verify your email: ${otp}
-
-      This code expires in 10 minutes. If you didn't create an account, you can ignore this email.
-
-      © ${new Date().getFullYear()} Zicket. All rights reserved.
-    `;
-
-    await this.sendEmail({
-      to: email,
-      subject: 'Verify your Zicket account',
-      html,
-      text,
-    });
+  /**
+   * Queue a verification OTP email for async processing
+   */
+  async sendVerificationOtp(email: string, otp: number): Promise<string> {
+    try {
+      const jobId = await queueService.enqueueVerificationOtp(email, otp);
+      console.log(`Verification OTP email queued for ${email}, Job ID: ${jobId}`);
+      return jobId;
+    } catch (error: any) {
+      console.error('Error queuing verification OTP:', error.message);
+      throw new Error('Failed to queue verification OTP email');
+    }
   }
 }
 
