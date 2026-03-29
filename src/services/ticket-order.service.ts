@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import TicketOrder, { ITicketOrder } from '../models/ticket-order';
 import EventTicket from '../models/event-ticket';
+import User from '../models/user';
+import zkEmailNotificationService from './zk-email-notification.service';
 
 export interface PaginatedTicketOrdersResponse {
   page: number;
@@ -119,6 +121,70 @@ export class TicketOrderService {
     } catch (error) {
       throw new Error(
         `Failed to create ticket order entry: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * Creates a new ticket order and sends purchase notification
+   * Retrieves user to respect privacy preferences
+   */
+  static async createOrderWithNotification(
+    orderData: Partial<ITicketOrder>,
+  ): Promise<{ order: ITicketOrder; notificationJobId: string | null }> {
+    try {
+      const order = await TicketOrder.create(orderData);
+
+      // Fetch user to check notification preferences and send notification
+      if (order.user) {
+        const user = await User.findById(order.user);
+        if (user) {
+          const notificationJobId =
+            await zkEmailNotificationService.notifyTicketPurchase(user, order);
+          return { order, notificationJobId };
+        }
+      }
+
+      return { order, notificationJobId: null };
+    } catch (error) {
+      throw new Error(
+        `Failed to create ticket order with notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * Updates ticket order status and sends status update notification
+   */
+  static async updateOrderStatusWithNotification(
+    orderId: string,
+    newStatus: number,
+  ): Promise<{ order: ITicketOrder | null; notificationJobId: string | null }> {
+    try {
+      const order = await TicketOrder.findByIdAndUpdate(
+        orderId,
+        { status: newStatus },
+        { new: true },
+      );
+
+      if (!order) {
+        throw new Error(`Ticket order ${orderId} not found`);
+      }
+
+      // Fetch user and send notification
+      if (order.user) {
+        const user = await User.findById(order.user);
+        if (user) {
+          const notificationJobId =
+            await zkEmailNotificationService.notifyTicketUpdate(user, order);
+          return { order, notificationJobId };
+        }
+      }
+
+      return { order, notificationJobId: null };
+    } catch (error) {
+      throw new Error(
+        `Failed to update ticket order status with notification: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }

@@ -6,6 +6,8 @@ export enum EmailJobType {
   SEND_VERIFICATION_OTP = 'SEND_VERIFICATION_OTP',
   SEND_MAGIC_LINK = 'SEND_MAGIC_LINK',
   SEND_EMAIL = 'SEND_EMAIL',
+  SEND_TICKET_PURCHASE_NOTIFICATION = 'SEND_TICKET_PURCHASE_NOTIFICATION',
+  SEND_TICKET_UPDATE_NOTIFICATION = 'SEND_TICKET_UPDATE_NOTIFICATION',
 }
 
 export interface SendVerificationOtpPayload {
@@ -25,13 +27,35 @@ export interface SendEmailPayload {
   text: string;
 }
 
+export interface SendTicketPurchaseNotificationPayload {
+  userEmail: string;
+  userName: string;
+  ticketType: string;
+  eventName: string;
+  quantity: number;
+  amount: number;
+  privacyLevel: string;
+  orderId: string;
+}
+
+export interface SendTicketUpdateNotificationPayload {
+  userEmail: string;
+  userName: string;
+  eventName: string;
+  status: number; // 0: pending, 1: completed, 3: failed
+  orderId: string;
+  privacyLevel: string;
+}
+
 /**
  * Union type for all email job payloads
  */
 export type EmailJobPayload =
   | SendVerificationOtpPayload
   | SendMagicLinkPayload
-  | SendEmailPayload;
+  | SendEmailPayload
+  | SendTicketPurchaseNotificationPayload
+  | SendTicketUpdateNotificationPayload;
 
 /**
  * Email job result

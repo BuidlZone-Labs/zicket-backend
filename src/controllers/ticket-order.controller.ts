@@ -83,3 +83,62 @@ export const getOrganizerOrders: RequestHandler = async (
     });
   }
 };
+
+/**
+ * Update ticket order status with notification
+ * Restricted to organizers or system admins
+ */
+export const updateTicketOrderStatus: RequestHandler = async (
+  req: UserAuthenticatedReq,
+  res,
+) => {
+  try {
+    const { orderId } = req.params as { orderId: string };
+    const { status } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'Order ID is required',
+      });
+    }
+
+    if (status === undefined || ![0, 1, 3].includes(status)) {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'Valid status (0, 1, or 3) is required',
+      });
+    }
+
+    const { order, notificationJobId } =
+      await TicketOrderService.updateOrderStatusWithNotification(
+        orderId,
+        status,
+      );
+
+    if (!order) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Ticket order not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket order status updated successfully',
+      data: {
+        order,
+        notificationJobId,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating ticket order status:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to update ticket order status',
+    });
+  }
+};
