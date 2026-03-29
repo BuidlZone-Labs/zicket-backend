@@ -40,7 +40,10 @@ class ZkEmailNotificationService {
       );
       return jobId;
     } catch (error: any) {
-      console.error('Error queuing ticket purchase notification:', error.message);
+      console.error(
+        'Error queuing ticket purchase notification:',
+        error.message,
+      );
       throw new Error('Failed to queue ticket purchase notification');
     }
   }
