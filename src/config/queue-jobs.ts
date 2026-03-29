@@ -44,10 +44,32 @@ export interface EmailJobResult {
 }
 
 /**
+ * zkEmail Job Types and Payload Interfaces
+ */
+
+export enum ZkEmailJobType {
+  ZK_EMAIL_HOOK = 'ZK_EMAIL_HOOK',
+}
+
+export interface ZkEmailHookPayload {
+  hashedEmail: string;
+}
+
+export type ZkEmailJobPayload = ZkEmailHookPayload;
+
+export interface ZkEmailJobResult {
+  success: boolean;
+  jobId?: string;
+  error?: string;
+  timestamp: Date;
+}
+
+/**
  * Queue names
  */
 export const QUEUE_NAMES = {
   EMAIL: 'email-queue',
+  ZKEMAIL: 'zkemail-queue',
   RECONCILIATION: 'reconciliation-queue',
   ANALYTICS: 'analytics-queue',
 } as const;

@@ -3,6 +3,7 @@ import config from './config/config';
 import { mongoConnect } from './config/db.mongo';
 import queueService from './services/queue.service';
 import emailWorker from './workers/email.worker';
+import zkEmailWorker from './workers/zkemail.worker';
 
 async function startServer() {
   try {
@@ -18,6 +19,10 @@ async function startServer() {
     await emailWorker.initialize();
     console.log('✓ Email worker initialized');
 
+    // Initialize zkEmail worker
+    await zkEmailWorker.initialize();
+    console.log('✓ zkEmail worker initialized');
+
     // Start Express server
     const server = app.listen(config.port, () => {
       console.log(`✓ Server running on port ${config.port}`);
@@ -29,6 +34,7 @@ async function startServer() {
       server.close(async () => {
         console.log('Express server stopped');
         await emailWorker.close();
+        await zkEmailWorker.close();
         await queueService.close();
         console.log('All services closed');
         process.exit(0);

@@ -3,6 +3,8 @@ import { redisConfig, queueConfig } from '../config/queue';
 import {
   EmailJobType,
   EmailJobPayload,
+  ZkEmailJobType,
+  ZkEmailJobPayload,
   QUEUE_NAMES,
 } from '../config/queue-jobs';
 
@@ -12,6 +14,7 @@ import {
  */
 class QueueService {
   private emailQueue: Queue | null = null;
+  private zkEmailQueue: Queue | null = null;
   private emailWorker: Worker | null = null;
   private initialized = false;
 
@@ -26,6 +29,11 @@ class QueueService {
 
     try {
       this.emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
+        connection: redisConfig,
+        ...queueConfig,
+      });
+
+      this.zkEmailQueue = new Queue(QUEUE_NAMES.ZKEMAIL, {
         connection: redisConfig,
         ...queueConfig,
       });
@@ -108,6 +116,26 @@ class QueueService {
   }
 
   /**
+   * Enqueue a zkEmail hook job
+   */
+  async enqueueZkEmailHook(hashedEmail: string): Promise<string> {
+    if (!this.zkEmailQueue) {
+      throw new Error('zkEmail queue not initialized');
+    }
+
+    const job = await this.zkEmailQueue.add(
+      ZkEmailJobType.ZK_EMAIL_HOOK,
+      { hashedEmail } as ZkEmailJobPayload,
+      {
+        jobId: `zkemail-${hashedEmail.slice(0, 16)}-${Date.now()}`,
+      },
+    );
+
+    console.log(`Queued zkEmail hook for hashed email, Job ID: ${job.id}`);
+    return job.id!;
+  }
+
+  /**
    * Get queue statistics
    */
   async getQueueStats() {
@@ -131,6 +159,9 @@ class QueueService {
   async close(): Promise<void> {
     if (this.emailQueue) {
       await this.emailQueue.close();
+    }
+    if (this.zkEmailQueue) {
+      await this.zkEmailQueue.close();
     }
     if (this.emailWorker) {
       await this.emailWorker.close();
