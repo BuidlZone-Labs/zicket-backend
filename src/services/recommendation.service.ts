@@ -51,7 +51,9 @@ export class RecommendationService {
 
   private static getTimezoneString(date: Date): string {
     const offset = -date.getTimezoneOffset();
-    const h = Math.floor(Math.abs(offset) / 60).toString().padStart(2, '0');
+    const h = Math.floor(Math.abs(offset) / 60)
+      .toString()
+      .padStart(2, '0');
     const m = (Math.abs(offset) % 60).toString().padStart(2, '0');
     return `(UTC ${offset >= 0 ? '+' : '-'}${h}:${m})`;
   }
@@ -128,7 +130,10 @@ export class RecommendationService {
 
       const trendingFilter = {
         ...baseFilter,
-        $or: [{ isTrending: true }, { soldTickets: { $gt: TRENDING_THRESHOLD } }],
+        $or: [
+          { isTrending: true },
+          { soldTickets: { $gt: TRENDING_THRESHOLD } },
+        ],
       };
 
       const trending = (await EventTicket.find(trendingFilter)

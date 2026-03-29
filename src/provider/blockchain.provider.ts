@@ -6,7 +6,9 @@ import { ethers } from 'ethers';
  */
 
 const RPC_URL = process.env.BLOCKCHAIN_RPC_URL || '';
-const PLATFORM_WALLET = (process.env.PLATFORM_WALLET_ADDRESS || '').toLowerCase();
+const PLATFORM_WALLET = (
+  process.env.PLATFORM_WALLET_ADDRESS || ''
+).toLowerCase();
 const MIN_CONFIRMATIONS = parseInt(process.env.MIN_CONFIRMATIONS || '2', 10);
 
 export interface ChainTransaction {
@@ -24,7 +26,8 @@ export class BlockchainProvider {
   private static _instance: BlockchainProvider | null = null;
 
   private constructor() {
-    if (!RPC_URL) throw new Error('BLOCKCHAIN_RPC_URL is not configured in .env');
+    if (!RPC_URL)
+      throw new Error('BLOCKCHAIN_RPC_URL is not configured in .env');
     this.provider = new ethers.JsonRpcProvider(RPC_URL);
   }
 
@@ -47,7 +50,9 @@ export class BlockchainProvider {
       let confirmations = 0;
 
       if (receipt) {
-        confirmations = receipt.blockNumber ? currentBlock - receipt.blockNumber : 0;
+        confirmations = receipt.blockNumber
+          ? currentBlock - receipt.blockNumber
+          : 0;
         status = receipt.status === 1 ? 'confirmed' : 'failed';
       }
 

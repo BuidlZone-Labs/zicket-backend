@@ -1,7 +1,11 @@
 import { RequestHandler } from 'express';
 import { Queue } from 'bullmq';
 import { redisConfig } from '../config/queue';
-import { QUEUE_NAMES, PaymentJobType, ProcessWebhookEventPayload } from '../config/queue-jobs';
+import {
+  QUEUE_NAMES,
+  PaymentJobType,
+  ProcessWebhookEventPayload,
+} from '../config/queue-jobs';
 import { WebhookService } from '../services/webhook.service';
 
 /**
@@ -60,6 +64,8 @@ export const handlePaymentWebhook: RequestHandler = async (req, res) => {
     console.error('[WebhookController] Error:', error);
     // Still return 200 to avoid provider flooding us with retries for
     // infrastructure errors — the job retry mechanism handles the rest
-    res.status(200).json({ received: true, warning: 'Queuing error — will retry' });
+    res
+      .status(200)
+      .json({ received: true, warning: 'Queuing error — will retry' });
   }
 };

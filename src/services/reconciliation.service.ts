@@ -87,7 +87,8 @@ export class ReconciliationService {
         }
 
         // ── Case 3: Terminal state (confirmed or failed) ──────────────────
-        const newTxStatus = chainTx.status === 'confirmed' ? 'completed' : 'failed';
+        const newTxStatus =
+          chainTx.status === 'confirmed' ? 'completed' : 'failed';
         const newOrderStatus = chainTx.status === 'confirmed' ? 1 : 3;
 
         const session = await mongoose.startSession();

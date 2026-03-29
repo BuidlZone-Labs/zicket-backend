@@ -50,7 +50,10 @@ export const reconciliationQueue = new Queue(QUEUE_NAMES.RECONCILIATION, {
       `[ReconciliationWorker] Repeatable job registered — pattern: ${opts.repeat.pattern}`,
     );
   } catch (err) {
-    console.error('[ReconciliationWorker] Failed to register repeatable job:', err);
+    console.error(
+      '[ReconciliationWorker] Failed to register repeatable job:',
+      err,
+    );
   }
 })();
 
@@ -67,7 +70,8 @@ const reconciliationWorker = new Worker(
 
     switch (name as ReconciliationJobType) {
       case ReconciliationJobType.RECONCILE_PENDING: {
-        const report = await ReconciliationService.reconcilePendingTransactions();
+        const report =
+          await ReconciliationService.reconcilePendingTransactions();
 
         // Surface any errors through BullMQ's job result
         if (report.errors.length > 0) {
@@ -103,9 +107,7 @@ reconciliationWorker.on('completed', (job, result) => {
 });
 
 reconciliationWorker.on('failed', (job, err) => {
-  console.error(
-    `[ReconciliationWorker] Job ${job?.id} failed: ${err.message}`,
-  );
+  console.error(`[ReconciliationWorker] Job ${job?.id} failed: ${err.message}`);
 });
 
 reconciliationWorker.on('error', (err) => {

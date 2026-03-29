@@ -88,7 +88,7 @@ export type ReconciliationJobPayload = ReconcilePayload;
  */
 export const QUEUE_NAMES = {
   EMAIL: 'email-queue',
-  PAYMENT: 'payment-queue',          // #81
+  PAYMENT: 'payment-queue', // #81
   RECONCILIATION: 'reconciliation-queue', // #78
   ANALYTICS: 'analytics-queue',
 } as const;

@@ -5,7 +5,10 @@ import {
   PaymentJobType,
   ProcessWebhookEventPayload,
 } from '../config/queue-jobs';
-import { WebhookService, WebhookPaymentEvent } from '../services/webhook.service';
+import {
+  WebhookService,
+  WebhookPaymentEvent,
+} from '../services/webhook.service';
 
 /**
  * #81 — Payment Worker
@@ -24,7 +27,9 @@ const paymentWorker = new Worker(
   async (job: Job<ProcessWebhookEventPayload>) => {
     const { name, data } = job;
 
-    console.log(`[PaymentWorker] Processing job: ${name} | txHash: ${data.txHash}`);
+    console.log(
+      `[PaymentWorker] Processing job: ${name} | txHash: ${data.txHash}`,
+    );
 
     switch (name as PaymentJobType) {
       case PaymentJobType.PROCESS_WEBHOOK_EVENT: {
