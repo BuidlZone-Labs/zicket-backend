@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { TicketOrderService } from '../services/ticket-order.service';
-import { PaymentVerificationService } from '../services/payment-verification.service';
+import { PaymentVerificationService } from '../verification/payment-verification.service';
 import { UserAuthenticatedReq } from '../utils/types';
 
 /**
