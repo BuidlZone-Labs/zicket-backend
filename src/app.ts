@@ -9,6 +9,7 @@ import messageCenterRoutes from './routes/message-center.route';
 import newsRoutes from './routes/news.route';
 import mediaRoutes from './routes/media.route';
 import ticketOrderRoutes from './routes/ticket-order.route';
+import queueMonitorRoutes from './routes/queue-monitor.route';
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/media', mediaRoutes);
 app.use('/zk-message-center', messageCenterRoutes);
 app.use('/news', newsRoutes);
 app.use('/ticket-orders', ticketOrderRoutes);
+app.use('/api', queueMonitorRoutes);
 app.use(protectedRoute);
 
 app.use(
