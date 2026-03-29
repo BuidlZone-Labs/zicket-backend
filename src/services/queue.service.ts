@@ -41,10 +41,7 @@ class QueueService {
   /**
    * Enqueue a verification OTP email
    */
-  async enqueueVerificationOtp(
-    email: string,
-    otp: number,
-  ): Promise<string> {
+  async enqueueVerificationOtp(email: string, otp: number): Promise<string> {
     if (!this.emailQueue) {
       throw new Error('Queue not initialized');
     }
@@ -79,9 +76,7 @@ class QueueService {
       },
     );
 
-    console.log(
-      `Queued magic link email for ${email}, Job ID: ${job.id}`,
-    );
+    console.log(`Queued magic link email for ${email}, Job ID: ${job.id}`);
     return job.id!;
   }
 

@@ -91,9 +91,7 @@ class EmailWorker {
           break;
 
         case EmailJobType.SEND_MAGIC_LINK:
-          result = await this.sendMagicLink(
-            payload as SendMagicLinkPayload,
-          );
+          result = await this.sendMagicLink(payload as SendMagicLinkPayload);
           break;
 
         case EmailJobType.SEND_EMAIL:
@@ -264,9 +262,7 @@ class EmailWorker {
   /**
    * Send generic email
    */
-  private async sendEmail(
-    payload: SendEmailPayload,
-  ): Promise<EmailJobResult> {
+  private async sendEmail(payload: SendEmailPayload): Promise<EmailJobResult> {
     const { to, subject, html, text } = payload;
 
     const info = await this.transporter.sendMail({
@@ -277,7 +273,9 @@ class EmailWorker {
       text,
     });
 
-    console.log(`Email sent successfully to ${to}, Message ID: ${info.messageId}`);
+    console.log(
+      `Email sent successfully to ${to}, Message ID: ${info.messageId}`,
+    );
 
     return {
       success: true,

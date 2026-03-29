@@ -58,8 +58,7 @@ export const checkAsyncHealth: RequestHandler = async (req, res) => {
       message: 'Async processing system operational',
       timestamp: new Date().toISOString(),
       queueMetrics: {
-        totalPending:
-          stats.waiting + stats.delayed,
+        totalPending: stats.waiting + stats.delayed,
         processing: stats.active,
         completed: stats.completed,
         failed: stats.failed,

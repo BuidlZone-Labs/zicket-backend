@@ -58,7 +58,9 @@ class EmailService {
   async sendVerificationOtp(email: string, otp: number): Promise<string> {
     try {
       const jobId = await queueService.enqueueVerificationOtp(email, otp);
-      console.log(`Verification OTP email queued for ${email}, Job ID: ${jobId}`);
+      console.log(
+        `Verification OTP email queued for ${email}, Job ID: ${jobId}`,
+      );
       return jobId;
     } catch (error: any) {
       console.error('Error queuing verification OTP:', error.message);

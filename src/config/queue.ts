@@ -24,7 +24,7 @@ export const redisConfig = {
  */
 export const createRedisConnection = () => {
   const client = Redis.createClient(redisConfig);
-  
+
   client.on('error', (err) => {
     console.error('Redis connection error:', err);
   });
@@ -52,7 +52,7 @@ export const queueConfig = {
     },
     removeOnFail: false, // Keep failed jobs for debugging
   },
-  
+
   // Worker settings
   worker: {
     concurrency: 5, // Process 5 jobs concurrently
