@@ -21,6 +21,9 @@ eventTicketRoutes.get('/', getEventTickets);
 // GET /api/event-tickets/category/:category - Fetch event tickets by category
 eventTicketRoutes.get('/category/:category', getEventTicketsByCategory);
 
+// GET /api/event-tickets/search - Search event tickets
+eventTicketRoutes.get('/search', searchEventTickets);
+
 // GET /api/event-tickets/:eventId - Fetch a single event by ID
 eventTicketRoutes.get('/:eventId', getEventById);
 
@@ -37,7 +40,5 @@ eventTicketRoutes.patch(
   authGuard,
   updateEventPrivacySettings,
 );
-// GET /api/event-tickets/search - Search event tickets
-eventTicketRoutes.get('/search', searchEventTickets);
 
 export default eventTicketRoutes;

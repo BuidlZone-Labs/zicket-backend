@@ -382,15 +382,34 @@ export const getEventById: RequestHandler = async (req, res) => {
 export const searchEventTickets: RequestHandler = async (req, res) => {
   try {
     // Extract search query and pagination parameters
-    const query = req.query.q as string;
+    const query = ((req.query.q as string) || '').trim();
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 8;
 
-    // Validate search query
-    if (!query || query.trim() === '') {
+    const location = (req.query.location as string | undefined)?.trim();
+    const privacyLevelQuery = req.query.privacyLevel as string | undefined;
+    const paymentPrivacyQuery = req.query.paymentPrivacy as string | undefined;
+    const eventTypeQuery = req.query.eventType as string | undefined;
+    const isPublishedQuery = req.query.isPublished as string | undefined;
+    const startDateQuery = req.query.startDate as string | undefined;
+    const endDateQuery = req.query.endDate as string | undefined;
+
+    const hasAnyFilter = Boolean(
+      location ||
+      privacyLevelQuery ||
+      paymentPrivacyQuery ||
+      eventTypeQuery ||
+      isPublishedQuery ||
+      startDateQuery ||
+      endDateQuery,
+    );
+
+    // Validate search query or filter presence
+    if (!query && !hasAnyFilter) {
       return res.status(400).json({
         error: 'Invalid query',
-        message: 'Search query parameter "q" is required',
+        message:
+          'At least one search parameter is required (q or filters like location/date/privacy)',
       });
     }
 
@@ -402,11 +421,119 @@ export const searchEventTickets: RequestHandler = async (req, res) => {
       });
     }
 
+    if (limit < 1 || limit > 50) {
+      return res.status(400).json({
+        error: 'Invalid limit',
+        message: 'Limit must be between 1 and 50',
+      });
+    }
+
+    const parsedPrivacyLevel =
+      privacyLevelQuery !== undefined
+        ? parseInt(privacyLevelQuery, 10)
+        : undefined;
+    const parsedPaymentPrivacy =
+      paymentPrivacyQuery !== undefined
+        ? parseInt(paymentPrivacyQuery, 10)
+        : undefined;
+    const parsedEventType =
+      eventTypeQuery !== undefined ? parseInt(eventTypeQuery, 10) : undefined;
+
+    if (
+      parsedPrivacyLevel !== undefined &&
+      (Number.isNaN(parsedPrivacyLevel) ||
+        ![0, 1, 2].includes(parsedPrivacyLevel))
+    ) {
+      return res.status(400).json({
+        error: 'Invalid privacyLevel',
+        message: 'privacyLevel must be one of: 0, 1, 2',
+      });
+    }
+
+    if (
+      parsedPaymentPrivacy !== undefined &&
+      (Number.isNaN(parsedPaymentPrivacy) ||
+        ![0, 1].includes(parsedPaymentPrivacy))
+    ) {
+      return res.status(400).json({
+        error: 'Invalid paymentPrivacy',
+        message: 'paymentPrivacy must be one of: 0, 1',
+      });
+    }
+
+    if (
+      parsedEventType !== undefined &&
+      (Number.isNaN(parsedEventType) || ![0, 1].includes(parsedEventType))
+    ) {
+      return res.status(400).json({
+        error: 'Invalid eventType',
+        message: 'eventType must be one of: 0, 1',
+      });
+    }
+
+    let parsedIsPublished: boolean | undefined;
+    if (isPublishedQuery !== undefined) {
+      if (!['true', 'false'].includes(isPublishedQuery.toLowerCase())) {
+        return res.status(400).json({
+          error: 'Invalid isPublished',
+          message: 'isPublished must be either true or false',
+        });
+      }
+      parsedIsPublished = isPublishedQuery.toLowerCase() === 'true';
+    }
+
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    if (startDateQuery) {
+      startDate = new Date(startDateQuery);
+      if (Number.isNaN(startDate.getTime())) {
+        return res.status(400).json({
+          error: 'Invalid startDate',
+          message: 'startDate must be a valid ISO date',
+        });
+      }
+    }
+
+    if (endDateQuery) {
+      endDate = new Date(endDateQuery);
+      if (Number.isNaN(endDate.getTime())) {
+        return res.status(400).json({
+          error: 'Invalid endDate',
+          message: 'endDate must be a valid ISO date',
+        });
+      }
+    }
+
+    if (startDate && endDate && startDate > endDate) {
+      return res.status(400).json({
+        error: 'Invalid date range',
+        message: 'startDate cannot be after endDate',
+      });
+    }
+
+    const filters = {
+      ...(location ? { location } : {}),
+      ...(parsedPrivacyLevel !== undefined
+        ? { privacyLevel: parsedPrivacyLevel }
+        : {}),
+      ...(parsedPaymentPrivacy !== undefined
+        ? { paymentPrivacy: parsedPaymentPrivacy }
+        : {}),
+      ...(parsedEventType !== undefined ? { eventType: parsedEventType } : {}),
+      ...(parsedIsPublished !== undefined
+        ? { isPublished: parsedIsPublished }
+        : {}),
+      ...(startDate ? { startDate } : {}),
+      ...(endDate ? { endDate } : {}),
+    };
+
     // Fetch searched event tickets from service
     const result = await EventTicketService.searchEventTickets(
       query,
       page,
       limit,
+      filters,
     );
 
     // Return success response

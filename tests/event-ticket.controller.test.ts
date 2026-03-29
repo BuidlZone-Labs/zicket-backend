@@ -29,7 +29,7 @@ describe('event-ticket controller search', () => {
     jest.restoreAllMocks();
   });
 
-  it('returns 400 when search query q is missing', async () => {
+  it('returns 400 when both search query and filters are missing', async () => {
     const req = {
       query: {},
     };
@@ -40,7 +40,8 @@ describe('event-ticket controller search', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       error: 'Invalid query',
-      message: 'Search query parameter "q" is required',
+      message:
+        'At least one search parameter is required (q or filters like location/date/privacy)',
     });
   });
 
@@ -100,6 +101,50 @@ describe('event-ticket controller search', () => {
       'web3',
       1,
       5,
+      {},
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(serviceResult);
+  });
+
+  it('supports filter-based discovery without q', async () => {
+    const req = {
+      query: {
+        location: 'Lagos',
+        privacyLevel: '1',
+        paymentPrivacy: '0',
+        eventType: '0',
+        isPublished: 'true',
+        startDate: '2026-04-01T00:00:00.000Z',
+        endDate: '2026-04-30T23:59:59.000Z',
+      },
+    };
+    const res = createResponse();
+
+    const serviceResult = {
+      page: 1,
+      limit: 8,
+      total: 0,
+      tickets: [],
+    };
+
+    eventTicketService.searchEventTickets.mockResolvedValue(serviceResult);
+
+    await searchEventTickets(req as any, res as any, jest.fn());
+
+    expect(eventTicketService.searchEventTickets).toHaveBeenCalledWith(
+      '',
+      1,
+      8,
+      {
+        location: 'Lagos',
+        privacyLevel: 1,
+        paymentPrivacy: 0,
+        eventType: 0,
+        isPublished: true,
+        startDate: new Date('2026-04-01T00:00:00.000Z'),
+        endDate: new Date('2026-04-30T23:59:59.000Z'),
+      },
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(serviceResult);

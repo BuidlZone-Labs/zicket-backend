@@ -21,8 +21,22 @@ export interface PaginatedEventTicketsResponse {
   tickets: EventTicketResponse[];
 }
 
+export interface EventTicketSearchFilters {
+  location?: string;
+  privacyLevel?: number;
+  paymentPrivacy?: number;
+  isPublished?: boolean;
+  eventType?: number;
+  startDate?: Date;
+  endDate?: Date;
+}
+
 export class EventTicketService {
   private static readonly DEFAULT_LIMIT = 8;
+
+  private static escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
   /**
    * Maps privacy level to status string
@@ -412,6 +426,7 @@ export class EventTicketService {
     query: string,
     page: number = 1,
     limit: number = this.DEFAULT_LIMIT,
+    filters: EventTicketSearchFilters = {},
   ): Promise<PaginatedEventTicketsResponse> {
     try {
       // Validate pagination parameters
@@ -421,26 +436,60 @@ export class EventTicketService {
       // Calculate skip value
       const skip = (validPage - 1) * validLimit;
 
-      // Create search filter
-      // Search in name, about, location, tags, and category
-      const searchRegex = new RegExp(query, 'i');
-      const filter = {
-        $or: [
-          { name: { $regex: searchRegex } },
-          { about: { $regex: searchRegex } },
-          { location: { $regex: searchRegex } },
-          { eventCategory: { $regex: searchRegex } },
-          { tags: { $in: [searchRegex] } },
-        ],
-      };
+      const filter: any = {};
+      const trimmedQuery = query.trim();
+
+      if (trimmedQuery.length > 0) {
+        filter.$text = { $search: trimmedQuery };
+      }
+
+      if (filters.location) {
+        const escapedLocation = this.escapeRegex(filters.location.trim());
+        filter.location = { $regex: new RegExp(`^${escapedLocation}$`, 'i') };
+      }
+
+      if (typeof filters.privacyLevel === 'number') {
+        filter.privacyLevel = filters.privacyLevel;
+      }
+
+      if (typeof filters.paymentPrivacy === 'number') {
+        filter.paymentPrivacy = filters.paymentPrivacy;
+      }
+
+      if (typeof filters.isPublished === 'boolean') {
+        filter.isPublished = filters.isPublished;
+      }
+
+      if (typeof filters.eventType === 'number') {
+        filter.eventType = filters.eventType;
+      }
+
+      if (filters.startDate || filters.endDate) {
+        filter.eventDate = {};
+        if (filters.startDate) {
+          filter.eventDate.$gte = filters.startDate;
+        }
+        if (filters.endDate) {
+          filter.eventDate.$lte = filters.endDate;
+        }
+      }
+
+      const findQuery = EventTicket.find(filter)
+        .skip(skip)
+        .limit(validLimit)
+        .lean();
+
+      if (trimmedQuery.length > 0) {
+        findQuery
+          .select({ score: { $meta: 'textScore' } })
+          .sort({ score: { $meta: 'textScore' }, eventDate: 1 });
+      } else {
+        findQuery.sort({ eventDate: 1 });
+      }
 
       // Get tickets and total count
       const [tickets, total] = await Promise.all([
-        EventTicket.find(filter)
-          .sort({ eventDate: 1 })
-          .skip(skip)
-          .limit(validLimit)
-          .lean(),
+        findQuery,
         EventTicket.countDocuments(filter),
       ]);
 

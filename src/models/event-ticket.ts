@@ -76,6 +76,28 @@ const eventTicketSchema = new Schema<IEventTicket>(
   { timestamps: true },
 );
 
+eventTicketSchema.index({ location: 1 });
+eventTicketSchema.index({ eventDate: 1 });
+eventTicketSchema.index({ privacyLevel: 1, paymentPrivacy: 1, isPublished: 1 });
+eventTicketSchema.index(
+  {
+    name: 'text',
+    about: 'text',
+    eventCategory: 'text',
+    location: 'text',
+    tags: 'text',
+  },
+  {
+    weights: {
+      name: 10,
+      eventCategory: 7,
+      tags: 6,
+      location: 5,
+      about: 2,
+    },
+  },
+);
+
 const EventTicket = mongoose.model<IEventTicket>(
   'EventTicket',
   eventTicketSchema,
