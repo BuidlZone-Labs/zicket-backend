@@ -11,6 +11,11 @@ export interface IUser extends Document {
   emailVerifiedAt?: Date;
   magicToken?: string;
   magicTokenExpires?: Date;
+  zkEmail?: string;
+  notificationPreferences?: {
+    emailOnTicketPurchase: boolean;
+    emailOnTicketUpdate: boolean;
+  };
 }
 
 const userSchema = new Schema<IUser>(
@@ -35,6 +40,11 @@ const userSchema = new Schema<IUser>(
     emailVerifiedAt: { type: Date, required: false },
     magicToken: { type: String, required: false },
     magicTokenExpires: { type: Date, required: false },
+    zkEmail: { type: String, required: false },
+    notificationPreferences: {
+      emailOnTicketPurchase: { type: Boolean, default: true },
+      emailOnTicketUpdate: { type: Boolean, default: true },
+    },
   },
   { timestamps: true },
 );
