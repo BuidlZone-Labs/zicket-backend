@@ -6,6 +6,8 @@ import {
   SendVerificationOtpPayload,
   SendMagicLinkPayload,
   SendEmailPayload,
+  SendTicketPurchaseNotificationPayload,
+  SendTicketUpdateNotificationPayload,
   EmailJobResult,
   QUEUE_NAMES,
 } from '../config/queue-jobs';
@@ -96,6 +98,18 @@ class EmailWorker {
 
         case EmailJobType.SEND_EMAIL:
           result = await this.sendEmail(payload as SendEmailPayload);
+          break;
+
+        case EmailJobType.SEND_TICKET_PURCHASE_NOTIFICATION:
+          result = await this.sendTicketPurchaseNotification(
+            payload as SendTicketPurchaseNotificationPayload,
+          );
+          break;
+
+        case EmailJobType.SEND_TICKET_UPDATE_NOTIFICATION:
+          result = await this.sendTicketUpdateNotification(
+            payload as SendTicketUpdateNotificationPayload,
+          );
           break;
 
         default:
@@ -254,6 +268,220 @@ class EmailWorker {
     return this.sendEmail({
       to: email,
       subject: 'Your Zicket Magic Link',
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Send ticket purchase notification (privacy-preserving)
+   * Masks data based on privacy level setting
+   */
+  private async sendTicketPurchaseNotification(
+    payload: SendTicketPurchaseNotificationPayload,
+  ): Promise<EmailJobResult> {
+    const {
+      userEmail,
+      userName,
+      ticketType,
+      eventName,
+      quantity,
+      amount,
+      privacyLevel,
+      orderId,
+    } = payload;
+
+    // Mask data based on privacy level
+    const showDetails = privacyLevel !== 'high';
+    const displayAmount = showDetails ? `$${amount}` : '[Amount hidden]';
+    const displayQuantity = showDetails ? quantity : '[Quantity hidden]';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #10B981; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+            .details-box { background-color: #e5f5e7; padding: 15px; border-left: 4px solid #10B981; margin: 20px 0; }
+            .detail-row { display: flex; justify-content: space-between; margin: 10px 0; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎫 Purchase Confirmation</h1>
+            </div>
+            <div class="content">
+              <h2>Thank you, ${userName}!</h2>
+              <p>Your ticket purchase has been confirmed.</p>
+              
+              <div class="details-box">
+                <div class="detail-row">
+                  <strong>Order ID:</strong>
+                  <span>${orderId}</span>
+                </div>
+                <div class="detail-row">
+                  <strong>Event:</strong>
+                  <span>${eventName}</span>
+                </div>
+                <div class="detail-row">
+                  <strong>Ticket Type:</strong>
+                  <span>${ticketType}</span>
+                </div>
+                <div class="detail-row">
+                  <strong>Quantity:</strong>
+                  <span>${displayQuantity}</span>
+                </div>
+                <div class="detail-row">
+                  <strong>Amount:</strong>
+                  <span>${displayAmount}</span>
+                </div>
+              </div>
+              
+              <p>Your ticket is now available in your account. You can view and manage your tickets anytime by logging into Zicket.</p>
+              <p>If you have any questions, please contact the event organizer or support team.</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email from Zicket. Please do not reply.</p>
+              <p>&copy; ${new Date().getFullYear()} Zicket. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const text = `
+      Zicket - Purchase Confirmation
+      
+      Thank you, ${userName}!
+      
+      Your ticket purchase has been confirmed.
+      
+      Order Details:
+      Order ID: ${orderId}
+      Event: ${eventName}
+      Ticket Type: ${ticketType}
+      Quantity: ${displayQuantity}
+      Amount: ${displayAmount}
+      
+      Your ticket is now available in your account. You can view and manage your tickets anytime by logging into Zicket.
+      
+      If you have any questions, please contact the event organizer or support team.
+      
+      This is an automated email from Zicket. Please do not reply.
+      © ${new Date().getFullYear()} Zicket. All rights reserved.
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject: `Ticket Purchase Confirmation - ${eventName}`,
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Send ticket update notification (privacy-preserving)
+   * Notifies user of ticket status changes
+   */
+  private async sendTicketUpdateNotification(
+    payload: SendTicketUpdateNotificationPayload,
+  ): Promise<EmailJobResult> {
+    const { userEmail, userName, eventName, status, orderId, privacyLevel } =
+      payload;
+
+    // Map status to readable message
+    const statusMap: Record<number, string> = {
+      0: 'Pending',
+      1: 'Completed',
+      3: 'Failed',
+    };
+
+    const statusMessage = statusMap[status] || 'Updated';
+    const statusColor =
+      status === 1 ? '#10B981' : status === 3 ? '#EF4444' : '#F59E0B';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: ${statusColor}; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+            .status-box { background-color: ${statusColor}; color: white; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; font-size: 18px; font-weight: bold; }
+            .details-box { background-color: #f0f0f0; padding: 15px; border-left: 4px solid ${statusColor}; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎫 Ticket Status Update</h1>
+            </div>
+            <div class="content">
+              <h2>Hello, ${userName}!</h2>
+              <p>We have an update regarding your ticket purchase.</p>
+              
+              <div class="status-box">${statusMessage}</div>
+              
+              <div class="details-box">
+                <p><strong>Event:</strong> ${eventName}</p>
+                <p><strong>Order ID:</strong> ${orderId}</p>
+              </div>
+              
+              ${
+                status === 1
+                  ? '<p>Your ticket is now active. You can view and use your ticket by logging into Zicket.</p>'
+                  : status === 3
+                    ? '<p>Unfortunately, there was an issue with your ticket. Please contact support for assistance.</p>'
+                    : '<p>Your ticket is being processed. We will send you an update when it is ready.</p>'
+              }
+              
+              <p>If you have any questions, please contact support.</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email from Zicket. Please do not reply.</p>
+              <p>&copy; ${new Date().getFullYear()} Zicket. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const text = `
+      Zicket - Ticket Status Update
+      
+      Hello, ${userName}!
+      
+      We have an update regarding your ticket purchase.
+      
+      Status: ${statusMessage}
+      Event: ${eventName}
+      Order ID: ${orderId}
+      
+      ${
+        status === 1
+          ? 'Your ticket is now active. You can view and use your ticket by logging into Zicket.'
+          : status === 3
+            ? 'Unfortunately, there was an issue with your ticket. Please contact support for assistance.'
+            : 'Your ticket is being processed. We will send you an update when it is ready.'
+      }
+      
+      If you have any questions, please contact support.
+      
+      This is an automated email from Zicket. Please do not reply.
+      © ${new Date().getFullYear()} Zicket. All rights reserved.
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject: `Ticket Status Update - ${eventName}`,
       html,
       text,
     });

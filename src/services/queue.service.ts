@@ -5,6 +5,8 @@ import {
   EmailJobPayload,
   ZkEmailJobType,
   ZkEmailJobPayload,
+  SendTicketPurchaseNotificationPayload,
+  SendTicketUpdateNotificationPayload,
   QUEUE_NAMES,
 } from '../config/queue-jobs';
 
@@ -132,6 +134,50 @@ class QueueService {
     );
 
     console.log(`Queued zkEmail hook for hashed email, Job ID: ${job.id}`);
+   * Enqueue a ticket purchase notification
+   */
+  async enqueueTicketPurchaseNotification(
+    payload: SendTicketPurchaseNotificationPayload,
+  ): Promise<string> {
+    if (!this.emailQueue) {
+      throw new Error('Queue not initialized');
+    }
+
+    const job = await this.emailQueue.add(
+      EmailJobType.SEND_TICKET_PURCHASE_NOTIFICATION,
+      payload as EmailJobPayload,
+      {
+        jobId: `purchase-${payload.userEmail}-${Date.now()}`,
+      },
+    );
+
+    console.log(
+      `Queued ticket purchase notification for ${payload.userEmail}, Job ID: ${job.id}`,
+    );
+    return job.id!;
+  }
+
+  /**
+   * Enqueue a ticket update notification
+   */
+  async enqueueTicketUpdateNotification(
+    payload: SendTicketUpdateNotificationPayload,
+  ): Promise<string> {
+    if (!this.emailQueue) {
+      throw new Error('Queue not initialized');
+    }
+
+    const job = await this.emailQueue.add(
+      EmailJobType.SEND_TICKET_UPDATE_NOTIFICATION,
+      payload as EmailJobPayload,
+      {
+        jobId: `update-${payload.userEmail}-${Date.now()}`,
+      },
+    );
+
+    console.log(
+      `Queued ticket update notification for ${payload.userEmail}, Job ID: ${job.id}`,
+    );
     return job.id!;
   }
 
