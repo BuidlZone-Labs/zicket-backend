@@ -34,7 +34,7 @@ app.use('/zk-message-center', messageCenterRoutes);
 app.use('/news', newsRoutes);
 app.use('/ticket-orders', ticketOrderRoutes);
 app.use('/api', queueMonitorRoutes);
-app.use('/zkemail', zkEmailRoutes);
+app.use('/zkemail', authLimiter, zkEmailRoutes);
 app.use(protectedRoute);
 
 app.use(
