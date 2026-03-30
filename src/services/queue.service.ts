@@ -138,6 +138,10 @@ class QueueService {
   }
 
   /**
+    return job.id!;
+  }
+
+  /**
    * Enqueue a ticket purchase notification
    */
   async enqueueTicketPurchaseNotification(
