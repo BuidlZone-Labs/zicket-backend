@@ -117,10 +117,10 @@ export interface ZkEmailJobResult {
 /**
  * Queue names
  */
-export const QUEUE_NAMES = {
-  EMAIL: 'email-queue',
-  ZKEMAIL: 'zkemail-queue',
-  RECONCILIATION: 'reconciliation-queue',
+// Queue names are defined in the consolidated QUEUE_NAMES object below.
+// (Removed duplicate partial QUEUE_NAMES definition.)
+
+/**
  * #78 — Reconciliation queue job types
  */
 export enum ReconciliationJobType {
