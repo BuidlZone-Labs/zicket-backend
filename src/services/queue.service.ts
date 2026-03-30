@@ -134,6 +134,10 @@ class QueueService {
     );
 
     console.log(`Queued zkEmail hook for hashed email, Job ID: ${job.id}`);
+    return job.id!;
+  }
+
+  /**
    * Enqueue a ticket purchase notification
    */
   async enqueueTicketPurchaseNotification(
