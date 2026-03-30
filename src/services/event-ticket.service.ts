@@ -278,6 +278,8 @@ export class EventTicketService {
         ticketTypes,
         isPublished,
         attendanceMode,
+        allowAnonymous,
+        requiresVerification,
         ...baseEventData
       } = eventData;
 
@@ -308,6 +310,8 @@ export class EventTicketService {
         availableTickets: totalTickets,
         soldTickets: 0,
         isPublished,
+        allowAnonymous,
+        requiresVerification,
       });
 
       return event;
@@ -386,6 +390,14 @@ export class EventTicketService {
 
       if (eventData.isPublished !== undefined) {
         updateData.isPublished = eventData.isPublished;
+      }
+
+      if (eventData.allowAnonymous !== undefined) {
+        updateData.allowAnonymous = eventData.allowAnonymous;
+      }
+
+      if (eventData.requiresVerification !== undefined) {
+        updateData.requiresVerification = eventData.requiresVerification;
       }
 
       const updatedEvent = await EventTicket.findByIdAndUpdate(

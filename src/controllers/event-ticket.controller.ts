@@ -185,6 +185,8 @@ export const createEventWithPrivacySettings: RequestHandler = async (
         ticketTypes: event.ticketType,
         totalTickets: event.totalTickets,
         isPublished: event.isPublished,
+        allowAnonymous: event.allowAnonymous,
+        requiresVerification: event.requiresVerification,
         createdAt: (event as any).createdAt,
       },
     });
@@ -287,6 +289,8 @@ export const updateEventPrivacySettings: RequestHandler = async (
         totalTickets: updatedEvent.totalTickets,
         availableTickets: updatedEvent.availableTickets,
         isPublished: updatedEvent.isPublished,
+        allowAnonymous: updatedEvent.allowAnonymous,
+        requiresVerification: updatedEvent.requiresVerification,
         updatedAt: (updatedEvent as any).updatedAt,
       },
     });
@@ -366,6 +370,8 @@ export const getEventById: RequestHandler = async (req, res) => {
         hasZkEmailUpdates: event.hasZkEmailUpdates,
         hasEventReminders: event.hasEventReminders,
         isPublished: event.isPublished,
+        allowAnonymous: event.allowAnonymous,
+        requiresVerification: event.requiresVerification,
         createdAt: (event as any).createdAt,
         updatedAt: (event as any).updatedAt,
       },

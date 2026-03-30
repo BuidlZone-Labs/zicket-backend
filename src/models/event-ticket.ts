@@ -31,6 +31,8 @@ export interface IEventTicket extends Document {
   hasZkEmailUpdates?: boolean; // whether user has opted in for zk-email updates
   hasEventReminders?: boolean; // whether user has opted in for event reminders
   isPublished: boolean; // whether the event is published
+  allowAnonymous: boolean; // whether unauthenticated users may purchase tickets
+  requiresVerification: boolean; // whether attendees must have a verified email
 }
 
 const eventTicketSchema = new Schema<IEventTicket>(
@@ -72,6 +74,8 @@ const eventTicketSchema = new Schema<IEventTicket>(
     hasZkEmailUpdates: { type: Boolean, default: false },
     hasEventReminders: { type: Boolean, default: false },
     isPublished: { type: Boolean, default: false },
+    allowAnonymous: { type: Boolean, default: false },
+    requiresVerification: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

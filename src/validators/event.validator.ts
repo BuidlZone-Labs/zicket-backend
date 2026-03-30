@@ -96,6 +96,10 @@ export const CreateEventStepTwoSchema = z
 
     // Publication status
     isPublished: z.boolean().default(false),
+
+    // Privacy configuration
+    allowAnonymous: z.boolean().default(false),
+    requiresVerification: z.boolean().default(false),
   })
   .refine(
     (data) => {
@@ -121,6 +125,20 @@ export const CreateEventStepTwoSchema = z
     {
       message: 'Payment privacy is required for PAID events',
       path: ['paymentPrivacy'],
+    },
+  )
+  .refine(
+    (data) => {
+      // allowAnonymous and requiresVerification are mutually exclusive
+      if (data.allowAnonymous && data.requiresVerification) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'allowAnonymous and requiresVerification cannot both be true',
+      path: ['requiresVerification'],
     },
   );
 
