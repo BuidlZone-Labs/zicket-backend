@@ -61,7 +61,10 @@ export class PaymentVerificationService {
 
     // ── 2b. Privacy enforcement ───────────────────────────────────────────────
     if (!event.allowAnonymous || event.requiresVerification) {
-      const user = await User.findById(userId).select('emailVerifiedAt').lean();
+      const isUserIdValid = mongoose.isValidObjectId(userId);
+      const user = isUserIdValid
+        ? await User.findById(userId).select('emailVerifiedAt').lean()
+        : null;
 
       if (!event.allowAnonymous && !user) {
         return {
