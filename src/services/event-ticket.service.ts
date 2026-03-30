@@ -1,4 +1,5 @@
 import EventTicket, { IEventTicket } from '../models/event-ticket';
+import TicketOrder from '../models/ticket-order';
 import { CreateEventStepTwoInput } from '../validators/event.validator';
 
 export interface EventTicketResponse {
@@ -507,6 +508,53 @@ export class EventTicketService {
     } catch (error) {
       throw new Error(
         `Failed to search event tickets: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * Cancels an event and triggers refunds for all participants
+   * #76: Handle full event cancellation flow
+   */
+  static async cancelEvent(eventId: string): Promise<IEventTicket> {
+    const session = await EventTicket.startSession();
+    session.startTransaction();
+
+    try {
+      const event = await EventTicket.findById(eventId).session(session);
+
+      if (!event) {
+        throw new Error('Event not found');
+      }
+
+      if (event.eventStatus === 'cancelled') {
+        throw new Error('Event is already cancelled');
+      }
+
+      // 1. Mark event cancelled
+      event.eventStatus = 'cancelled';
+      await event.save({ session });
+
+      /**
+       * 2. Trigger refunds
+       * Mark all associated ticket orders as failed (3) to be handled by the refund worker.
+       * In the future, this can trigger a dedicated refund job in the queue.
+       */
+      await TicketOrder.updateMany(
+        { eventTicket: eventId, status: { $ne: 3 } }, // Update all non-failed orders
+        { $set: { status: 3 } },
+        { session },
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return event;
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw new Error(
+        `Failed to cancel event: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
