@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Transaction from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
 import EventTicket from '../models/event-ticket';
+import User from '../models/user';
 import { BlockchainProvider } from '../provider/blockchain.provider';
 
 /**
@@ -56,6 +57,26 @@ export class PaymentVerificationService {
         success: false,
         message: `Only ${event.availableTickets} ticket(s) remaining`,
       };
+    }
+
+    // ── 2b. Privacy enforcement ───────────────────────────────────────────────
+    if (!event.allowAnonymous || event.requiresVerification) {
+      const user = await User.findById(userId).select('emailVerifiedAt').lean();
+
+      if (!event.allowAnonymous && !user) {
+        return {
+          success: false,
+          message: 'Authentication required to purchase tickets for this event',
+        };
+      }
+
+      if (event.requiresVerification && !user?.emailVerifiedAt) {
+        return {
+          success: false,
+          message:
+            'Email verification required to purchase tickets for this event',
+        };
+      }
     }
 
     // ── 3. On-chain verification ──────────────────────────────────────────────
