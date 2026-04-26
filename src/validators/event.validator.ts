@@ -143,3 +143,5 @@ export const CreateEventStepTwoSchema = z
   );
 
 export type CreateEventStepTwoInput = z.infer<typeof CreateEventStepTwoSchema>;
+
+// Contributed via automated bounty system
