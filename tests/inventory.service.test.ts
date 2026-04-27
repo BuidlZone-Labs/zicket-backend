@@ -90,7 +90,7 @@ describe('InventoryService', () => {
 
     it('fails to reserve when event not found', async () => {
       const validEventId = '507f1f77bcf86cd799439011';
-      
+
       // First call (findOneAndUpdate) returns null
       (mockEventTicket.findOneAndUpdate as jest.Mock).mockResolvedValue(null);
       // Second call (findById to check existence) also returns null
@@ -303,10 +303,18 @@ describe('InventoryService', () => {
     it('successfully reserves inventory for multiple events', async () => {
       const validEventId1 = '507f1f77bcf86cd799439011';
       const validEventId2 = '507f1f77bcf86cd799439012';
-      
+
       (mockEventTicket.findOneAndUpdate as jest.Mock)
-        .mockResolvedValueOnce({ _id: createObjectId('event1'), availableTickets: 8, soldTickets: 2 })
-        .mockResolvedValueOnce({ _id: createObjectId('event2'), availableTickets: 15, soldTickets: 5 });
+        .mockResolvedValueOnce({
+          _id: createObjectId('event1'),
+          availableTickets: 8,
+          soldTickets: 2,
+        })
+        .mockResolvedValueOnce({
+          _id: createObjectId('event2'),
+          availableTickets: 15,
+          soldTickets: 5,
+        });
 
       const mockSession = {} as mongoose.ClientSession;
       const reservations = [
@@ -328,10 +336,13 @@ describe('InventoryService', () => {
     it('handles partial failures correctly', async () => {
       const validEventId1 = '507f1f77bcf86cd799439011';
       const validEventId2 = '507f1f77bcf86cd799439012';
-      
+
       // First succeeds, second fails
       (mockEventTicket.findOneAndUpdate as jest.Mock)
-        .mockResolvedValueOnce({ _id: createObjectId('event1'), availableTickets: 8 })
+        .mockResolvedValueOnce({
+          _id: createObjectId('event1'),
+          availableTickets: 8,
+        })
         .mockResolvedValueOnce(null);
 
       (mockEventTicket.findById as jest.Mock).mockReturnValue({
@@ -394,7 +405,7 @@ describe('Concurrent Purchase Scenarios', () => {
     (mockEventTicket.findOneAndUpdate as jest.Mock).mockImplementation(
       (filter) => {
         const requestedQuantity = filter.availableTickets?.$gte || 1;
-        
+
         // Simulate atomic check: only succeed if enough tickets available
         if (availableTickets >= requestedQuantity) {
           availableTickets -= requestedQuantity;
@@ -425,7 +436,7 @@ describe('Concurrent Purchase Scenarios', () => {
     const results = await Promise.all(purchaseAttempts);
 
     const successfulPurchases = results.filter((r) => r.success).length;
-    const totalSold = (10 - availableTickets);
+    const totalSold = 10 - availableTickets;
 
     // Should not oversell: max 3 successful purchases (9 tickets)
     expect(successfulPurchases).toBeLessThanOrEqual(4);
@@ -469,7 +480,9 @@ describe('Concurrent Purchase Scenarios', () => {
       ...Array(5).fill(2), // 5 people buying 2 tickets
       ...Array(3).fill(5), // 3 people buying 5 tickets
       ...Array(2).fill(10), // 2 people buying 10 tickets
-    ].map((qty) => InventoryService.reserveInventory(validEventId, qty as number));
+    ].map((qty) =>
+      InventoryService.reserveInventory(validEventId, qty as number),
+    );
 
     const results = await Promise.all(purchases);
 

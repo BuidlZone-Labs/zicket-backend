@@ -139,11 +139,12 @@ export class WebhookService {
         if (status === 'confirmed') {
           // #80: Confirm inventory deduction using atomic operation
           // Inventory should have been reserved during order creation
-          const confirmResult = await InventoryService.confirmInventoryDeduction(
-            transaction.eventTicket.toString(),
-            order.quantity,
-            session,
-          );
+          const confirmResult =
+            await InventoryService.confirmInventoryDeduction(
+              transaction.eventTicket.toString(),
+              order.quantity,
+              session,
+            );
 
           if (!confirmResult.success) {
             console.warn(

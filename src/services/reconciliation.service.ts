@@ -118,11 +118,12 @@ export class ReconciliationService {
 
             if (chainTx.status === 'confirmed') {
               // #80: Confirm inventory deduction using atomic operation
-              const confirmResult = await InventoryService.confirmInventoryDeduction(
-                tx.eventTicket.toString(),
-                order.quantity,
-                session,
-              );
+              const confirmResult =
+                await InventoryService.confirmInventoryDeduction(
+                  tx.eventTicket.toString(),
+                  order.quantity,
+                  session,
+                );
 
               if (!confirmResult.success) {
                 console.warn(

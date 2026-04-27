@@ -139,6 +139,7 @@ export type ReconciliationJobPayload = ReconcilePayload;
  */
 export const QUEUE_NAMES = {
   EMAIL: 'email-queue',
+  ZKEMAIL: 'zkemail-queue',
   PAYMENT: 'payment-queue', // #81
   RECONCILIATION: 'reconciliation-queue', // #78
   ANALYTICS: 'analytics-queue',

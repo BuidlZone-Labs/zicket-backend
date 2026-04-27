@@ -179,7 +179,10 @@ export class InventoryService {
       return result;
     } finally {
       // Always release the lock
-      await InventoryLockService.releaseLock(eventTicketId, lockResult.lockKey!);
+      await InventoryLockService.releaseLock(
+        eventTicketId,
+        lockResult.lockKey!,
+      );
     }
   }
 

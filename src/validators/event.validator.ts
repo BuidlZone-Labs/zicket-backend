@@ -136,8 +136,7 @@ export const CreateEventStepTwoSchema = z
       return true;
     },
     {
-      message:
-        'allowAnonymous and requiresVerification cannot both be true',
+      message: 'allowAnonymous and requiresVerification cannot both be true',
       path: ['requiresVerification'],
     },
   );

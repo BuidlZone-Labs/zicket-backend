@@ -220,9 +220,7 @@ export class InventoryLockService {
     );
 
     if (!lockResult.success) {
-      throw new Error(
-        `Failed to acquire inventory lock: ${lockResult.error}`,
-      );
+      throw new Error(`Failed to acquire inventory lock: ${lockResult.error}`);
     }
 
     try {

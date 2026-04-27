@@ -5,7 +5,10 @@ import queueService from '../services/queue.service';
 const ZkEmailHookSchema = z.object({
   hashedEmail: z
     .string()
-    .regex(/^[a-f0-9]{64}$/, 'hashedEmail must be a SHA256 hex string (64 lowercase hex characters)'),
+    .regex(
+      /^[a-f0-9]{64}$/,
+      'hashedEmail must be a SHA256 hex string (64 lowercase hex characters)',
+    ),
 });
 
 export const zkEmailHookController: RequestHandler = async (
@@ -18,7 +21,7 @@ export const zkEmailHookController: RequestHandler = async (
     if (!parsed.success) {
       res.status(400).json({
         error: 'Validation failed',
-        message: parsed.error.errors[0].message,
+        message: parsed.error.issues[0].message,
       });
       return;
     }
