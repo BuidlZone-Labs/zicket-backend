@@ -77,15 +77,19 @@ describe('PaymentVerificationService - privacy enforcement', () => {
         allowAnonymous: false,
         requiresVerification: false,
       });
+
+      // Reset and set up mock properly
+      (mockUser.findById as jest.Mock).mockReset();
+      const mockSelect = jest.fn().mockReturnValue({
+        lean: jest.fn().mockResolvedValue({ _id: 'user123' }),
+      });
       (mockUser.findById as jest.Mock).mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue({ _id: 'user123' }),
-        }),
+        select: mockSelect,
       });
 
       const result = await PaymentVerificationService.verifyAndIssueTicket(
         '0xTxHash',
-        'user123',
+        '507f1f77bcf86cd799439011', // valid ObjectId
         'event123',
         'General',
         1,
@@ -104,17 +108,18 @@ describe('PaymentVerificationService - privacy enforcement', () => {
         allowAnonymous: false,
         requiresVerification: true,
       });
+
+      // Reset and set up mock properly - chain select().lean()
+      (mockUser.findById as jest.Mock).mockReset();
       (mockUser.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
-          lean: jest
-            .fn()
-            .mockResolvedValue({ _id: 'user123', emailVerifiedAt: undefined }),
+          lean: jest.fn().mockResolvedValue({ _id: 'user123', emailVerifiedAt: undefined }),
         }),
       });
 
       const result = await PaymentVerificationService.verifyAndIssueTicket(
         '0xTxHash',
-        'user123',
+        '507f1f77bcf86cd799439011', // valid ObjectId
         'event123',
         'General',
         1,
@@ -139,6 +144,9 @@ describe('PaymentVerificationService - privacy enforcement', () => {
         allowAnonymous: false,
         requiresVerification: true,
       });
+
+      // Reset and set up mock properly - chain select().lean()
+      (mockUser.findById as jest.Mock).mockReset();
       (mockUser.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
           lean: jest.fn().mockResolvedValue({
@@ -150,7 +158,7 @@ describe('PaymentVerificationService - privacy enforcement', () => {
 
       const result = await PaymentVerificationService.verifyAndIssueTicket(
         '0xTxHash',
-        'user123',
+        '507f1f77bcf86cd799439011', // valid ObjectId
         'event123',
         'General',
         1,
