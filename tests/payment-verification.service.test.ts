@@ -113,7 +113,9 @@ describe('PaymentVerificationService - privacy enforcement', () => {
       (mockUser.findById as jest.Mock).mockReset();
       (mockUser.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue({ _id: 'user123', emailVerifiedAt: undefined }),
+          lean: jest
+            .fn()
+            .mockResolvedValue({ _id: 'user123', emailVerifiedAt: undefined }),
         }),
       });
 
