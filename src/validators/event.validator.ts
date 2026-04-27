@@ -30,6 +30,8 @@ export const CreateEventStepOneSchema = z
     }),
 
     eventTicketImage: z.string().url('Must be a valid image URL'),
+
+    sessionId: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -100,6 +102,8 @@ export const CreateEventStepTwoSchema = z
     // Privacy configuration
     allowAnonymous: z.boolean().default(false),
     requiresVerification: z.boolean().default(false),
+
+    sessionId: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -136,8 +140,7 @@ export const CreateEventStepTwoSchema = z
       return true;
     },
     {
-      message:
-        'allowAnonymous and requiresVerification cannot both be true',
+      message: 'allowAnonymous and requiresVerification cannot both be true',
       path: ['requiresVerification'],
     },
   );
