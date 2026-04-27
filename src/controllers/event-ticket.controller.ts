@@ -620,10 +620,7 @@ export const scanTicket: RequestHandler = async (
 
     res.status(500).json({
       error: 'Internal server error',
-      message:
-        error instanceof Error
-          ? error.message
-          : 'Failed to scan ticket',
+      message: error instanceof Error ? error.message : 'Failed to scan ticket',
     });
   }
 };
@@ -690,10 +687,7 @@ export const validateTicket: RequestHandler = async (
     res.status(500).json({
       error: 'Internal server error',
       message:
-        error instanceof Error
-          ? error.message
-          : 'Failed to validate ticket',
+        error instanceof Error ? error.message : 'Failed to validate ticket',
     });
   }
 };
-

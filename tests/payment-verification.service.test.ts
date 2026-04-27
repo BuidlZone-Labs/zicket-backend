@@ -66,7 +66,9 @@ describe('PaymentVerificationService - privacy enforcement', () => {
     });
 
     it('proceeds to on-chain verification when user exists', async () => {
-      const { BlockchainProvider } = require('../src/provider/blockchain.provider');
+      const {
+        BlockchainProvider,
+      } = require('../src/provider/blockchain.provider');
       const blockchain = BlockchainProvider.getInstance();
       blockchain.fetchTransaction.mockResolvedValue(null);
 
@@ -104,7 +106,9 @@ describe('PaymentVerificationService - privacy enforcement', () => {
       });
       (mockUser.findById as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnValue({
-          lean: jest.fn().mockResolvedValue({ _id: 'user123', emailVerifiedAt: undefined }),
+          lean: jest
+            .fn()
+            .mockResolvedValue({ _id: 'user123', emailVerifiedAt: undefined }),
         }),
       });
 
@@ -124,7 +128,9 @@ describe('PaymentVerificationService - privacy enforcement', () => {
     });
 
     it('proceeds when user email is verified', async () => {
-      const { BlockchainProvider } = require('../src/provider/blockchain.provider');
+      const {
+        BlockchainProvider,
+      } = require('../src/provider/blockchain.provider');
       const blockchain = BlockchainProvider.getInstance();
       blockchain.fetchTransaction.mockResolvedValue(null);
 
@@ -158,7 +164,9 @@ describe('PaymentVerificationService - privacy enforcement', () => {
 
   describe('allowAnonymous = true', () => {
     it('skips user lookup and proceeds when anonymous purchases are allowed', async () => {
-      const { BlockchainProvider } = require('../src/provider/blockchain.provider');
+      const {
+        BlockchainProvider,
+      } = require('../src/provider/blockchain.provider');
       const blockchain = BlockchainProvider.getInstance();
       blockchain.fetchTransaction.mockResolvedValue(null);
 

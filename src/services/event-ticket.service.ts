@@ -539,9 +539,8 @@ export class EventTicketService {
   }> {
     try {
       // Find the ticket order
-      const ticketOrder = await TicketOrder.findById(ticketOrderId).populate(
-        'eventTicket',
-      );
+      const ticketOrder =
+        await TicketOrder.findById(ticketOrderId).populate('eventTicket');
 
       if (!ticketOrder) {
         return {
@@ -589,7 +588,10 @@ export class EventTicketService {
       }
 
       // Event should be ongoing or completed for validation
-      if (event.eventStatus !== 'ongoing' && event.eventStatus !== 'completed') {
+      if (
+        event.eventStatus !== 'ongoing' &&
+        event.eventStatus !== 'completed'
+      ) {
         return {
           success: false,
           message: `Event is ${event.eventStatus}, tickets can only be scanned during ongoing or completed events`,
@@ -642,9 +644,8 @@ export class EventTicketService {
   }> {
     try {
       // Find the ticket order
-      const ticketOrder = await TicketOrder.findById(ticketOrderId).populate(
-        'eventTicket',
-      );
+      const ticketOrder =
+        await TicketOrder.findById(ticketOrderId).populate('eventTicket');
 
       if (!ticketOrder) {
         return {
@@ -692,7 +693,10 @@ export class EventTicketService {
       }
 
       // Event should be ongoing or completed for validation
-      if (event.eventStatus !== 'ongoing' && event.eventStatus !== 'completed') {
+      if (
+        event.eventStatus !== 'ongoing' &&
+        event.eventStatus !== 'completed'
+      ) {
         return {
           valid: false,
           message: `Event is ${event.eventStatus}, tickets can only be validated during ongoing or completed events`,
@@ -719,4 +723,3 @@ export class EventTicketService {
     }
   }
 }
-
