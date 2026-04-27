@@ -2,10 +2,10 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Transaction from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
-import EventTicket from '../models/event-ticket';
+import InventoryService from './inventory.service';
 
 /**
- * #81 — Payment Webhook / Listener Service
+ * #81 #80 — Payment Webhook / Listener Service with Inventory Locking
  *
  * Designed to receive POST events from any blockchain webhook provider
  * (Alchemy Notify, Moralis Streams, QuickNode Streams, custom indexer, etc.)
@@ -137,17 +137,20 @@ export class WebhookService {
         );
 
         if (status === 'confirmed') {
-          // Confirm seat deductions
-          await EventTicket.findByIdAndUpdate(
-            transaction.eventTicket,
-            {
-              $inc: {
-                availableTickets: -order.quantity,
-                soldTickets: order.quantity,
-              },
-            },
-            { session },
+          // #80: Confirm inventory deduction using atomic operation
+          // Inventory should have been reserved during order creation
+          const confirmResult = await InventoryService.confirmInventoryDeduction(
+            transaction.eventTicket.toString(),
+            order.quantity,
+            session,
           );
+
+          if (!confirmResult.success) {
+            console.warn(
+              `[WebhookService] Inventory confirmation issue for order ${order._id}: ${confirmResult.error}`,
+            );
+            // Continue processing - don't fail the webhook due to confirmation issues
+          }
         }
       }
 

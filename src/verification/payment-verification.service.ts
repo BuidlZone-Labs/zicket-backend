@@ -4,15 +4,18 @@ import TicketOrder from '../models/ticket-order';
 import EventTicket from '../models/event-ticket';
 import User from '../models/user';
 import { BlockchainProvider } from '../provider/blockchain.provider';
+import InventoryService from '../services/inventory.service';
 
 /**
- * #75 — Wallet Payment Verification
+ * #75 #80 — Wallet Payment Verification with Distributed Inventory Locking
  *
  * Flow:
  *  1. Guard against replay (duplicate txHash)
- *  2. Confirm event exists + has enough available tickets
+ *  2. Confirm event exists
  *  3. Fetch tx from chain, check confirmations & recipient
- *  4. Atomically create Transaction + TicketOrder + decrement availability
+ *  4. Atomically reserve inventory, create Transaction + TicketOrder
+ *
+ * Uses atomic findOneAndUpdate with $gte condition to prevent overselling.
  */
 
 export interface VerificationResult {
@@ -47,16 +50,10 @@ export class PaymentVerificationService {
       return { success: false, message: 'Transaction already processed' };
     }
 
-    // ── 2. Event existence + availability ────────────────────────────────────
+    // ── 2. Event existence ──────────────────────────────────────────────────
     const event = await EventTicket.findById(eventTicketId);
     if (!event) {
       return { success: false, message: 'Event not found' };
-    }
-    if (event.availableTickets < quantity) {
-      return {
-        success: false,
-        message: `Only ${event.availableTickets} ticket(s) remaining`,
-      };
     }
 
     // ── 2b. Privacy enforcement ───────────────────────────────────────────────
@@ -116,11 +113,27 @@ export class PaymentVerificationService {
       };
     }
 
-    // ── 4. Atomic DB writes ───────────────────────────────────────────────────
+    // ── 4. Atomic inventory reservation + DB writes ─────────────────────────
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
+      // #80: Reserve inventory atomically with distributed locking
+      // This prevents race conditions and ensures no overselling
+      const inventoryResult = await InventoryService.reserveInventory(
+        eventTicketId,
+        quantity,
+        session,
+      );
+
+      if (!inventoryResult.success) {
+        await session.abortTransaction();
+        return {
+          success: false,
+          message: inventoryResult.error || 'Failed to reserve tickets',
+        };
+      }
+
       // Create completed transaction record
       const [transaction] = await Transaction.create(
         [
@@ -153,13 +166,6 @@ export class PaymentVerificationService {
             datePurchased: new Date(),
           },
         ],
-        { session },
-      );
-
-      // Decrement available / increment sold (atomic)
-      await EventTicket.findByIdAndUpdate(
-        eventTicketId,
-        { $inc: { availableTickets: -quantity, soldTickets: quantity } },
         { session },
       );
 
