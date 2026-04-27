@@ -557,3 +557,143 @@ export const searchEventTickets: RequestHandler = async (req, res) => {
     });
   }
 };
+
+/**
+ * Scans and validates a ticket for entry
+ * Marks the ticket as used to prevent reuse
+ * POST /api/event-tickets/scan
+ */
+export const scanTicket: RequestHandler = async (
+  req: UserAuthenticatedReq,
+  res,
+) => {
+  try {
+    const { ticketId } = req.body;
+
+    if (!ticketId || typeof ticketId !== 'string' || ticketId.trim() === '') {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'Ticket ID is required',
+      });
+    }
+
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'User authentication required',
+      });
+    }
+
+    // Scan and validate ticket
+    const result = await EventTicketService.scanTicket(
+      ticketId.trim(),
+      userId.toString(),
+    );
+
+    if (!result.success) {
+      const statusCode =
+        result.error === 'TICKET_NOT_FOUND' ||
+        result.error === 'EVENT_NOT_FOUND'
+          ? 404
+          : result.error === 'OWNERSHIP_MISMATCH'
+            ? 403
+            : result.error === 'TICKET_ALREADY_USED'
+              ? 409
+              : 400;
+
+      return res.status(statusCode).json({
+        success: false,
+        message: result.message,
+        error: result.error,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.ticket,
+    });
+  } catch (error) {
+    console.error('Error scanning ticket:', error);
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to scan ticket',
+    });
+  }
+};
+
+/**
+ * Validates a ticket without marking it as used (read-only validation)
+ * POST /api/event-tickets/validate
+ */
+export const validateTicket: RequestHandler = async (
+  req: UserAuthenticatedReq,
+  res,
+) => {
+  try {
+    const { ticketId } = req.body;
+
+    if (!ticketId || typeof ticketId !== 'string' || ticketId.trim() === '') {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'Ticket ID is required',
+      });
+    }
+
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'User authentication required',
+      });
+    }
+
+    // Validate ticket without marking as used
+    const result = await EventTicketService.validateTicket(
+      ticketId.trim(),
+      userId.toString(),
+    );
+
+    if (!result.valid) {
+      const statusCode =
+        result.error === 'TICKET_NOT_FOUND' ||
+        result.error === 'EVENT_NOT_FOUND'
+          ? 404
+          : result.error === 'OWNERSHIP_MISMATCH'
+            ? 403
+            : result.error === 'TICKET_ALREADY_USED'
+              ? 409
+              : 400;
+
+      return res.status(statusCode).json({
+        valid: false,
+        message: result.message,
+        error: result.error,
+      });
+    }
+
+    res.status(200).json({
+      valid: true,
+      message: result.message,
+      data: result.ticket,
+    });
+  } catch (error) {
+    console.error('Error validating ticket:', error);
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to validate ticket',
+    });
+  }
+};
+

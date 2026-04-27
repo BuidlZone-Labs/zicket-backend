@@ -1,4 +1,5 @@
 import EventTicket, { IEventTicket } from '../models/event-ticket';
+import TicketOrder, { ITicketOrder } from '../models/ticket-order';
 import { CreateEventStepTwoInput } from '../validators/event.validator';
 
 export interface EventTicketResponse {
@@ -522,4 +523,200 @@ export class EventTicketService {
       );
     }
   }
+
+  /**
+   * Validates and scans a ticket for entry
+   * Checks: ownership, status, reuse prevention, and event status
+   */
+  static async scanTicket(
+    ticketOrderId: string,
+    userId: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    ticket?: any;
+    error?: string;
+  }> {
+    try {
+      // Find the ticket order
+      const ticketOrder = await TicketOrder.findById(ticketOrderId).populate(
+        'eventTicket',
+      );
+
+      if (!ticketOrder) {
+        return {
+          success: false,
+          message: 'Ticket not found',
+          error: 'TICKET_NOT_FOUND',
+        };
+      }
+
+      // 1. Validate ownership
+      if (ticketOrder.user.toString() !== userId) {
+        return {
+          success: false,
+          message: 'You do not own this ticket',
+          error: 'OWNERSHIP_MISMATCH',
+        };
+      }
+
+      // 2. Validate ticket status (must be completed = 1)
+      if (ticketOrder.status !== 1) {
+        return {
+          success: false,
+          message: 'Ticket purchase is not completed',
+          error: 'INVALID_TICKET_STATUS',
+        };
+      }
+
+      // 3. Prevent reuse (check if already used)
+      if (ticketOrder.isUsed) {
+        return {
+          success: false,
+          message: 'This ticket has already been used',
+          error: 'TICKET_ALREADY_USED',
+        };
+      }
+
+      // 4. Validate event status
+      const event = ticketOrder.eventTicket as any;
+      if (!event) {
+        return {
+          success: false,
+          message: 'Event not found',
+          error: 'EVENT_NOT_FOUND',
+        };
+      }
+
+      // Event should be ongoing or completed for validation
+      if (event.eventStatus !== 'ongoing' && event.eventStatus !== 'completed') {
+        return {
+          success: false,
+          message: `Event is ${event.eventStatus}, tickets can only be scanned during ongoing or completed events`,
+          error: 'INVALID_EVENT_STATUS',
+        };
+      }
+
+      // 5. Mark ticket as used
+      const updatedTicket = await TicketOrder.findByIdAndUpdate(
+        ticketOrderId,
+        {
+          $set: {
+            isUsed: true,
+            usedAt: new Date(),
+          },
+        },
+        { new: true },
+      ).populate('eventTicket');
+
+      return {
+        success: true,
+        message: 'Ticket successfully scanned and marked as used',
+        ticket: {
+          id: updatedTicket?._id,
+          eventName: updatedTicket?.eventName,
+          ticketType: updatedTicket?.ticketType,
+          usedAt: updatedTicket?.usedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Ticket validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error: 'VALIDATION_ERROR',
+      };
+    }
+  }
+
+  /**
+   * Validates a ticket without marking it as used (read-only validation)
+   */
+  static async validateTicket(
+    ticketOrderId: string,
+    userId: string,
+  ): Promise<{
+    valid: boolean;
+    message: string;
+    ticket?: any;
+    error?: string;
+  }> {
+    try {
+      // Find the ticket order
+      const ticketOrder = await TicketOrder.findById(ticketOrderId).populate(
+        'eventTicket',
+      );
+
+      if (!ticketOrder) {
+        return {
+          valid: false,
+          message: 'Ticket not found',
+          error: 'TICKET_NOT_FOUND',
+        };
+      }
+
+      // 1. Validate ownership
+      if (ticketOrder.user.toString() !== userId) {
+        return {
+          valid: false,
+          message: 'You do not own this ticket',
+          error: 'OWNERSHIP_MISMATCH',
+        };
+      }
+
+      // 2. Validate ticket status (must be completed = 1)
+      if (ticketOrder.status !== 1) {
+        return {
+          valid: false,
+          message: 'Ticket purchase is not completed',
+          error: 'INVALID_TICKET_STATUS',
+        };
+      }
+
+      // 3. Check reuse (cannot use already used tickets)
+      if (ticketOrder.isUsed) {
+        return {
+          valid: false,
+          message: 'This ticket has already been used',
+          error: 'TICKET_ALREADY_USED',
+        };
+      }
+
+      // 4. Validate event status
+      const event = ticketOrder.eventTicket as any;
+      if (!event) {
+        return {
+          valid: false,
+          message: 'Event not found',
+          error: 'EVENT_NOT_FOUND',
+        };
+      }
+
+      // Event should be ongoing or completed for validation
+      if (event.eventStatus !== 'ongoing' && event.eventStatus !== 'completed') {
+        return {
+          valid: false,
+          message: `Event is ${event.eventStatus}, tickets can only be validated during ongoing or completed events`,
+          error: 'INVALID_EVENT_STATUS',
+        };
+      }
+
+      return {
+        valid: true,
+        message: 'Ticket is valid and ready to be scanned',
+        ticket: {
+          id: ticketOrder._id,
+          eventName: ticketOrder.eventName,
+          ticketType: ticketOrder.ticketType,
+          owner: ticketOrder.user,
+        },
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        message: `Ticket validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error: 'VALIDATION_ERROR',
+      };
+    }
+  }
 }
+
