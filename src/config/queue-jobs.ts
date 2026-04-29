@@ -8,6 +8,7 @@ export enum EmailJobType {
   SEND_EMAIL = 'SEND_EMAIL',
   SEND_TICKET_PURCHASE_NOTIFICATION = 'SEND_TICKET_PURCHASE_NOTIFICATION',
   SEND_TICKET_UPDATE_NOTIFICATION = 'SEND_TICKET_UPDATE_NOTIFICATION',
+  SEND_EVENT_CANCELLATION_NOTIFICATION = 'SEND_EVENT_CANCELLATION_NOTIFICATION',
 }
 
 export interface SendVerificationOtpPayload {
@@ -47,6 +48,13 @@ export interface SendTicketUpdateNotificationPayload {
   privacyLevel: string;
 }
 
+export interface SendEventCancellationNotificationPayload {
+  userEmail: string;
+  userName: string;
+  eventName: string;
+  reason?: string;
+}
+
 /**
  * Union type for all email job payloads
  */
@@ -55,7 +63,8 @@ export type EmailJobPayload =
   | SendMagicLinkPayload
   | SendEmailPayload
   | SendTicketPurchaseNotificationPayload
-  | SendTicketUpdateNotificationPayload;
+  | SendTicketUpdateNotificationPayload
+  | SendEventCancellationNotificationPayload;
 
 /**
  * Email job result
