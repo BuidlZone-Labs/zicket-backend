@@ -7,6 +7,7 @@ export interface ITransaction extends Document {
   transactionDate: Date; // date of the transaction
   status: string; // e.g., pending, completed, failed
   transactionId: string; // unique identifier from service gateway
+  idempotencyKey?: string; // unique idempotency key for safe retries
 }
 
 const transactionSchema = new Schema<ITransaction>(
@@ -26,9 +27,13 @@ const transactionSchema = new Schema<ITransaction>(
       default: 'pending',
     },
     transactionId: { type: String, required: true, unique: true },
+    idempotencyKey: { type: String, sparse: true, unique: true },
   },
   { timestamps: true },
 );
+
+// Compound index for duplicate detection: (user + eventTicket + transactionId)
+transactionSchema.index({ user: 1, eventTicket: 1, transactionId: 1 }, { unique: true });
 
 const Transaction = mongoose.model<ITransaction>(
   'Transaction',

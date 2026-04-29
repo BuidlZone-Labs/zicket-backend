@@ -16,6 +16,7 @@ export interface ITicketOrder extends Document {
   privacyLevel: string;
   hasReceipt: boolean;
   datePurchased: Date;
+  idempotencyKey?: string; // unique idempotency key for duplicate prevention
 }
 
 const ticketOrderSchema = new Schema<ITicketOrder>(
@@ -40,6 +41,7 @@ const ticketOrderSchema = new Schema<ITicketOrder>(
     privacyLevel: { type: String, required: true },
     hasReceipt: { type: Boolean, default: false },
     datePurchased: { type: Date, default: Date.now },
+    idempotencyKey: { type: String, sparse: true, unique: true },
   },
   { timestamps: true },
 );
