@@ -21,7 +21,7 @@ export const zkEmailHookController: RequestHandler = async (
     if (!parsed.success) {
       res.status(400).json({
         error: 'Validation failed',
-        message: parsed.error.errors[0].message,
+        message: parsed.error.issues[0].message,
       });
       return;
     }
