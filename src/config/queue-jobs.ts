@@ -103,6 +103,33 @@ export interface ProcessWebhookEventPayload {
 export type PaymentJobPayload = ProcessWebhookEventPayload;
 
 /**
+ * zkEmail Job Types and Payload Interfaces
+ */
+
+export enum ZkEmailJobType {
+  ZK_EMAIL_HOOK = 'ZK_EMAIL_HOOK',
+}
+
+export interface ZkEmailHookPayload {
+  hashedEmail: string;
+}
+
+export type ZkEmailJobPayload = ZkEmailHookPayload;
+
+export interface ZkEmailJobResult {
+  success: boolean;
+  jobId?: string;
+  error?: string;
+  timestamp: Date;
+}
+
+/**
+ * Queue names
+ */
+// Queue names are defined in the consolidated QUEUE_NAMES object below.
+// (Removed duplicate partial QUEUE_NAMES definition.)
+
+/**
  * #78 — Reconciliation queue job types
  */
 export enum ReconciliationJobType {
