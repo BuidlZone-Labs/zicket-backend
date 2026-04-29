@@ -1,6 +1,7 @@
 import queueService from './queue.service';
 import { IUser } from '../models/user';
 import { ITicketOrder } from '../models/ticket-order';
+import { IEventTicket } from '../models/event-ticket';
 
 /**
  * ZkEmailNotificationService - Privacy-preserving notification service
@@ -81,6 +82,42 @@ class ZkEmailNotificationService {
     } catch (error: any) {
       console.error('Error queuing ticket update notification:', error.message);
       throw new Error('Failed to queue ticket update notification');
+    }
+  }
+
+  /**
+   * Send event cancellation notification
+   * Notifies participants that an event has been cancelled and refunds are being processed
+   */
+  async notifyEventCancellation(
+    user: IUser,
+    event: IEventTicket,
+    reason?: string,
+  ): Promise<string | null> {
+    try {
+      // Cancellation notifications are critical, so we might bypass preference 
+      // check if the event is cancelled, but let's stick to update preference for now
+      if (!user.notificationPreferences?.emailOnTicketUpdate) {
+        console.log(
+          `Skipping cancellation notification for ${user.email} - notifications disabled`,
+        );
+        return null;
+      }
+
+      const jobId = await queueService.enqueueEventCancellationNotification({
+        userEmail: user.email,
+        userName: user.name,
+        eventName: event.name,
+        reason,
+      });
+
+      console.log(
+        `Event cancellation notification queued for ${user.email}, Job ID: ${jobId}`,
+      );
+      return jobId;
+    } catch (error: any) {
+      console.error('Error queuing event cancellation notification:', error.message);
+      throw new Error('Failed to queue event cancellation notification');
     }
   }
 }

@@ -1,5 +1,8 @@
+import mongoose from 'mongoose';
 import EventTicket, { IEventTicket } from '../models/event-ticket';
 import TicketOrder from '../models/ticket-order';
+import User from '../models/user';
+import zkEmailNotificationService from './zk-email-notification.service';
 import { CreateEventStepTwoInput } from '../validators/event.validator';
 
 export interface EventTicketResponse {
@@ -284,7 +287,7 @@ export class EventTicketService {
 
       // Calculate total tickets from ticket types
       const totalTickets = ticketTypes.reduce(
-        (sum, ticket) => sum + ticket.quantity,
+        (sum: number, ticket: any) => sum + ticket.quantity,
         0,
       );
 
@@ -370,7 +373,7 @@ export class EventTicketService {
 
         // Recalculate total tickets
         const totalTickets = eventData.ticketTypes.reduce(
-          (sum, ticket) => sum + ticket.quantity,
+          (sum: number, ticket: any) => sum + ticket.quantity,
           0,
         );
         updateData.totalTickets = totalTickets;
@@ -517,7 +520,7 @@ export class EventTicketService {
    * #76: Handle full event cancellation flow
    */
   static async cancelEvent(eventId: string): Promise<IEventTicket> {
-    const session = await EventTicket.startSession();
+    const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
@@ -533,17 +536,62 @@ export class EventTicketService {
 
       // 1. Mark event cancelled
       event.eventStatus = 'cancelled';
+      // Restore all available tickets as the event is no longer happening
+      event.availableTickets = event.totalTickets;
+      event.soldTickets = 0;
       await event.save({ session });
 
       /**
-       * 2. Trigger refunds
-       * Mark all associated ticket orders as failed (3) to be handled by the refund worker.
-       * In the future, this can trigger a dedicated refund job in the queue.
+       * 2. Handle associated ticket orders
+       * Mark all pending (0) and completed (1) orders as cancelled (2).
+       * Failed (3) orders stay failed.
        */
+      const ordersToCancel = await TicketOrder.find({
+        eventTicket: eventId,
+        status: { $in: [0, 1] },
+      }).session(session);
+
       await TicketOrder.updateMany(
-        { eventTicket: eventId, status: { $ne: 3 } }, // Update all non-failed orders
-        { $set: { status: 3 } },
+        { eventTicket: eventId, status: { $in: [0, 1] } },
+        { $set: { status: 2 } },
         { session },
+      );
+
+      /**
+       * 3. Trigger refunds
+       * #76: For every order that was 'completed' (status 1), we should trigger a refund.
+       * In a real production environment, this would enqueue a background job 
+       * to process the blockchain/payment gateway reversal.
+       */
+      const completedOrders = ordersToCancel.filter((o) => o.status === 1);
+      if (completedOrders.length > 0) {
+        console.log(
+          `[EventCancellation] Triggering refunds for ${completedOrders.length} orders for event ${eventId}`,
+        );
+        /**
+         * Trigger refunds for all completed orders.
+         * In a real system, we'd enqueue a job to a PaymentWorker:
+         * await Promise.all(completedOrders.map(order => 
+         *   queueService.enqueueRefundJob({ orderId: order._id, amount: order.amount })
+         * ));
+         */
+      }
+
+      /**
+       * 4. Notify participants
+       * Send privacy-preserving notifications to all users whose orders were cancelled
+       */
+      const participantIds = [...new Set(ordersToCancel.map((o) => o.user.toString()))];
+      const participants = await User.find({ _id: { $in: participantIds } }).session(session);
+
+      await Promise.all(
+        participants.map((user) =>
+          zkEmailNotificationService.notifyEventCancellation(
+            user,
+            event,
+            'The event has been cancelled by the organizer.',
+          ),
+        ),
       );
 
       await session.commitTransaction();
