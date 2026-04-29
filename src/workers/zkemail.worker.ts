@@ -55,7 +55,10 @@ class ZkEmailWorker {
 
       switch (jobType) {
         case ZkEmailJobType.ZK_EMAIL_HOOK:
-          return this.processZkEmailHook(job.data as ZkEmailHookPayload, job.id!);
+          return this.processZkEmailHook(
+            job.data as ZkEmailHookPayload,
+            job.id!,
+          );
 
         default:
           throw new Error(`Unknown zkEmail job type: ${jobType}`);
@@ -95,12 +98,17 @@ class ZkEmailWorker {
       };
 
       await new Promise<void>((resolve, reject) => {
-        const lib = url.protocol === 'https:' ? require('https') : require('http');
+        const lib =
+          url.protocol === 'https:' ? require('https') : require('http');
         const req = lib.request(options, (res: any) => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             resolve();
           } else {
-            reject(new Error(`zkEmail relay responded with status ${res.statusCode}`));
+            reject(
+              new Error(
+                `zkEmail relay responded with status ${res.statusCode}`,
+              ),
+            );
           }
           res.resume();
         });
