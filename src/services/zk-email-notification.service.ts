@@ -95,7 +95,7 @@ class ZkEmailNotificationService {
     reason?: string,
   ): Promise<string | null> {
     try {
-      // Cancellation notifications are critical, so we might bypass preference 
+      // Cancellation notifications are critical, so we might bypass preference
       // check if the event is cancelled, but let's stick to update preference for now
       if (!user.notificationPreferences?.emailOnTicketUpdate) {
         console.log(
@@ -116,7 +116,10 @@ class ZkEmailNotificationService {
       );
       return jobId;
     } catch (error: any) {
-      console.error('Error queuing event cancellation notification:', error.message);
+      console.error(
+        'Error queuing event cancellation notification:',
+        error.message,
+      );
       throw new Error('Failed to queue event cancellation notification');
     }
   }

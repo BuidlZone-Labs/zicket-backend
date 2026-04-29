@@ -23,7 +23,7 @@ describe('EventTicketService - cancelEvent', () => {
   const mockAbortTransaction = jest.fn().mockResolvedValue(undefined);
   const mockCommitTransaction = jest.fn().mockResolvedValue(undefined);
   const mockStartTransaction = jest.fn().mockResolvedValue(undefined);
-  
+
   const mockSession = {
     startTransaction: mockStartTransaction,
     commitTransaction: mockCommitTransaction,
@@ -67,7 +67,9 @@ describe('EventTicketService - cancelEvent', () => {
       session: jest.fn().mockResolvedValue(mockOrders),
     });
 
-    (TicketOrder.updateMany as jest.Mock).mockResolvedValue({ modifiedCount: 2 });
+    (TicketOrder.updateMany as jest.Mock).mockResolvedValue({
+      modifiedCount: 2,
+    });
 
     (User.find as jest.Mock).mockReturnValue({
       session: jest.fn().mockResolvedValue(mockUsers),
@@ -84,10 +86,12 @@ describe('EventTicketService - cancelEvent', () => {
     expect(TicketOrder.updateMany).toHaveBeenCalledWith(
       { eventTicket: eventId, status: { $in: [0, 1] } },
       { $set: { status: 2 } },
-      { session: mockSession }
+      { session: mockSession },
     );
 
-    expect(zkEmailNotificationService.notifyEventCancellation).toHaveBeenCalledTimes(1);
+    expect(
+      zkEmailNotificationService.notifyEventCancellation,
+    ).toHaveBeenCalledTimes(1);
     expect(mockCommitTransaction).toHaveBeenCalled();
     expect(result.eventStatus).toBe('cancelled');
   });
@@ -97,7 +101,9 @@ describe('EventTicketService - cancelEvent', () => {
       session: jest.fn().mockResolvedValue(null),
     });
 
-    await expect(EventTicketService.cancelEvent(eventId)).rejects.toThrow('Event not found');
+    await expect(EventTicketService.cancelEvent(eventId)).rejects.toThrow(
+      'Event not found',
+    );
     expect(mockAbortTransaction).toHaveBeenCalled();
   });
 
@@ -110,6 +116,8 @@ describe('EventTicketService - cancelEvent', () => {
       session: jest.fn().mockResolvedValue(mockEvent),
     });
 
-    await expect(EventTicketService.cancelEvent(eventId)).rejects.toThrow('Event is already cancelled');
+    await expect(EventTicketService.cancelEvent(eventId)).rejects.toThrow(
+      'Event is already cancelled',
+    );
   });
 });

@@ -560,7 +560,7 @@ export class EventTicketService {
       /**
        * 3. Trigger refunds
        * #76: For every order that was 'completed' (status 1), we should trigger a refund.
-       * In a real production environment, this would enqueue a background job 
+       * In a real production environment, this would enqueue a background job
        * to process the blockchain/payment gateway reversal.
        */
       const completedOrders = ordersToCancel.filter((o) => o.status === 1);
@@ -571,7 +571,7 @@ export class EventTicketService {
         /**
          * Trigger refunds for all completed orders.
          * In a real system, we'd enqueue a job to a PaymentWorker:
-         * await Promise.all(completedOrders.map(order => 
+         * await Promise.all(completedOrders.map(order =>
          *   queueService.enqueueRefundJob({ orderId: order._id, amount: order.amount })
          * ));
          */
@@ -581,8 +581,12 @@ export class EventTicketService {
        * 4. Notify participants
        * Send privacy-preserving notifications to all users whose orders were cancelled
        */
-      const participantIds = [...new Set(ordersToCancel.map((o) => o.user.toString()))];
-      const participants = await User.find({ _id: { $in: participantIds } }).session(session);
+      const participantIds = [
+        ...new Set(ordersToCancel.map((o) => o.user.toString())),
+      ];
+      const participants = await User.find({
+        _id: { $in: participantIds },
+      }).session(session);
 
       await Promise.all(
         participants.map((user) =>
