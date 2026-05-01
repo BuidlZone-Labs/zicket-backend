@@ -3,15 +3,17 @@ import Transaction from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
 import EventTicket from '../models/event-ticket';
 import User from '../models/user';
-import { BlockchainProvider } from '../provider/blockchain.provider';
+import { PaymentVerificationService as Verifier } from '../services/paymentVerification.service';
 
 /**
- * #75 — Wallet Payment Verification
+ * Orchestrates payment verification (delegated to PaymentVerificationService)
+ * followed by atomic ticket issuance.
  *
  * Flow:
- *  1. Guard against replay (duplicate txHash)
- *  2. Confirm event exists + has enough available tickets
- *  3. Fetch tx from chain, check confirmations & recipient
+ *  1. Validate event existence + availability
+ *  2. Privacy enforcement
+ *  3. Delegate on-chain verification to PaymentVerificationService.verify()
+ *     — replay protection, finality, recipient, value checks all happen there
  *  4. Atomically create Transaction + TicketOrder + decrement availability
  */
 
@@ -41,13 +43,7 @@ export class PaymentVerificationService {
     quantity: number,
     expectedAmountUsd: number,
   ): Promise<VerificationResult> {
-    // ── 1. Replay guard ───────────────────────────────────────────────────────
-    const existing = await Transaction.findOne({ transactionId: txHash });
-    if (existing) {
-      return { success: false, message: 'Transaction already processed' };
-    }
-
-    // ── 2. Event existence + availability ────────────────────────────────────
+    // ── 1. Event existence + availability ────────────────────────────────────
     const event = await EventTicket.findById(eventTicketId);
     if (!event) {
       return { success: false, message: 'Event not found' };
@@ -59,7 +55,7 @@ export class PaymentVerificationService {
       };
     }
 
-    // ── 2b. Privacy enforcement ───────────────────────────────────────────────
+    // ── 2. Privacy enforcement ────────────────────────────────────────────────
     if (!event.allowAnonymous || event.requiresVerification) {
       const isUserIdValid = mongoose.isValidObjectId(userId);
       const user = isUserIdValid
@@ -82,46 +78,20 @@ export class PaymentVerificationService {
       }
     }
 
-    // ── 3. On-chain verification ──────────────────────────────────────────────
-    const blockchain = BlockchainProvider.getInstance();
-    const chainTx = await blockchain.fetchTransaction(txHash);
-
-    if (!chainTx) {
-      return { success: false, message: 'Transaction not found on chain' };
-    }
-
-    if (chainTx.status === 'failed') {
-      return { success: false, message: 'Transaction failed on chain' };
-    }
-
-    if (chainTx.status === 'pending') {
-      return {
-        success: false,
-        message: `Transaction is still pending (0 confirmations). Please try again shortly.`,
-      };
-    }
-
-    if (chainTx.confirmations < blockchain.getMinConfirmations()) {
-      return {
-        success: false,
-        message: `Transaction needs ${blockchain.getMinConfirmations()} confirmations, currently has ${chainTx.confirmations}`,
-      };
-    }
-
-    // Ensure payment was sent to the platform wallet, not a random address
-    if (chainTx.to !== blockchain.getPlatformWallet()) {
-      return {
-        success: false,
-        message: 'Payment was not sent to the platform wallet',
-      };
-    }
+    // ── 3. On-chain verification (throws on failure) ──────────────────────────
+    // PaymentVerificationError → permanent failure (wrong recipient, replay, etc.)
+    // ServiceUnavailableError  → transient RPC failure (caller should retry)
+    await Verifier.verify({
+      txHash,
+      expectedAmountUsd,
+      orderRef: eventTicketId,
+    });
 
     // ── 4. Atomic DB writes ───────────────────────────────────────────────────
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      // Create completed transaction record
       const [transaction] = await Transaction.create(
         [
           {
@@ -136,7 +106,6 @@ export class PaymentVerificationService {
         { session },
       );
 
-      // Create completed ticket order
       const [order] = await TicketOrder.create(
         [
           {
@@ -144,7 +113,7 @@ export class PaymentVerificationService {
             eventTicket: new mongoose.Types.ObjectId(eventTicketId),
             ticketType,
             eventName: event.name,
-            status: 1, // completed
+            status: 1,
             quantity,
             amount: expectedAmountUsd,
             zkIdMatch: false,
@@ -156,7 +125,6 @@ export class PaymentVerificationService {
         { session },
       );
 
-      // Decrement available / increment sold (atomic)
       await EventTicket.findByIdAndUpdate(
         eventTicketId,
         { $inc: { availableTickets: -quantity, soldTickets: quantity } },
@@ -173,9 +141,7 @@ export class PaymentVerificationService {
       };
     } catch (error) {
       await session.abortTransaction();
-      throw new Error(
-        `Payment verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+      throw error;
     } finally {
       session.endSession();
     }
