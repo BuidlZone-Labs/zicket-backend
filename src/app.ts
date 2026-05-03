@@ -11,6 +11,7 @@ import mediaRoutes from './routes/media.route';
 import ticketOrderRoutes from './routes/ticket-order.route';
 import queueMonitorRoutes from './routes/queue-monitor.route';
 import zkEmailRoutes from './routes/zkemail.route';
+import { globalErrorHandler } from './middlewares/errorHandler';
 
 const app = express();
 
@@ -37,43 +38,6 @@ app.use('/api', queueMonitorRoutes);
 app.use('/zkemail', authLimiter, zkEmailRoutes);
 app.use(protectedRoute);
 
-app.use(
-  (
-    err: any,
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ) => {
-    if (err.status === 429) {
-      return res.status(429).json({
-        error: 'Too many requests',
-        message: err.message || 'Rate limit exceeded',
-        retryAfter: err.retryAfter || 60,
-      });
-    }
-
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Image must be less than 5MB',
-      });
-    }
-
-    if (
-      err.message &&
-      /Unsupported file type|Invalid image type/.test(err.message)
-    ) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: err.message,
-      });
-    }
-
-    console.error('Server error:', err);
-    res.status(err.status || 500).json({
-      error: 'Internal server error',
-    });
-  },
-);
+app.use(globalErrorHandler);
 
 export default app;
