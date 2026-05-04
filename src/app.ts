@@ -25,6 +25,16 @@ app.get('/', (req, res) => {
   res.send('Welcome to Zicket API');
 });
 
+// Health check endpoint (Issue #97)
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    service: 'zicket-backend',
+  });
+});
+
 app.use('/auth', authLimiter);
 
 app.use('/auth', authRoute);
@@ -40,4 +50,4 @@ app.use(protectedRoute);
 
 app.use(globalErrorHandler);
 
-export default app;
+export default app; 
