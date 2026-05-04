@@ -3,18 +3,19 @@ import Transaction from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
 import EventTicket from '../models/event-ticket';
 import User from '../models/user';
+import InventoryService from '../services/inventory.service';
 import { PaymentVerificationService as Verifier } from '../services/paymentVerification.service';
 
 /**
  * Orchestrates payment verification (delegated to PaymentVerificationService)
- * followed by atomic ticket issuance.
+ * followed by atomic, lock-protected ticket issuance.
  *
  * Flow:
  *  1. Validate event existence + availability
  *  2. Privacy enforcement
  *  3. Delegate on-chain verification to PaymentVerificationService.verify()
  *     — replay protection, finality, recipient, value checks all happen there
- *  4. Atomically create Transaction + TicketOrder + decrement availability
+ *  4. Atomically reserve inventory, then create Transaction + TicketOrder
  */
 
 export interface VerificationResult {
@@ -48,12 +49,6 @@ export class PaymentVerificationService {
     if (!event) {
       return { success: false, message: 'Event not found' };
     }
-    if (event.availableTickets < quantity) {
-      return {
-        success: false,
-        message: `Only ${event.availableTickets} ticket(s) remaining`,
-      };
-    }
 
     // ── 2. Privacy enforcement ────────────────────────────────────────────────
     if (!event.allowAnonymous || event.requiresVerification) {
@@ -78,20 +73,47 @@ export class PaymentVerificationService {
       }
     }
 
-    // ── 3. On-chain verification (throws on failure) ──────────────────────────
-    // PaymentVerificationError → permanent failure (wrong recipient, replay, etc.)
-    // ServiceUnavailableError  → transient RPC failure (caller should retry)
-    await Verifier.verify({
-      txHash,
-      expectedAmountUsd,
-      orderRef: eventTicketId,
-    });
+    // ── 3. On-chain verification ──────────────────────────────────────────────
+    // Normalize delegated verifier failures to stable API messages.
+    try {
+      await Verifier.verify({
+        txHash,
+        expectedAmountUsd,
+        orderRef: eventTicketId,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Verification failed';
 
-    // ── 4. Atomic DB writes ───────────────────────────────────────────────────
+      if (message.toLowerCase().includes('not found on chain')) {
+        return { success: false, message: 'Transaction not found on chain' };
+      }
+
+      return { success: false, message };
+    }
+
+    // ── 4. Atomic inventory reservation + DB writes ─────────────────────────
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
+      // #80: Reserve inventory atomically with distributed locking
+      // This prevents race conditions and ensures no overselling
+      const inventoryResult =
+        await InventoryService.reserveInventoryTransactional(
+          eventTicketId,
+          quantity,
+          session,
+        );
+
+      if (!inventoryResult.success) {
+        await session.abortTransaction();
+        return {
+          success: false,
+          message: inventoryResult.error || 'Failed to reserve tickets',
+        };
+      }
+
       const [transaction] = await Transaction.create(
         [
           {
@@ -122,12 +144,6 @@ export class PaymentVerificationService {
             datePurchased: new Date(),
           },
         ],
-        { session },
-      );
-
-      await EventTicket.findByIdAndUpdate(
-        eventTicketId,
-        { $inc: { availableTickets: -quantity, soldTickets: quantity } },
         { session },
       );
 

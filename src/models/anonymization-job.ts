@@ -21,7 +21,10 @@ const anonymizationJobSchema = new Schema<IAnonymizationJob>(
 );
 
 // TTL index: automatically expire anonymization records after 90 days
-anonymizationJobSchema.index({ createdAt: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
+anonymizationJobSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 90 * 24 * 60 * 60 },
+);
 
 const AnonymizationJob = mongoose.model<IAnonymizationJob>(
   'AnonymizationJob',

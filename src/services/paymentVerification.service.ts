@@ -1,6 +1,9 @@
 import Transaction from '../models/transaction';
 import { BlockchainProvider } from '../provider/blockchain.provider';
-import { PaymentVerificationError, ServiceUnavailableError } from '../errors/AppError';
+import {
+  PaymentVerificationError,
+  ServiceUnavailableError,
+} from '../errors/AppError';
 
 export interface VerifyRequest {
   txHash: string;
@@ -31,12 +34,7 @@ async function withRpcRetry<T>(
       await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
     }
     try {
-      const result = await Promise.race([
-        fn(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('RPC timeout')), RPC_TIMEOUT_MS),
-        ),
-      ]);
+      const result = await withRpcTimeout(fn, RPC_TIMEOUT_MS);
       return result;
     } catch (err) {
       lastErr = err;
@@ -49,6 +47,27 @@ async function withRpcRetry<T>(
   throw new ServiceUnavailableError(
     `Payment verification service is temporarily unavailable after ${RETRY_DELAYS_MS.length} attempts. Please try again shortly.`,
   );
+}
+
+async function withRpcTimeout<T>(
+  fn: () => Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+
+  try {
+    return await Promise.race([
+      fn(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('RPC timeout')), timeoutMs);
+        timer.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+  }
 }
 
 export class PaymentVerificationService {
@@ -67,7 +86,7 @@ export class PaymentVerificationService {
     const expectedRecipient = req.expectedRecipient;
 
     // ── 1. Replay guard ───────────────────────────────────────────────────────
-    const existing = await Transaction.findOne({ transactionId: txHash }).lean();
+    const existing = await Transaction.findOne({ transactionId: txHash });
     if (existing) {
       throw new PaymentVerificationError(
         `Transaction ${txHash} has already been used to fulfill order ${existing.eventTicket}.`,

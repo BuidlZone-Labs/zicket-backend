@@ -16,7 +16,10 @@ const tempDataSchema = new Schema<ITempData>(
 );
 
 // TTL index: automatically expire temporary data after 7 days
-tempDataSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60 });
+tempDataSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 7 * 24 * 60 * 60 },
+);
 
 const TempData = mongoose.model<ITempData>('TempData', tempDataSchema);
 export default TempData;
