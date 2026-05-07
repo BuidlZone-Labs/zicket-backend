@@ -7,6 +7,8 @@ import {
   updateEventPrivacySettings,
   getEventById,
   searchEventTickets,
+  scanTicket,
+  validateTicket,
 } from '../controllers/event-ticket.controller';
 import { authGuard } from '../middlewares/auth';
 
@@ -14,6 +16,12 @@ const eventTicketRoutes = Router();
 
 // GET /api/event-tickets/trending - Fetch trending event tickets
 eventTicketRoutes.get('/trending', getTrendingEventTickets);
+
+// POST /api/event-tickets/scan - Scan and validate ticket for entry
+eventTicketRoutes.post('/scan', authGuard, scanTicket);
+
+// POST /api/event-tickets/validate - Validate ticket without marking as used
+eventTicketRoutes.post('/validate', authGuard, validateTicket);
 
 // GET /api/event-tickets - Fetch paginated event tickets
 eventTicketRoutes.get('/', getEventTickets);
