@@ -622,8 +622,9 @@ export class EventTicketService {
       throw new Error(
         `Failed to cancel event: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
-
-   * Validates and scans a ticket for entry
+    }
+  }
+  /** Validates and scans a ticket for entry
    * Checks: ownership, status, reuse prevention, and event status
    */
   static async scanTicket(
