@@ -152,7 +152,6 @@ export const QUEUE_NAMES = {
   PAYMENT: 'payment-queue', // #81
   RECONCILIATION: 'reconciliation-queue', // #78
   ANALYTICS: 'analytics-queue',
-  ZKEMAIL: 'zkemail-queue',
 } as const;
 
 /**
