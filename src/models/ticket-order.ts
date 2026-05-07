@@ -9,7 +9,7 @@ export interface ITicketOrder extends Document {
   eventTicket: mongoose.Types.ObjectId;
   ticketType: string;
   eventName: string;
-  status: number; // 0 for pending, 1 for completed, 3 for failed
+  status: number; // 0 for pending, 1 for completed, 2 for cancelled, 3 for failed, 4 for refunded
   quantity: number;
   amount: number;
   zkIdMatch: boolean;
@@ -32,7 +32,7 @@ const ticketOrderSchema = new Schema<ITicketOrder>(
     eventName: { type: String, required: true },
     status: {
       type: Number,
-      enum: [0, 1, 3],
+      enum: [0, 1, 2, 3, 4],
       default: 0,
       required: true,
     },

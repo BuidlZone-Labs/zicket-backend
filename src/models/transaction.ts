@@ -22,7 +22,7 @@ const transactionSchema = new Schema<ITransaction>(
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'completed', 'failed'],
+      enum: ['pending', 'completed', 'failed', 'cancelled', 'refunded'],
       default: 'pending',
     },
     transactionId: { type: String, required: true, unique: true },
