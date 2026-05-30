@@ -1,3 +1,4 @@
+import './utils/logger';
 import express from 'express';
 import protectedRoute from './routes/protected.route';
 import otpRoute from './routes/otp.route';
