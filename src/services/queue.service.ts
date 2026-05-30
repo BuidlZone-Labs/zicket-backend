@@ -7,6 +7,7 @@ import {
   ZkEmailJobPayload,
   SendTicketPurchaseNotificationPayload,
   SendTicketUpdateNotificationPayload,
+  SendEventCancellationNotificationPayload,
   QUEUE_NAMES,
 } from '../config/queue-jobs';
 
@@ -185,6 +186,30 @@ class QueueService {
 
     console.log(
       `Queued ticket update notification for ${payload.userEmail}, Job ID: ${job.id}`,
+    );
+    return job.id!;
+  }
+
+  /**
+   * Enqueue an event cancellation notification
+   */
+  async enqueueEventCancellationNotification(
+    payload: SendEventCancellationNotificationPayload,
+  ): Promise<string> {
+    if (!this.emailQueue) {
+      throw new Error('Queue not initialized');
+    }
+
+    const job = await this.emailQueue.add(
+      EmailJobType.SEND_EVENT_CANCELLATION_NOTIFICATION,
+      payload as EmailJobPayload,
+      {
+        jobId: `cancellation-${payload.userEmail}-${Date.now()}`,
+      },
+    );
+
+    console.log(
+      `Queued event cancellation notification for ${payload.userEmail}, Job ID: ${job.id}`,
     );
     return job.id!;
   }

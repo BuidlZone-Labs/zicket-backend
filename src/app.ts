@@ -50,4 +50,4 @@ app.use(protectedRoute);
 
 app.use(globalErrorHandler);
 
-export default app; 
+export default app;
