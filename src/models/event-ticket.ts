@@ -33,6 +33,7 @@ export interface IEventTicket extends Document {
   isPublished: boolean; // whether the event is published
   allowAnonymous: boolean; // whether unauthenticated users may purchase tickets
   requiresVerification: boolean; // whether attendees must have a verified email
+  __v?: number; // Mongoose version key for optimistic locking
 }
 
 const eventTicketSchema = new Schema<IEventTicket>(

@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 import Transaction from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
-import EventTicket from '../models/event-ticket';
 import { BlockchainProvider } from '../provider/blockchain.provider';
+import InventoryService from './inventory.service';
 
 /**
- * #78 — Blockchain Transaction Reconciliation Service
+ * #78 #80 — Blockchain Transaction Reconciliation Service with Inventory Locking
  *
  * Runs as a periodic BullMQ job (see workers/reconciliation.worker.ts).
  * Finds any pending Transaction that's been sitting for longer than
@@ -117,16 +117,19 @@ export class ReconciliationService {
             );
 
             if (chainTx.status === 'confirmed') {
-              await EventTicket.findByIdAndUpdate(
-                tx.eventTicket,
-                {
-                  $inc: {
-                    availableTickets: -order.quantity,
-                    soldTickets: order.quantity,
-                  },
-                },
-                { session },
-              );
+              // #80: Confirm inventory deduction using atomic operation
+              const confirmResult =
+                await InventoryService.confirmInventoryDeduction(
+                  tx.eventTicket.toString(),
+                  order.quantity,
+                  session,
+                );
+
+              if (!confirmResult.success) {
+                console.warn(
+                  `[ReconciliationService] Inventory confirmation issue for order ${order._id}: ${confirmResult.error}`,
+                );
+              }
               report.confirmed++;
             } else {
               report.failed++;
