@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import { TicketOrderService } from '../services/ticket-order.service';
 import { PaymentVerificationService } from '../verification/payment-verification.service';
 import { UserAuthenticatedReq } from '../utils/types';
+import { getIdempotencyKey } from '../middlewares/idempotency';
 
 /**
  * Controller for Ticket Orders and Payments transparency
@@ -146,6 +147,7 @@ export const verifyPayment: RequestHandler = async (
     }
 
     // ── Payment verification ──────────────────────────────────────────────────
+    const idempotencyKey = getIdempotencyKey(req);
     const result = await PaymentVerificationService.verifyAndIssueTicket(
       txHash.trim(),
       userId.toString(),
@@ -153,6 +155,7 @@ export const verifyPayment: RequestHandler = async (
       ticketType,
       parsedQty,
       parsedAmount,
+      idempotencyKey,
     );
 
     if (!result.success) {
@@ -165,6 +168,7 @@ export const verifyPayment: RequestHandler = async (
     res.status(200).json({
       success: true,
       message: result.message,
+      isRetry: result.isRetry,
       data: {
         transactionId: result.transactionId,
         orderId: result.orderId,

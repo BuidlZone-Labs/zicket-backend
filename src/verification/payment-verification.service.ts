@@ -23,11 +23,13 @@ export interface VerificationResult {
   transactionId?: string;
   orderId?: string;
   message: string;
+  isRetry?: boolean; // indicates if this was a retry of a successful payment
 }
 
 export class PaymentVerificationService {
   /**
    * Verify an on-chain transaction and issue a ticket if everything checks out.
+   * Supports idempotency for safe retries.
    *
    * @param txHash             Blockchain transaction hash submitted by the user
    * @param userId             Authenticated user's MongoDB ID
@@ -35,6 +37,7 @@ export class PaymentVerificationService {
    * @param ticketType         e.g. "VIP", "General"
    * @param quantity           Number of tickets requested
    * @param expectedAmountUsd  Amount we expect to have been paid (stored in DB)
+   * @param idempotencyKey     Optional idempotency key for duplicate prevention
    */
   static async verifyAndIssueTicket(
     txHash: string,
@@ -43,8 +46,38 @@ export class PaymentVerificationService {
     ticketType: string,
     quantity: number,
     expectedAmountUsd: number,
+    idempotencyKey?: string,
   ): Promise<VerificationResult> {
-    // ── 1. Event existence + availability ────────────────────────────────────
+    // ── 1. Idempotency guard: check if this request was already processed ─────
+    if (idempotencyKey) {
+      const existingByKey = await Transaction.findOne({ idempotencyKey });
+      if (existingByKey) {
+        // Same idempotency key was used before — return the cached result
+        const order = await TicketOrder.findOne({
+          idempotencyKey,
+        });
+        return {
+          success: true,
+          transactionId: (existingByKey._id as any).toString(),
+          orderId: (order?._id as any).toString(),
+          message: 'Payment already verified for this request (idempotency match)',
+          isRetry: true,
+        };
+      }
+    }
+
+    // ── 2. Replay guard: check by txHash ──────────────────────────────────────
+    const existing = await Transaction.findOne({ transactionId: txHash });
+    if (existing) {
+      // Warn: txHash was already processed but with a different idempotency key
+      // This could indicate an attack or network retry. Still reject to prevent double charge.
+      return {
+        success: false,
+        message: 'Transaction already processed (txHash replay detected)',
+      };
+    }
+
+    // ── 3. Event existence + availability ────────────────────────────────────
     const event = await EventTicket.findById(eventTicketId);
     if (!event) {
       return { success: false, message: 'Event not found' };
@@ -123,11 +156,13 @@ export class PaymentVerificationService {
             transactionDate: new Date(),
             status: 'completed',
             transactionId: txHash,
+            idempotencyKey: idempotencyKey || undefined,
           },
         ],
         { session },
       );
 
+      // Create completed ticket order with idempotency key
       const [order] = await TicketOrder.create(
         [
           {
@@ -142,6 +177,7 @@ export class PaymentVerificationService {
             privacyLevel: String(event.privacyLevel),
             hasReceipt: event.offerReceipts ?? false,
             datePurchased: new Date(),
+            idempotencyKey: idempotencyKey || undefined,
           },
         ],
         { session },

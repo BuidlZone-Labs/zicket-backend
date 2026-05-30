@@ -16,6 +16,7 @@ export interface ITicketOrder extends Document {
   privacyLevel: string;
   hasReceipt: boolean;
   datePurchased: Date;
+  idempotencyKey?: string; // unique idempotency key for duplicate prevention
   isUsed?: boolean; // Track if ticket has been scanned/used
   usedAt?: Date; // Timestamp when ticket was scanned
 }
@@ -42,6 +43,7 @@ const ticketOrderSchema = new Schema<ITicketOrder>(
     privacyLevel: { type: String, required: true },
     hasReceipt: { type: Boolean, default: false },
     datePurchased: { type: Date, default: Date.now },
+    idempotencyKey: { type: String, sparse: true, unique: true },
     isUsed: { type: Boolean, default: false },
     usedAt: { type: Date, default: null },
   },
