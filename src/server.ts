@@ -1,5 +1,5 @@
 import app from './app';
-import config from './config/config';
+import config, { validateEnv } from './config/config';
 import { mongoConnect } from './config/db.mongo';
 import queueService from './services/queue.service';
 import emailWorker from './workers/email.worker';
@@ -7,6 +7,9 @@ import zkEmailWorker from './workers/zkemail.worker';
 
 async function startServer() {
   try {
+    // Validate required environment variables
+    validateEnv();
+
     // Connect to MongoDB
     await mongoConnect();
     console.log('✓ MongoDB connected');
