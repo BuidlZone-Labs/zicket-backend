@@ -1,4 +1,5 @@
 import { Queue, Worker } from 'bullmq';
+import crypto from 'crypto';
 import { redisConfig, queueConfig } from '../config/queue';
 import {
   EmailJobType,
@@ -57,11 +58,12 @@ class QueueService {
       throw new Error('Queue not initialized');
     }
 
+    const emailHash = crypto.createHash('sha256').update(email).digest('hex').slice(0, 12);
     const job = await this.emailQueue.add(
       EmailJobType.SEND_VERIFICATION_OTP,
       { email, otp } as EmailJobPayload,
       {
-        jobId: `otp-${email}-${Date.now()}`,
+        jobId: `otp-${emailHash}-${Date.now()}`,
       },
     );
 
@@ -79,11 +81,12 @@ class QueueService {
       throw new Error('Queue not initialized');
     }
 
+    const emailHash = crypto.createHash('sha256').update(email).digest('hex').slice(0, 12);
     const job = await this.emailQueue.add(
       EmailJobType.SEND_MAGIC_LINK,
       { email, token } as EmailJobPayload,
       {
-        jobId: `magic-${email}-${Date.now()}`,
+        jobId: `magic-${emailHash}-${Date.now()}`,
       },
     );
 
@@ -104,11 +107,12 @@ class QueueService {
       throw new Error('Queue not initialized');
     }
 
+    const toHash = crypto.createHash('sha256').update(to).digest('hex').slice(0, 12);
     const job = await this.emailQueue.add(
       EmailJobType.SEND_EMAIL,
       { to, subject, html, text } as EmailJobPayload,
       {
-        jobId: `email-${to}-${Date.now()}`,
+        jobId: `email-${toHash}-${Date.now()}`,
       },
     );
 
@@ -152,11 +156,12 @@ class QueueService {
       throw new Error('Queue not initialized');
     }
 
+    const userEmailHash = crypto.createHash('sha256').update(payload.userEmail).digest('hex').slice(0, 12);
     const job = await this.emailQueue.add(
       EmailJobType.SEND_TICKET_PURCHASE_NOTIFICATION,
       payload as EmailJobPayload,
       {
-        jobId: `purchase-${payload.userEmail}-${Date.now()}`,
+        jobId: `purchase-${userEmailHash}-${Date.now()}`,
       },
     );
 
@@ -176,11 +181,12 @@ class QueueService {
       throw new Error('Queue not initialized');
     }
 
+    const userEmailHash = crypto.createHash('sha256').update(payload.userEmail).digest('hex').slice(0, 12);
     const job = await this.emailQueue.add(
       EmailJobType.SEND_TICKET_UPDATE_NOTIFICATION,
       payload as EmailJobPayload,
       {
-        jobId: `update-${payload.userEmail}-${Date.now()}`,
+        jobId: `update-${userEmailHash}-${Date.now()}`,
       },
     );
 

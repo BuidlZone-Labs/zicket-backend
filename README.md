@@ -70,6 +70,23 @@ Tests are written using Jest and live inside the src/tests directory.
 
 ---
 
+## **Logging & Security**
+
+- **Centralized sanitizer**: A structured logger is initialized at startup in `src/utils/logger.ts`. It overrides console methods to emit JSON logs with fields `{ timestamp, level, message, data }`.
+- **What is masked**: Email addresses (e.g. `alice@example.com` → `a***e@example.com`) and 0x wallet addresses (e.g. `0x1234...abcd`) are automatically redacted in log messages and object payloads.
+- **Queue job IDs**: Queue job IDs no longer embed raw emails — `src/services/queue.service.ts` uses a short SHA256-based hash for job identifiers.
+- **Known remaining item**: The rate limiter currently uses `email` in its key generator (`src/middlewares/rateLimiter.ts`). Consider hashing or omitting emails there if you prefer zero-email storage in logs/keys.
+- **Verification**: Run the test suite and a small demo to verify masking:
+
+```bash
+npm run build
+npm test
+npx ts-node src/scripts/log-demo.ts
+```
+
+If you want logs integrated with a production logger (pino/winston) while keeping sanitization, we can add that next.
+
+
 <br>
 
 # 🤝 Contributing
