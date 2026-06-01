@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/user';
+import zkOrchestratorService from '../services/zk-orchestrator.service';
 import { generateAccessToken } from '../utils/token';
 import dotenv from 'dotenv';
 
@@ -42,6 +43,15 @@ passport.use(
               emailVerifiedAt: new Date(),
             });
           }
+        }
+
+        try {
+          await zkOrchestratorService.orchestrateForUser(user);
+        } catch (error: any) {
+          console.error(
+            'zk orchestration failed during Google auth:',
+            error.message || error,
+          );
         }
 
         return done(null, user);

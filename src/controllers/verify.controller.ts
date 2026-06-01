@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import User from '../models/user';
+import zkOrchestratorService from '../services/zk-orchestrator.service';
 
 export const verifyAccountController: RequestHandler = async (req, res) => {
   try {
@@ -38,6 +39,15 @@ export const verifyAccountController: RequestHandler = async (req, res) => {
     user.otpExpires = undefined;
     user.emailVerifiedAt = new Date();
     await user.save();
+
+    try {
+      await zkOrchestratorService.orchestrateForUser(user);
+    } catch (error: any) {
+      console.error(
+        'zk orchestration failed during account verification:',
+        error.message || error,
+      );
+    }
 
     res.status(200).json({ message: 'Account verified successfully' });
   } catch (error: any) {
