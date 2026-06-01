@@ -56,3 +56,21 @@ export class ServiceUnavailableError extends AppError {
     super(message, 503, 'SERVICE_UNAVAILABLE');
   }
 }
+
+export class TransactionStateError extends AppError {
+  readonly txHash: string;
+  readonly currentState: string;
+  readonly attemptedEvent: string;
+
+  constructor(
+    message: string,
+    txHash: string,
+    currentState: string,
+    attemptedEvent: string,
+  ) {
+    super(message, 409, 'INVALID_STATE_TRANSITION');
+    this.txHash = txHash;
+    this.currentState = currentState;
+    this.attemptedEvent = attemptedEvent;
+  }
+}
