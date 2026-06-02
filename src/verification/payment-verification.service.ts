@@ -5,6 +5,11 @@ import EventTicket from '../models/event-ticket';
 import User from '../models/user';
 import InventoryService from '../services/inventory.service';
 import { PaymentVerificationService as Verifier } from '../services/paymentVerification.service';
+import {
+  ZkIntegrationOrchestrator,
+  ZkProofPayload,
+  ZkProviderType,
+} from '../services/zk-orchestrator.service';
 
 /**
  * Orchestrates payment verification (delegated to PaymentVerificationService)
@@ -47,6 +52,8 @@ export class PaymentVerificationService {
     quantity: number,
     expectedAmountUsd: number,
     idempotencyKey?: string,
+    zkProofPayload?: ZkProofPayload,
+    zkProvider?: ZkProviderType,
   ): Promise<VerificationResult> {
     // ── 1. Idempotency guard: check if this request was already processed ─────
     if (idempotencyKey) {
@@ -60,7 +67,8 @@ export class PaymentVerificationService {
           success: true,
           transactionId: (existingByKey._id as any).toString(),
           orderId: (order?._id as any).toString(),
-          message: 'Payment already verified for this request (idempotency match)',
+          message:
+            'Payment already verified for this request (idempotency match)',
           isRetry: true,
         };
       }
@@ -97,12 +105,35 @@ export class PaymentVerificationService {
         };
       }
 
-      if (event.requiresVerification && !user?.emailVerifiedAt) {
-        return {
-          success: false,
-          message:
-            'Email verification required to purchase tickets for this event',
-        };
+      if (event.requiresVerification) {
+        let isVerified = !!user?.emailVerifiedAt;
+
+        // If not verified but provided a ZK Proof, try to verify on the fly
+        if (!isVerified && zkProofPayload && zkProvider) {
+          const zkResult = await ZkIntegrationOrchestrator.verifyIdentity({
+            userId,
+            provider: zkProvider,
+            proofPayload: zkProofPayload,
+            allowFallback: false, // Block async fallback in the middle of a synchronous payment
+          });
+
+          if (zkResult.success) {
+            isVerified = true;
+          } else {
+            return {
+              success: false,
+              message: `ZK Verification failed: ${zkResult.message}`,
+            };
+          }
+        }
+
+        if (!isVerified) {
+          return {
+            success: false,
+            message:
+              'Email verification required to purchase tickets for this event',
+          };
+        }
       }
     }
 
@@ -173,7 +204,7 @@ export class PaymentVerificationService {
             status: 1,
             quantity,
             amount: expectedAmountUsd,
-            zkIdMatch: false,
+            zkIdMatch: !!zkProofPayload,
             privacyLevel: String(event.privacyLevel),
             hasReceipt: event.offerReceipts ?? false,
             datePurchased: new Date(),
