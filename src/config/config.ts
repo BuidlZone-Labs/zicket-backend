@@ -2,6 +2,27 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const REQUIRED_ENV_VARS = [
+  'MONGO_URI',
+  'JWT_SECRET',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'GOOGLE_CALLBACK_URL',
+  'FRONTEND_URL',
+  'EMAIL_USER',
+  'EMAIL_PASSWORD',
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET',
+] as const;
+
+export function validateEnv(): void {
+  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+}
+
 interface Config {
   port: number;
   nodeEnv: string;

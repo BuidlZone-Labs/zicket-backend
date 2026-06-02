@@ -7,6 +7,7 @@ import {
 } from '../utils/token';
 import emailService from '../services/email.service';
 import { generateToken } from '../config/passport';
+import zkOrchestratorService from '../services/zk-orchestrator.service';
 
 export const requestMagicLinkController: RequestHandler = async (req, res) => {
   try {
@@ -102,6 +103,15 @@ export const verifyMagicLinkController: RequestHandler = async (req, res) => {
     }
 
     await user.save();
+
+    try {
+      await zkOrchestratorService.orchestrateForUser(user);
+    } catch (error: any) {
+      console.error(
+        'zk orchestration failed during magic link verification:',
+        error.message || error,
+      );
+    }
 
     console.log(
       `Magic link verified for ${user.email} from IP: ${req.ip} at ${new Date().toISOString()}`,
