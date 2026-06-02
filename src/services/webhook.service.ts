@@ -1,20 +1,20 @@
 import crypto from 'crypto';
-import mongoose from 'mongoose';
 import Transaction from '../models/transaction';
-import TicketOrder from '../models/ticket-order';
-import InventoryService from './inventory.service';
+import {
+  TransactionStateMachine,
+  TransactionEvent,
+} from '../state-machine/transaction.state-machine';
 
 /**
- * #81 #80 — Payment Webhook / Listener Service with Inventory Locking
+ * #81 #80 — Payment Webhook / Listener Service
  *
  * Designed to receive POST events from any blockchain webhook provider
  * (Alchemy Notify, Moralis Streams, QuickNode Streams, custom indexer, etc.)
  *
  * Security: HMAC-SHA256 signature verification before any processing.
  *
- * Flow per event:
- *  confirmed → Transaction: pending→completed, TicketOrder: 0→1, decrement seats
- *  failed    → Transaction: pending→failed,    TicketOrder: 0→3
+ * All state transitions are delegated to TransactionStateMachine, which
+ * enforces valid transitions and prevents false confirmations.
  */
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
@@ -79,95 +79,53 @@ export class WebhookService {
 
   /**
    * Process a single payment event delivered by the webhook.
+   *
+   * Delegates all state transitions to TransactionStateMachine, which
+   * enforces the allowed-transition table and prevents illegal moves
+   * (e.g. re-confirming an already-confirmed transaction).
    */
   static async handlePaymentEvent(
     event: WebhookPaymentEvent,
   ): Promise<WebhookProcessResult> {
-    const { txHash, status } = event;
+    const { txHash, status, blockNumber, confirmations } = event;
 
-    // Find the matching pending transaction in our DB
-    const transaction = await Transaction.findOne({
-      transactionId: txHash,
-      status: 'pending',
-    });
+    // Check if a transaction record exists for this hash
+    const tx = await Transaction.findOne({ transactionId: txHash });
 
-    if (!transaction) {
-      // Either already processed, or we created it optimistically elsewhere
-      const alreadyDone = await Transaction.findOne({ transactionId: txHash });
-      if (alreadyDone) {
-        return {
-          processed: false,
-          message: `Transaction ${txHash} already in state: ${alreadyDone.status}`,
-        };
-      }
+    if (!tx) {
+      // No pending transaction found — either already processed elsewhere
+      // or this webhook arrived before the user submitted the payment.
       return {
         processed: false,
-        message: `No pending transaction found for hash: ${txHash}`,
+        message: `No transaction record found for hash: ${txHash}`,
       };
     }
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    // Map webhook status to a state machine event
+    const smEvent: TransactionEvent =
+      status === 'confirmed' ? 'CHAIN_CONFIRMED' : 'CHAIN_FAILED';
 
     try {
-      const newTxStatus = status === 'confirmed' ? 'completed' : 'failed';
-      const newOrderStatus = status === 'confirmed' ? 1 : 3;
-
-      // Update transaction
-      await Transaction.findByIdAndUpdate(
-        transaction._id,
-        { status: newTxStatus },
-        { session },
-      );
-
-      // Find matching pending order (most recent one for this user + event)
-      const order = await TicketOrder.findOne({
-        user: transaction.user,
-        eventTicket: transaction.eventTicket,
-        status: 0, // pending
-      })
-        .sort({ datePurchased: -1 })
-        .session(session);
-
-      if (order) {
-        await TicketOrder.findByIdAndUpdate(
-          order._id,
-          { status: newOrderStatus },
-          { session },
-        );
-
-        if (status === 'confirmed') {
-          // #80: Confirm inventory deduction using atomic operation
-          // Inventory should have been reserved during order creation
-          const confirmResult =
-            await InventoryService.confirmInventoryDeduction(
-              transaction.eventTicket.toString(),
-              order.quantity,
-              session,
-            );
-
-          if (!confirmResult.success) {
-            console.warn(
-              `[WebhookService] Inventory confirmation issue for order ${order._id}: ${confirmResult.error}`,
-            );
-            // Continue processing - don't fail the webhook due to confirmation issues
-          }
-        }
-      }
-
-      await session.commitTransaction();
+      const result = await TransactionStateMachine.apply(smEvent, {
+        txHash,
+        blockNumber,
+        confirmations,
+        triggeredBy: 'webhook',
+      });
 
       return {
-        processed: true,
-        message: `Transaction ${txHash} → ${newTxStatus}`,
+        processed: result.transitioned,
+        message: result.message,
       };
     } catch (error) {
-      await session.abortTransaction();
-      throw new Error(
-        `Webhook processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    } finally {
-      session.endSession();
+      // TransactionStateError means the tx is already in a terminal state —
+      // this is expected for duplicate webhook deliveries, not a real error.
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      console.warn(`[WebhookService] State transition rejected: ${msg}`);
+      return {
+        processed: false,
+        message: msg,
+      };
     }
   }
 

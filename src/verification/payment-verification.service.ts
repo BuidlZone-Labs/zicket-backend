@@ -10,6 +10,7 @@ import {
   ZkProofPayload,
   ZkProviderType,
 } from '../services/zk-orchestrator.service';
+import { TransactionStateMachine } from '../state-machine/transaction.state-machine';
 
 /**
  * Orchestrates payment verification (delegated to PaymentVerificationService)
@@ -20,7 +21,8 @@ import {
  *  2. Privacy enforcement
  *  3. Delegate on-chain verification to PaymentVerificationService.verify()
  *     — replay protection, finality, recipient, value checks all happen there
- *  4. Atomically reserve inventory, then create Transaction + TicketOrder
+ *  4. Create Transaction (pending) + TicketOrder (pending) atomically
+ *  5. Apply CHAIN_CONFIRMED via TransactionStateMachine → moves both to terminal state
  */
 
 export interface VerificationResult {
@@ -77,8 +79,7 @@ export class PaymentVerificationService {
     // ── 2. Replay guard: check by txHash ──────────────────────────────────────
     const existing = await Transaction.findOne({ transactionId: txHash });
     if (existing) {
-      // Warn: txHash was already processed but with a different idempotency key
-      // This could indicate an attack or network retry. Still reject to prevent double charge.
+      // txHash was already processed — reject to prevent double charge.
       return {
         success: false,
         message: 'Transaction already processed (txHash replay detected)',
@@ -91,7 +92,7 @@ export class PaymentVerificationService {
       return { success: false, message: 'Event not found' };
     }
 
-    // ── 2. Privacy enforcement ────────────────────────────────────────────────
+    // ── 4. Privacy enforcement ────────────────────────────────────────────────
     if (!event.allowAnonymous || event.requiresVerification) {
       const isUserIdValid = mongoose.isValidObjectId(userId);
       const user = isUserIdValid
@@ -137,10 +138,10 @@ export class PaymentVerificationService {
       }
     }
 
-    // ── 3. On-chain verification ──────────────────────────────────────────────
-    // Normalize delegated verifier failures to stable API messages.
+    // ── 5. On-chain verification ──────────────────────────────────────────────
+    let chainResult;
     try {
-      await Verifier.verify({
+      chainResult = await Verifier.verify({
         txHash,
         expectedAmountUsd,
         orderRef: eventTicketId,
@@ -156,13 +157,15 @@ export class PaymentVerificationService {
       return { success: false, message };
     }
 
-    // ── 4. Atomic inventory reservation + DB writes ─────────────────────────
+    // ── 6. Atomic: reserve inventory + create pending records ────────────────
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    let transaction: any;
+    let order: any;
+
     try {
-      // #80: Reserve inventory atomically with distributed locking
-      // This prevents race conditions and ensures no overselling
+      // Reserve inventory atomically with distributed locking
       const inventoryResult =
         await InventoryService.reserveInventoryTransactional(
           eventTicketId,
@@ -178,30 +181,32 @@ export class PaymentVerificationService {
         };
       }
 
-      const [transaction] = await Transaction.create(
+      // Create Transaction in 'pending' state — state machine will confirm it
+      [transaction] = await Transaction.create(
         [
           {
             user: new mongoose.Types.ObjectId(userId),
             eventTicket: new mongoose.Types.ObjectId(eventTicketId),
             amount: expectedAmountUsd,
             transactionDate: new Date(),
-            status: 'completed',
+            status: 'pending',
             transactionId: txHash,
             idempotencyKey: idempotencyKey || undefined,
+            confirmations: chainResult.confirmations,
           },
         ],
         { session },
       );
 
-      // Create completed ticket order with idempotency key
-      const [order] = await TicketOrder.create(
+      // Create TicketOrder in pending state (status: 0)
+      [order] = await TicketOrder.create(
         [
           {
             user: new mongoose.Types.ObjectId(userId),
             eventTicket: new mongoose.Types.ObjectId(eventTicketId),
             ticketType,
             eventName: event.name,
-            status: 1,
+            status: 0, // pending — state machine will move to 1
             quantity,
             amount: expectedAmountUsd,
             zkIdMatch: !!zkProofPayload,
@@ -215,18 +220,36 @@ export class PaymentVerificationService {
       );
 
       await session.commitTransaction();
-
-      return {
-        success: true,
-        transactionId: (transaction._id as any).toString(),
-        orderId: (order._id as any).toString(),
-        message: 'Payment verified and ticket issued successfully',
-      };
     } catch (error) {
       await session.abortTransaction();
       throw error;
     } finally {
       session.endSession();
     }
+
+    // ── 7. Confirm via state machine (outside the creation session) ───────────
+    // The on-chain verification already passed, so we apply CHAIN_CONFIRMED.
+    // If this step fails, the reconciliation job will pick it up and retry.
+    try {
+      await TransactionStateMachine.apply('CHAIN_CONFIRMED', {
+        txHash,
+        confirmations: chainResult.confirmations,
+        triggeredBy: 'direct',
+      });
+    } catch (smError) {
+      // Log but don't fail the request — the records exist and reconciliation
+      // will fix the state on the next run.
+      console.error(
+        `[PaymentVerificationService] State machine confirmation failed for ${txHash}:`,
+        smError,
+      );
+    }
+
+    return {
+      success: true,
+      transactionId: (transaction._id as any).toString(),
+      orderId: (order._id as any).toString(),
+      message: 'Payment verified and ticket issued successfully',
+    };
   }
 }

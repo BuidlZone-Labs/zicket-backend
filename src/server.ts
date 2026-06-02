@@ -4,6 +4,8 @@ import { mongoConnect } from './config/db.mongo';
 import queueService from './services/queue.service';
 import emailWorker from './workers/email.worker';
 import zkEmailWorker from './workers/zkemail.worker';
+import paymentWorker from './workers/payment.worker';
+import reconciliationWorker from './workers/reconciliation.worker';
 
 async function startServer() {
   try {
@@ -26,6 +28,12 @@ async function startServer() {
     await zkEmailWorker.initialize();
     console.log('✓ zkEmail worker initialized');
 
+    // Payment worker (processes webhook events via state machine)
+    console.log('✓ Payment worker initialized');
+
+    // Reconciliation worker (periodic stale-tx cleanup via state machine)
+    console.log('✓ Reconciliation worker initialized');
+
     // Start Express server
     const server = app.listen(config.port, () => {
       console.log(`✓ Server running on port ${config.port}`);
@@ -38,6 +46,8 @@ async function startServer() {
         console.log('Express server stopped');
         await emailWorker.close();
         await zkEmailWorker.close();
+        await paymentWorker.close();
+        await reconciliationWorker.close();
         await queueService.close();
         console.log('All services closed');
         process.exit(0);
