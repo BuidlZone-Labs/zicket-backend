@@ -6,6 +6,7 @@ import emailWorker from './workers/email.worker';
 import zkEmailWorker from './workers/zkemail.worker';
 import paymentWorker from './workers/payment.worker';
 import reconciliationWorker from './workers/reconciliation.worker';
+import indexerWorker from './workers/indexer.worker';
 
 async function startServer() {
   try {
@@ -27,6 +28,10 @@ async function startServer() {
     // Initialize zkEmail worker
     await zkEmailWorker.initialize();
     console.log('✓ zkEmail worker initialized');
+
+    // Initialize indexer worker
+    await indexerWorker.initialize();
+    console.log('✓ Indexer worker initialized');
 
     // Payment worker (processes webhook events via state machine)
     console.log('✓ Payment worker initialized');
