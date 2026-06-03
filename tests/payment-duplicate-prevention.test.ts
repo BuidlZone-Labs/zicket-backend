@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import mongoose from 'mongoose';
-import Transaction from '../models/transaction';
-import TicketOrder from '../models/ticket-order';
-import EventTicket from '../models/event-ticket';
-import User from '../models/user';
-import { PaymentVerificationService } from '../verification/payment-verification.service';
+import Transaction from '../src/models/transaction';
+import TicketOrder from '../src/models/ticket-order';
+import EventTicket from '../src/models/event-ticket';
+import User from '../src/models/user';
+import { PaymentVerificationService } from '../src/verification/payment-verification.service';
 
 /**
  * Duplicate Payment Prevention Tests

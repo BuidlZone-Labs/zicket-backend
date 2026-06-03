@@ -42,7 +42,7 @@ describe('ZkOrchestratorService', () => {
     } as unknown as MockUser;
 
     await expect(
-      zkOrchestratorService.orchestrateForUser(user),
+      zkOrchestratorService.orchestrateForUser(user as any),
     ).resolves.toBeUndefined();
     expect(queueService.enqueueZkEmailHook).not.toHaveBeenCalled();
     expect(user.save).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ describe('ZkOrchestratorService', () => {
     } as unknown as MockUser;
 
     await expect(
-      zkOrchestratorService.orchestrateForUser(user),
+      zkOrchestratorService.orchestrateForUser(user as any),
     ).resolves.toBeUndefined();
     expect(queueService.enqueueZkEmailHook).toHaveBeenCalledTimes(1);
     expect(user.zkEmail).toBe(
