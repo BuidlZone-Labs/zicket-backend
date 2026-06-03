@@ -1,10 +1,19 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll, jest } from '@jest/globals';
 import mongoose from 'mongoose';
+
+jest.setTimeout(600000); // 10 minutes for MongoDB binary download
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import Transaction from '../src/models/transaction';
 import TicketOrder from '../src/models/ticket-order';
 import EventTicket from '../src/models/event-ticket';
 import User from '../src/models/user';
 import { PaymentVerificationService } from '../src/verification/payment-verification.service';
+
+jest.mock('../src/services/paymentVerification.service', () => ({
+  PaymentVerificationService: {
+    verify: jest.fn().mockImplementation(async () => ({ confirmations: 2 })),
+  },
+}));
 
 /**
  * Duplicate Payment Prevention Tests
@@ -16,12 +25,17 @@ import { PaymentVerificationService } from '../src/verification/payment-verifica
  */
 
 describe('Duplicate Payment Prevention', () => {
+  let mongoServer: MongoMemoryReplSet;
+
   let testUserId: string;
   let testEventTicketId: string;
   const testTxHash = '0x' + 'a'.repeat(64); // Mock tx hash
   const testAmount = 100;
 
   beforeAll(async () => {
+    mongoServer = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+    await mongoose.connect(mongoServer.getUri());
+
     // Create test user
     const user = new User({
       name: 'Test User',
@@ -53,13 +67,10 @@ describe('Duplicate Payment Prevention', () => {
   });
 
   afterAll(async () => {
-    // Cleanup
-    await User.deleteMany({ email: 'test-duplicate@example.com' });
-    await EventTicket.deleteMany({
-      name: 'Duplicate Prevention Test Event',
-    });
-    await Transaction.deleteMany({ transactionId: testTxHash });
-    await TicketOrder.deleteMany({});
+    await mongoose.disconnect();
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   });
 
   describe('Replay Attack Prevention (txHash)', () => {
