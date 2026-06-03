@@ -9,16 +9,17 @@ import {
   restoreNewsById,
   incrementReadCount,
 } from '../controllers/news.controller';
+import { anonymousActionLimiter } from '../middlewares/rateLimiter';
 
 const newsRoutes = Router();
 
 newsRoutes.get('/', getAllNews);
-newsRoutes.post('/', createNews);
+newsRoutes.post('/', anonymousActionLimiter, createNews);
 
 newsRoutes.patch('/:id', updateNews);
 newsRoutes.get('/:slug', getSingleNews);
 
-newsRoutes.patch('/:id/read', incrementReadCount);
+newsRoutes.patch('/:id/read', anonymousActionLimiter, incrementReadCount);
 
 // DELETE /api/news/:id - Soft delete a news article by ID
 newsRoutes.delete('/:id', deleteNewsById);
