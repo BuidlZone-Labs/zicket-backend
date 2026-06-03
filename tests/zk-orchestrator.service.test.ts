@@ -23,6 +23,13 @@ jest.mock('fs', () => ({
   readFileSync: jest.fn(),
 }));
 
+jest.mock('../src/models/user', () => ({
+  __esModule: true,
+  default: {
+    findByIdAndUpdate: jest.fn().mockResolvedValue(true),
+  },
+}));
+
 jest.mock('snarkjs', () => ({
   groth16: { verify: jest.fn() },
 }));

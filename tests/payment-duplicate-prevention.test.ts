@@ -24,6 +24,7 @@ describe('Duplicate Payment Prevention', () => {
   beforeAll(async () => {
     // Create test user
     const user = new User({
+      name: 'Test User',
       email: 'test-duplicate@example.com',
       walletAddress: '0x' + '1'.repeat(40),
       emailVerifiedAt: new Date(),
