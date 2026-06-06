@@ -75,6 +75,10 @@ export class BlockchainProvider {
     return PLATFORM_WALLET;
   }
 
+  getProvider(): ethers.JsonRpcProvider {
+    return this.provider;
+  }
+
   getMinConfirmations(): number {
     return MIN_CONFIRMATIONS;
   }

@@ -12,6 +12,7 @@ import mediaRoutes from './routes/media.route';
 import ticketOrderRoutes from './routes/ticket-order.route';
 import queueMonitorRoutes from './routes/queue-monitor.route';
 import zkEmailRoutes from './routes/zkemail.route';
+import indexerRoutes from './routes/indexer.route';
 import { globalErrorHandler } from './middlewares/errorHandler';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/news', newsRoutes);
 app.use('/ticket-orders', ticketOrderRoutes);
 app.use('/api', queueMonitorRoutes);
 app.use('/zkemail', authLimiter, zkEmailRoutes);
+app.use('/api/events', indexerRoutes);
 app.use(protectedRoute);
 
 app.use(globalErrorHandler);
