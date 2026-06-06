@@ -23,6 +23,13 @@ jest.mock('fs', () => ({
   readFileSync: jest.fn(),
 }));
 
+jest.mock('../src/models/user', () => ({
+  __esModule: true,
+  default: {
+    findByIdAndUpdate: jest.fn().mockResolvedValue(true),
+  },
+}));
+
 jest.mock('snarkjs', () => ({
   groth16: { verify: jest.fn() },
 }));
@@ -42,7 +49,7 @@ describe('ZkOrchestratorService', () => {
     } as unknown as MockUser;
 
     await expect(
-      zkOrchestratorService.orchestrateForUser(user),
+      zkOrchestratorService.orchestrateForUser(user as any),
     ).resolves.toBeUndefined();
     expect(queueService.enqueueZkEmailHook).not.toHaveBeenCalled();
     expect(user.save).not.toHaveBeenCalled();
@@ -62,7 +69,7 @@ describe('ZkOrchestratorService', () => {
     } as unknown as MockUser;
 
     await expect(
-      zkOrchestratorService.orchestrateForUser(user),
+      zkOrchestratorService.orchestrateForUser(user as any),
     ).resolves.toBeUndefined();
     expect(queueService.enqueueZkEmailHook).toHaveBeenCalledTimes(1);
     expect(user.zkEmail).toBe(

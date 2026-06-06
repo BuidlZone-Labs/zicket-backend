@@ -88,6 +88,54 @@ const createIpBasedLimiter = (
   });
 };
 
+// Anonymous action rate limiter (IP + Session/Device Fingerprint)
+const createAnonymousActionLimiter = (
+  windowMs: number,
+  max: number,
+  message: string,
+) => {
+  return rateLimit({
+    windowMs,
+    max,
+    message: {
+      error: message,
+      retryAfter: Math.ceil(windowMs / 1000 / 60), // minutes
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req: Request) => {
+      const ip = req.ip || req.connection.remoteAddress || 'unknown';
+      // Use x-device-id if provided, else fallback to User-Agent
+      const deviceId = req.headers['x-device-id'] || req.headers['x-session-id'];
+      const userAgent = req.get('User-Agent') || 'unknown-agent';
+      
+      const sessionFingerprint = deviceId ? deviceId : userAgent;
+      return `${ip}:${sessionFingerprint}`;
+    },
+    handler: (req: Request, res: Response) => {
+      console.warn(`Anonymous rate limit exceeded for ${req.ip} on ${req.path}`, {
+        ip: req.ip,
+        path: req.path,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date().toISOString(),
+      });
+
+      res.status(429).json({
+        error: message,
+        retryAfter: Math.ceil(windowMs / 1000 / 60),
+        timestamp: new Date().toISOString(),
+      });
+    },
+    skipSuccessfulRequests: false, // For anonymous actions, count all requests
+    skip: (req: Request) => {
+      return (
+        process.env.NODE_ENV === 'development' &&
+        (req.ip === '127.0.0.1' || req.ip === '::1')
+      );
+    },
+  });
+};
+
 // Login rate limiter - 5 requests per minute per IP
 export const loginLimiter = createIpBasedLimiter(
   1 * 60 * 1000, // 1 minute
@@ -123,6 +171,13 @@ export const authLimiter = createIpBasedLimiter(
   'Too many authentication requests. Please try again in 15 minutes.',
 );
 
+// Anonymous actions limiter (News reading, public endpoints)
+export const anonymousActionLimiter = createAnonymousActionLimiter(
+  15 * 60 * 1000, // 15 minutes
+  10, // 10 requests per 15 minutes
+  'Too many requests from this device. Please try again in 15 minutes.',
+);
+
 // Stricter production limits
 export const productionLimits = {
   loginLimiter: createIpBasedLimiter(
@@ -145,10 +200,15 @@ export const productionLimits = {
     2,
     'Too many signup attempts. Please try again in 2 hours.',
   ),
+  anonymousActionLimiter: createAnonymousActionLimiter(
+    15 * 60 * 1000, // 15 minutes
+    5, // 5 requests per 15 minutes in production
+    'Too many requests from this device. Please try again in 15 minutes.',
+  ),
 };
 
 // Helper function to get appropriate limiter based on environment
-export const getLimiter = (type: 'login' | 'otp' | 'magicLink' | 'signup') => {
+export const getLimiter = (type: 'login' | 'otp' | 'magicLink' | 'signup' | 'anonymous') => {
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (isProduction) {
@@ -161,6 +221,8 @@ export const getLimiter = (type: 'login' | 'otp' | 'magicLink' | 'signup') => {
         return productionLimits.magicLinkLimiter;
       case 'signup':
         return productionLimits.signupLimiter;
+      case 'anonymous':
+        return productionLimits.anonymousActionLimiter;
     }
   }
 
@@ -173,5 +235,7 @@ export const getLimiter = (type: 'login' | 'otp' | 'magicLink' | 'signup') => {
       return magicLinkLimiter;
     case 'signup':
       return signupLimiter;
+    case 'anonymous':
+      return anonymousActionLimiter;
   }
 };

@@ -30,6 +30,7 @@
   "homepage": "https://github.com/BuidlZone-Labs/zicket-backend#readme",
   "dependencies": {
     "@types/passport-google-oauth20": "^2.0.17",
+    "@zk-email/helpers": "^6.4.2",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.71.1",
     "cloudinary": "^2.9.0",
@@ -46,6 +47,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "redis": "^5.11.0",
+    "snarkjs": "^0.7.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {

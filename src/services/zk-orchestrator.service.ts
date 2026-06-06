@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import * as snarkjs from 'snarkjs';
-import { packedBytesToString } from '@zk-email/helpers';
+import { packedNBytesToString } from '@zk-email/helpers';
 import User, { IUser } from '../models/user';
 import queueService from './queue.service';
 
@@ -140,7 +140,7 @@ export class ZkIntegrationOrchestrator {
       const emailSignalArray = payload.publicSignals
         .slice(1, 10)
         .map((signal) => BigInt(signal));
-      const email = packedBytesToString(emailSignalArray);
+      const email = packedNBytesToString(emailSignalArray);
 
       return { isValid: true, email };
     } catch (error) {
