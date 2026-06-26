@@ -27,7 +27,10 @@ function simulateContractResponse(
   return { accepted: true };
 }
 
-function mapContractError(contractError: string): { code: string; status: number } {
+function mapContractError(contractError: string): {
+  code: string;
+  status: number;
+} {
   if (contractError === 'AnonClaimWindowFull') {
     return { code: 'ANON_CLAIM_WINDOW_FULL', status: 429 };
   }
@@ -103,7 +106,10 @@ describe('No contradictory states between backend and contract limiters', () => 
     // Simulate: N requests come in, N <= contract quota
     // Backend must pass all of them (quota >= contract quota)
     for (let n = 1; n <= CONTRACT_ANON_MAX_CLAIMS; n++) {
-      const contractResult = simulateContractResponse(n - 1, CONTRACT_ANON_MAX_CLAIMS);
+      const contractResult = simulateContractResponse(
+        n - 1,
+        CONTRACT_ANON_MAX_CLAIMS,
+      );
       // If the contract would accept it, the backend quota must not have been
       // exceeded yet (since backend quota >= contract quota)
       if (contractResult.accepted) {
@@ -125,8 +131,10 @@ describe('No contradictory states between backend and contract limiters', () => 
   });
 
   it('error messages are distinct so frontend can show correct UI', () => {
-    const backendLimitMsg = 'You are sending anonymous claim requests too fast.';
-    const contractLimitMsg = 'The anonymous claim limit for this event window has been reached.';
+    const backendLimitMsg =
+      'You are sending anonymous claim requests too fast.';
+    const contractLimitMsg =
+      'The anonymous claim limit for this event window has been reached.';
 
     // The two messages must be different strings
     expect(backendLimitMsg).not.toBe(contractLimitMsg);

@@ -58,10 +58,9 @@ export const anonClaimLimiter = rateLimit({
     // Use the actual reset time when available so clients blocked late in
     // a window get an accurate remaining cooldown rather than the full window.
     const rl = (req as any).rateLimit as { resetTime?: Date } | undefined;
-    const retryAfterMs =
-      rl?.resetTime
-        ? Math.max(0, rl.resetTime.getTime() - Date.now())
-        : ANON_CLAIM_WINDOW_MS;
+    const retryAfterMs = rl?.resetTime
+      ? Math.max(0, rl.resetTime.getTime() - Date.now())
+      : ANON_CLAIM_WINDOW_MS;
 
     res.status(429).json({
       error: 'TOO_MANY_REQUESTS',
