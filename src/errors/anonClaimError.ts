@@ -4,18 +4,20 @@ import { AppError } from './AppError';
  * Thrown when the on-chain claim_anonymous_ticket call returns
  * AnonClaimWindowFull (contract error code 10).
  *
- * This is a DISTINCT error from ANON_CLAIM_RATE_LIMITED (the backend
- * rate-limit middleware). The frontend uses the `code` field to decide
- * which message to show:
+ * Distinct from ANON_CLAIM_RATE_LIMITED (the backend rate-limit middleware).
+ * The frontend uses the `code` field to decide which message to show:
  *
  *   ANON_CLAIM_RATE_LIMITED  → "You're sending requests too fast"
  *   ANON_CLAIM_WINDOW_FULL   → "Event claim limit reached — try next window"
+ *
+ * Ledger window bounds are exposed through the `details` field so that
+ * errorHandler serialises them into the HTTP response body and the frontend
+ * can display a countdown to the next window.
  */
 export class AnonClaimWindowFullError extends AppError {
-  /** Ledger number at which the current contract window opened. */
   readonly windowStartLedger: number;
-  /** Ledger number at which the current window closes. */
   readonly windowEndLedger: number;
+  readonly details: { windowStartLedger: number; windowEndLedger: number };
 
   constructor(windowStartLedger: number, windowEndLedger: number) {
     super(
@@ -26,5 +28,7 @@ export class AnonClaimWindowFullError extends AppError {
     );
     this.windowStartLedger = windowStartLedger;
     this.windowEndLedger = windowEndLedger;
+    // Expose through `details` so errorHandler includes them in the HTTP body.
+    this.details = { windowStartLedger, windowEndLedger };
   }
 }
