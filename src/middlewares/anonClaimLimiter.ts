@@ -24,7 +24,7 @@ export const LEDGER_DURATION_MS = 5_000; // 5 seconds per Stellar ledger
 export const CONTRACT_WINDOW_MS =
   CONTRACT_ANON_WINDOW_LEDGERS * LEDGER_DURATION_MS; // ~8.3 min
 
-export const ANON_CLAIM_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+export const ANON_CLAIM_WINDOW_MS = CONTRACT_WINDOW_MS; // exactly matches contract window
 export const ANON_CLAIM_MAX_REQUESTS = CONTRACT_ANON_MAX_CLAIMS; // 5
 
 /**
