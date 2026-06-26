@@ -1,12 +1,12 @@
-# 🚀 Zicket API
+# 🚀 Zicket Backend
 
-Zicket's backend built with **Express**, **TypeScript**, **Mongoose**, and **Jest** for testing.
+Zicket backend built with **Express**, **TypeScript**, **Mongoose**, and **Jest** for testing.
 
 ## ⚙️ Prerequisites
 
 Before you begin, make sure you have the following installed:
 
-- **Node.js** (v18+ recommended): [Download](https://nodejs.org/)
+- **Node.js** (v22+ recommended): [Download](https://nodejs.org/)
 - **npm** (comes with Node.js) or [Yarn](https://yarnpkg.com/)
 - **MongoDB** (local or cloud): [Install MongoDB](https://www.mongodb.com/try/download/community)
 
@@ -14,16 +14,19 @@ Before you begin, make sure you have the following installed:
 
 ## 📁 Project Structure
 
+```
 src/ <br>
-├── config/ # Environment config and DB setup <br>
-├── controllers/ # Request handlers <br>
-├── models/ # Mongoose schemas <br>
-├── routes/ # Express route definitions <br>
-├── services/ # Business logic layer <br>
-├── tests/ # Jest test files <br>
-├── utils/ # Utility functions <br>
-└── app.ts # Application grade <br>
-└── server.ts # Application entry point <br>
+├── config/        # Environment config and DB setup
+├── controllers/   # Request handlers
+├── middlewares/   # Express middleware
+├── models/        # Mongoose schemas
+├── routes/        # Express route definitions
+├── services/      # Business logic layer
+├── tests/         # Jest test files
+├── utils/         # Utility functions
+└── app.ts         # Application grade
+└── server.ts      # Application entry point
+```
 
 ---
 
@@ -84,8 +87,6 @@ npm test
 npx ts-node src/scripts/log-demo.ts
 ```
 
-If you want logs integrated with a production logger (pino/winston) while keeping sanitization, we can add that next.
-
 
 <br>
 
@@ -95,8 +96,10 @@ Contributions are welcome! 🎉
 
 - Fork this repo
 - Create your feature branch: git checkout -b feature/your-feature
-- Commit your changes: git commit -am 'Add new feature'
-- After applying your change, run `npm run lint:check && npm run build && npm test`
+- Commit your changes using conventional commits: git commit -am 'feat: Add new feature' or 'fix: Fix bug' or 'chore: Update dependencies'
+- After applying your change, run `npm run format && npm run lint:check` to follow the code style
+- Run the tests `npm run test` to make sure the tests pass and the CI will run all the tests on your pull request anyway
+- Run `npm run build` to make sure the app compiles successfully
 - Push to the branch: git push origin feature/your-feature
 - Open a pull request 🚀
 
