@@ -17,6 +17,16 @@ const authGuard = async (req: UserAuthenticatedReq, res: any, next: any) => {
 
     const user = await validateAndGetUser(token);
 
+    // Defense in depth: a valid JWT is not enough. Local accounts must have a
+    // verified email before reaching any protected route (see issue #122).
+    // Google accounts are verified by the provider and carry emailVerifiedAt.
+    if (user.provider === 'local' && !user.emailVerifiedAt) {
+      return res.status(403).json({
+        error:
+          'Forbidden: Please verify your email before accessing this resource',
+      });
+    }
+
     req.user = user;
     return next();
   } catch (err) {
