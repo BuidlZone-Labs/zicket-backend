@@ -3,6 +3,8 @@ import bcrypt from 'bcrypt';
 import User from '../models/user';
 import { generateOTP } from '../utils/otp';
 import emailService from '../services/email.service';
+import { SignupSchema } from '../validators/auth.validator';
+import z from 'zod';
 
 const OTP_EXPIRY_MINUTES = 10;
 
@@ -11,12 +13,16 @@ export const signupController: RequestHandler = async (
   res: Response,
 ) => {
   try {
-    const { name, email, password } = req.body;
+    const parsed = SignupSchema.safeParse(req.body);
 
-    if (!name || !email || !password) {
-      res.status(400).json({ message: 'All fields are required' });
-      return;
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        messages: z.treeifyError(parsed.error),
+      });
     }
+
+    const { name, email, password } = parsed.data;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {

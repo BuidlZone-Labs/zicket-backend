@@ -2,15 +2,21 @@ import { RequestHandler } from 'express';
 import bcrypt from 'bcrypt';
 import User from '../models/user';
 import { generateAccessToken } from '../utils/token';
+import { LoginSchema } from '../validators/auth.validator';
+import z from 'zod';
 
 export const loginController: RequestHandler = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const parsed = LoginSchema.safeParse(req.body);
 
-    if (!email || !password) {
-      res.status(400).json({ message: 'Email and password are required' });
-      return;
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        messages: z.treeifyError(parsed.error),
+      });
     }
+
+    const { email, password } = parsed.data;
 
     const user = await User.findOne({ email });
     if (!user) {

@@ -48,9 +48,9 @@ describe('signup controller', () => {
     const res = createResponse();
     await signupController(req as any, res as any, jest.fn());
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      message: 'All fields are required',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Validation failed' }),
+    );
     expect(User.findOne).not.toHaveBeenCalled();
   });
 
@@ -109,5 +109,71 @@ describe('signup controller', () => {
       message:
         'User registered successfully. Please verify your account with the OTP sent to your email.',
     });
+  });
+
+  it('returns 400 when email is a NoSQL injection payload ($ne)', async () => {
+    const req = {
+      body: {
+        name: 'Test User',
+        email: { $ne: null },
+        password: 'secret123',
+      },
+    };
+    const res = createResponse();
+    await signupController(req as any, res as any, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Validation failed' }),
+    );
+    expect(User.findOne).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when email is a NoSQL injection payload ($gt)', async () => {
+    const req = {
+      body: {
+        name: 'Test User',
+        email: { $gt: '' },
+        password: 'secret123',
+      },
+    };
+    const res = createResponse();
+    await signupController(req as any, res as any, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Validation failed' }),
+    );
+  });
+
+  it('returns 400 when name is a NoSQL injection payload', async () => {
+    const req = {
+      body: {
+        name: { $ne: null },
+        email: 'test@example.com',
+        password: 'secret123',
+      },
+    };
+    const res = createResponse();
+    await signupController(req as any, res as any, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Validation failed' }),
+    );
+  });
+
+  it('returns 400 when password is a NoSQL injection payload', async () => {
+    const req = {
+      body: {
+        name: 'Test User',
+        email: 'test@example.com',
+        password: { $ne: null },
+      },
+    };
+    const res = createResponse();
+    await signupController(req as any, res as any, jest.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Validation failed' }),
+    );
+    expect(User.findOne).not.toHaveBeenCalled();
   });
 });
