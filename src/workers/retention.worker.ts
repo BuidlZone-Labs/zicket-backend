@@ -24,23 +24,20 @@ export const retentionQueue = new Queue(QUEUE_NAMES.RETENTION, {
   },
 });
 
-(async () => {
-  try {
-    const { name, opts } = REPEATABLE_JOBS.RUN_RETENTION_PASS;
+/** Registers the repeatable retention cron after env validation (server startup). */
+export async function initializeRetentionWorker(): Promise<void> {
+  const { name, opts } = REPEATABLE_JOBS.RUN_RETENTION_PASS;
 
-    await retentionQueue.add(
-      name,
-      { triggeredBy: 'schedule', timestamp: Date.now() } as RetentionPayload,
-      opts,
-    );
+  await retentionQueue.add(
+    name,
+    { triggeredBy: 'schedule', timestamp: Date.now() } as RetentionPayload,
+    opts,
+  );
 
-    console.log(
-      `[RetentionWorker] Repeatable job registered — pattern: ${opts.repeat.pattern}`,
-    );
-  } catch (err) {
-    console.error('[RetentionWorker] Failed to register repeatable job:', err);
-  }
-})();
+  console.log(
+    `[RetentionWorker] Repeatable job registered — pattern: ${opts.repeat.pattern}`,
+  );
+}
 
 const retentionWorker = new Worker(
   QUEUE_NAMES.RETENTION,

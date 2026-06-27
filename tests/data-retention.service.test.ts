@@ -27,18 +27,23 @@ describe('DataRetentionService', () => {
     const staleJob = { _id: 'job1', targetUserId: 'user1', status: 'pending' };
     const failedJob = { _id: 'job2', targetUserId: 'user2', status: 'failed' };
 
+    const saveMock = jest.fn().mockResolvedValue(undefined);
+    const hydratedJob = (raw: { _id: string; targetUserId: string }) => ({
+      ...raw,
+      status: 'pending',
+      save: saveMock,
+    });
+
     (mockAnonymizationJob.find as jest.Mock).mockImplementation(
-      (query: { status?: string }) => ({
-        lean: jest
-          .fn()
-          .mockResolvedValue(
-            query.status === 'pending'
-              ? [staleJob]
-              : query.status === 'failed'
-                ? [failedJob]
-                : [],
-          ),
-      }),
+      (query: { status?: string }) => {
+        const jobs =
+          query.status === 'pending'
+            ? [staleJob]
+            : query.status === 'failed'
+              ? [failedJob]
+              : [];
+        return Promise.resolve(jobs.map((j) => hydratedJob(j)));
+      },
     );
 
     (AnonymizationService.executeJob as jest.Mock).mockResolvedValue({

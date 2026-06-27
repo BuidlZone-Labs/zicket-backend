@@ -4,6 +4,7 @@ import EventTicket from '../models/event-ticket';
 import {
   DATA_RETENTION_MATRIX,
   PRIVACY_POLICY_SUMMARY,
+  USER_FACING_PRIVACY_POLICY,
 } from '../constants/data-retention-matrix';
 import { PaymentPrivacyDisclosureService } from '../services/payment-privacy-disclosure.service';
 
@@ -18,6 +19,17 @@ export const getDataRetentionMatrix: RequestHandler = async (_req, res) => {
       matrix: DATA_RETENTION_MATRIX,
       summary: PRIVACY_POLICY_SUMMARY,
     },
+  });
+};
+
+/**
+ * GET /compliance/privacy-policy
+ * User-facing summary separating erasable off-chain data from permanent on-chain records.
+ */
+export const getPrivacyPolicy: RequestHandler = async (_req, res) => {
+  res.status(200).json({
+    success: true,
+    data: USER_FACING_PRIVACY_POLICY,
   });
 };
 

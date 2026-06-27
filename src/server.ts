@@ -6,7 +6,9 @@ import emailWorker from './workers/email.worker';
 import zkEmailWorker from './workers/zkemail.worker';
 import paymentWorker from './workers/payment.worker';
 import reconciliationWorker from './workers/reconciliation.worker';
-import retentionWorker from './workers/retention.worker';
+import retentionWorker, {
+  initializeRetentionWorker,
+} from './workers/retention.worker';
 import indexerWorker from './workers/indexer.worker';
 
 async function startServer() {
@@ -41,6 +43,7 @@ async function startServer() {
     console.log('✓ Reconciliation worker initialized');
 
     // Retention worker (TTL hygiene + anonymization job retries)
+    await initializeRetentionWorker();
     console.log('✓ Retention worker initialized');
 
     // Start Express server

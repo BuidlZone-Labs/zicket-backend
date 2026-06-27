@@ -20,7 +20,7 @@ export interface IUser extends Document {
     emailOnTicketUpdate: boolean;
   };
   /** Set when the user exercises right-to-erasure (off-chain anonymization). */
-  anonymizedAt?: Date;
+  anonymizedAt?: Date | null;
 }
 
 const userSchema = new Schema<IUser>(

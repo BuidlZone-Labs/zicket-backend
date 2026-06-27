@@ -3,11 +3,15 @@ import {
   getErasureAssessment,
   requestErasure,
 } from '../controllers/account.controller';
-import { authGuard } from '../middlewares/auth';
+import { authGuardIdentity } from '../middlewares/auth';
 
 const accountRoutes = Router();
 
-accountRoutes.get('/erasure-assessment', authGuard, getErasureAssessment);
-accountRoutes.post('/request-erasure', authGuard, requestErasure);
+accountRoutes.get(
+  '/erasure-assessment',
+  authGuardIdentity,
+  getErasureAssessment,
+);
+accountRoutes.post('/request-erasure', authGuardIdentity, requestErasure);
 
 export default accountRoutes;

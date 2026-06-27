@@ -33,8 +33,10 @@ describe('PaymentPrivacyDisclosureService', () => {
       );
       expect(d.level).toBe('anonymous');
       expect(d.onChainWalletStored).toBe(false);
+      expect(d.onChainDataPermanent).toBe(true);
       expect(d.acknowledgmentRequired).toBe(false);
-      expect(d.warning).toMatch(/not stored/i);
+      expect(d.warning).toMatch(/permanent Soroban PaymentRecord/i);
+      expect(d.warning).toMatch(/wallet address is not stored/i);
     });
   });
 

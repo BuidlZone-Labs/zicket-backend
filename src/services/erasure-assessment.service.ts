@@ -17,6 +17,7 @@ export interface ErasureAssessment {
  * Assesses right-to-erasure impact: off-chain vs immutable on-chain data (Issue #127).
  */
 export class ErasureAssessmentService {
+  /** Evaluates whether a user has erasable off-chain data or permanent on-chain wallet exposure. */
   static async assessUser(userId: string): Promise<ErasureAssessment> {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       throw new Error('Invalid user id');
@@ -41,12 +42,15 @@ export class ErasureAssessmentService {
 
     const onChainPermanentReasons: string[] = [];
     let standardPaymentOrders = 0;
+    let paidOrdersReviewed = 0;
 
     for (const order of orders) {
       const event = eventById.get(order.eventTicket.toString());
       if (!event || event.eventType !== 1) {
         continue;
       }
+
+      paidOrdersReviewed++;
 
       const effectivePrivacy =
         order.paymentPrivacy ?? event.paymentPrivacy ?? null;
@@ -61,14 +65,14 @@ export class ErasureAssessmentService {
 
     const onChainPermanentData = standardPaymentOrders > 0;
     const anonymousOnlyPaymentHistory =
-      orders.length > 0 && standardPaymentOrders === 0;
+      paidOrdersReviewed > 0 && standardPaymentOrders === 0;
 
     return {
       userId,
       offChainErasable: true,
       onChainPermanentData,
       onChainPermanentReasons,
-      ordersReviewed: orders.length,
+      ordersReviewed: paidOrdersReviewed,
       standardPaymentOrders,
       anonymousOnlyPaymentHistory,
     };

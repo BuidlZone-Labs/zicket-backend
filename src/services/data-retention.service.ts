@@ -18,6 +18,7 @@ const STALE_PENDING_MS = 60_000;
  * Operational retention pass — TTL-backed collections and stuck erasure jobs.
  */
 export class DataRetentionService {
+  /** Runs a scheduled retention pass over TTL collections and stuck erasure jobs. */
   static async runRetentionPass(): Promise<RetentionReport> {
     const startTime = Date.now();
 
@@ -30,8 +31,8 @@ export class DataRetentionService {
         AnonymizationJob.find({
           status: 'pending',
           createdAt: { $lt: staleThreshold },
-        }).lean(),
-        AnonymizationJob.find({ status: 'failed' }).lean(),
+        }),
+        AnonymizationJob.find({ status: 'failed' }),
       ]);
 
     const jobsToProcess = [...pendingJobs, ...failedJobs];
@@ -40,7 +41,7 @@ export class DataRetentionService {
 
     for (const job of jobsToProcess) {
       try {
-        await AnonymizationService.executeJob(job as any);
+        await AnonymizationService.executeJob(job);
         anonymizationJobsProcessed++;
       } catch {
         anonymizationJobsFailed++;

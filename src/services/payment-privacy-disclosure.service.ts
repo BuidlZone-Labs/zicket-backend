@@ -24,8 +24,9 @@ const STANDARD_WARNING =
   'By proceeding you acknowledge this limitation.';
 
 const ANONYMOUS_NOTICE =
-  'This event uses Anonymous payment privacy. Your wallet address is not stored ' +
-  'in the on-chain PaymentRecord. Off-chain account data remains subject to our erasure policy.';
+  'This event uses Anonymous payment privacy. A permanent Soroban PaymentRecord is still ' +
+  'created on-chain, but your paying wallet address is not stored in that record. ' +
+  'Off-chain account data remains subject to our erasure policy.';
 
 export class PaymentPrivacyDisclosureService {
   /**
@@ -69,7 +70,7 @@ export class PaymentPrivacyDisclosureService {
       paymentPrivacy: paymentPrivacy ?? PAYMENT_PRIVACY_ANONYMOUS,
       level,
       onChainWalletStored: false,
-      onChainDataPermanent: false,
+      onChainDataPermanent: true,
       warning: ANONYMOUS_NOTICE,
       acknowledgmentRequired: false,
       policyReference: '/compliance/data-retention',

@@ -26,6 +26,18 @@ describe('Privacy compliance routes (#127)', () => {
     expect(res.body.data.matrix.length).toBeGreaterThan(0);
     expect(res.body.data.summary.onChainPermanent).toMatch(/immutable/i);
     expect(res.body.data.summary.offChainErasable).toMatch(/MongoDB/i);
+    expect(res.body.data.summary.policyDocumentPath).toBe(
+      '/compliance/data-retention',
+    );
+  });
+
+  it('GET /compliance/privacy-policy returns user-facing summary', async () => {
+    const res = await request(app).get('/compliance/privacy-policy');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.title).toMatch(/Privacy/i);
+    expect(res.body.data.sections.length).toBeGreaterThanOrEqual(3);
+    expect(res.body.data.sections[1].body).toMatch(/permanent/i);
   });
 
   it('GET /compliance/payment-privacy-disclosure/:eventId returns Standard warning', async () => {

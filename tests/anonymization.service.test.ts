@@ -36,7 +36,6 @@ describe('AnonymizationService', () => {
     };
 
     (mockUser.findById as jest.Mock).mockResolvedValue(userDoc);
-    (mockAnonymizationJob.findOne as jest.Mock).mockResolvedValue(null);
     (mockAnonymizationJob.create as jest.Mock).mockResolvedValue({
       _id: jobId,
       targetUserId: userId,
@@ -75,14 +74,13 @@ describe('AnonymizationService', () => {
     ).rejects.toThrow('Account has already been anonymized');
   });
 
-  it('rejects when a pending job already exists', async () => {
+  it('rejects when a pending job already exists (duplicate key)', async () => {
     (mockUser.findById as jest.Mock).mockResolvedValue({
       _id: userId,
       anonymizedAt: undefined,
     });
-    (mockAnonymizationJob.findOne as jest.Mock).mockResolvedValue({
-      _id: jobId,
-      status: 'pending',
+    (mockAnonymizationJob.create as jest.Mock).mockRejectedValue({
+      code: 11000,
     });
 
     await expect(

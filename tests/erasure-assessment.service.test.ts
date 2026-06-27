@@ -157,5 +157,7 @@ describe('ErasureAssessmentService', () => {
 
     expect(assessment.onChainPermanentData).toBe(false);
     expect(assessment.standardPaymentOrders).toBe(0);
+    expect(assessment.ordersReviewed).toBe(0);
+    expect(assessment.anonymousOnlyPaymentHistory).toBe(false);
   });
 });

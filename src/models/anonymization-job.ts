@@ -26,6 +26,15 @@ anonymizationJobSchema.index(
   { expireAfterSeconds: 90 * 24 * 60 * 60 },
 );
 
+// One pending erasure job per user (atomic exclusivity for concurrent requests)
+anonymizationJobSchema.index(
+  { targetUserId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: 'pending' },
+  },
+);
+
 const AnonymizationJob = mongoose.model<IAnonymizationJob>(
   'AnonymizationJob',
   anonymizationJobSchema,

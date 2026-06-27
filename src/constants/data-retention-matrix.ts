@@ -91,8 +91,28 @@ export const PRIVACY_POLICY_SUMMARY = {
   onChainPermanent:
     'Soroban payment and event records are immutable. Standard (public) payments may store your wallet address on-chain permanently; it cannot be deleted after submission.',
   anonymousPaymentGuarantee:
-    'Events configured with paymentPrivacy=0 (Anonymous) do not store your wallet address in PaymentRecord on-chain.',
+    'Events configured with paymentPrivacy=0 (Anonymous) create a permanent Soroban PaymentRecord but do not store your wallet address in that record.',
   standardPaymentWarning:
     'Events configured with paymentPrivacy=1 (Standard/Public) store your paying wallet address on the blockchain. This cannot be erased under any right-to-erasure request.',
-  policyDocumentPath: 'docs/compliance/data-retention.md',
+  policyDocumentPath: '/compliance/data-retention',
+  userFacingPrivacyPolicyPath: '/compliance/privacy-policy',
+};
+
+/** User-facing privacy policy sections served at GET /compliance/privacy-policy. */
+export const USER_FACING_PRIVACY_POLICY = {
+  title: 'Zicket Privacy & Data Retention Summary',
+  sections: [
+    {
+      heading: 'Data we can erase (off-chain)',
+      body: 'Your profile, email, authentication tokens, and preferences stored in our database can be anonymized when you submit a right-to-erasure request via POST /account/request-erasure.',
+    },
+    {
+      heading: 'Data we cannot erase (on-chain)',
+      body: 'Blockchain payment records on Stellar/Soroban are permanent. Standard (public) payments store your wallet address on-chain and cannot be deleted. Anonymous payments still create a permanent PaymentRecord but omit your wallet address.',
+    },
+    {
+      heading: 'Before you pay',
+      body: 'Paid events with Standard payment privacy require you to acknowledge that your wallet will be stored permanently on-chain before payment is processed.',
+    },
+  ],
 };
