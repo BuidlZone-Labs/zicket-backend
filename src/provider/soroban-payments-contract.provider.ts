@@ -26,19 +26,19 @@ export class SorobanPaymentsContractProvider implements IPaymentsContractProvide
   private readonly server: rpc.Server;
   private readonly contract: Contract;
   private readonly networkPassphrase: string;
+  private cachedPlatformFeeBps: number | null = null;
 
   private constructor() {
     const rpcUrl = process.env.SOROBAN_RPC_URL || '';
     const contractId = process.env.PAYMENTS_CONTRACT_ID || '';
-    if (!rpcUrl || !contractId) {
+    const networkPassphrase = process.env.SOROBAN_NETWORK_PASSPHRASE || '';
+    if (!rpcUrl || !contractId || !networkPassphrase) {
       throw new Error(
-        'SOROBAN_RPC_URL and PAYMENTS_CONTRACT_ID must be configured for contract reads',
+        'SOROBAN_RPC_URL, PAYMENTS_CONTRACT_ID, and SOROBAN_NETWORK_PASSPHRASE must be configured for contract reads',
       );
     }
 
-    this.networkPassphrase =
-      process.env.SOROBAN_NETWORK_PASSPHRASE ||
-      'Test SDF Network ; September 2015';
+    this.networkPassphrase = networkPassphrase;
     this.server = new rpc.Server(rpcUrl, {
       allowHttp: rpcUrl.startsWith('http://'),
     });
@@ -51,17 +51,22 @@ export class SorobanPaymentsContractProvider implements IPaymentsContractProvide
   }
 
   async getPlatformFeeBps(): Promise<number> {
+    if (this.cachedPlatformFeeBps !== null) {
+      return this.cachedPlatformFeeBps;
+    }
+
     const result = await this.simulateRead('get_platform_fee_bps');
-    return Number(scValToNative(result));
+    this.cachedPlatformFeeBps = Number(scValToNative(result));
+    return this.cachedPlatformFeeBps;
   }
 
   async getEventFinancialState(
     onChainEventId: string,
   ): Promise<EventFinancialState> {
-    const [configVal, revenueVal, platformFeeBps] = await Promise.all([
+    const platformFeeBps = await this.getPlatformFeeBps();
+    const [configVal, revenueVal] = await Promise.all([
       this.simulateRead('get_event_config', onChainEventId),
       this.simulateRead('get_event_revenue', onChainEventId),
-      this.getPlatformFeeBps(),
     ]);
 
     const config = scValToNative(configVal) as EventConfigOnChain;

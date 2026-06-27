@@ -163,7 +163,7 @@ export class ReconciliationService {
 
     const cancelledEvents = await EventTicket.find({
       eventStatus: 'cancelled',
-      onChainEventId: { $exists: true, $ne: null },
+      onChainEventId: { $exists: true, $nin: [null, ''] },
     })
       .lean()
       .limit(200);
@@ -194,17 +194,25 @@ export class ReconciliationService {
         }).lean();
 
         for (const tx of confirmedTxs) {
-          const result = await TransactionStateMachine.apply(
-            'EVENT_CANCELLED',
-            {
-              txHash: tx.transactionId,
-              withdrawableRatioBps: financialState.withdrawableRatioBps,
-              triggeredBy: 'reconciliation',
-            },
-          );
+          try {
+            const result = await TransactionStateMachine.apply(
+              'EVENT_CANCELLED',
+              {
+                txHash: tx.transactionId,
+                withdrawableRatioBps: financialState.withdrawableRatioBps,
+                triggeredBy: 'reconciliation',
+              },
+            );
 
-          if (result.transitioned) {
-            localReport.cancelledTransactionsUpdated++;
+            if (result.transitioned) {
+              localReport.cancelledTransactionsUpdated++;
+            }
+          } catch (error) {
+            const msg = `Failed to cancel tx ${tx.transactionId} for event ${onChainEventId}: ${
+              error instanceof Error ? error.message : 'Unknown'
+            }`;
+            localReport.errors.push(msg);
+            console.error(`[Reconciliation] ${msg}`);
           }
         }
       } catch (error) {

@@ -37,7 +37,18 @@ const transactionSchema = new Schema<ITransaction>(
       enum: ['pending', 'confirmed', 'failed', 'cancelled', 'refunded'],
       default: 'pending',
     },
-    withdrawableRatioBps: { type: Number, default: null },
+    withdrawableRatioBps: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 10_000,
+      validate: {
+        validator(this: ITransaction, value: number | null) {
+          return this.status !== 'cancelled' || value != null;
+        },
+        message: 'cancelled transactions require withdrawableRatioBps',
+      },
+    },
     transactionId: { type: String, required: true, unique: true },
     idempotencyKey: { type: String, sparse: true, unique: true },
     // Blockchain metadata — populated by the state machine on each transition

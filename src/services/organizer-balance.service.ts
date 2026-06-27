@@ -11,6 +11,7 @@ import {
   getPaymentsContractProvider,
   IPaymentsContractProvider,
 } from '../provider/payments-contract.provider';
+import { ValidationError } from '../errors/AppError';
 
 export class OrganizerBalanceService {
   /**
@@ -21,7 +22,19 @@ export class OrganizerBalanceService {
     eventStatus: string,
     state: EventFinancialState,
   ): OrganizerBalanceSnapshot {
-    const ratio = state.withdrawableRatioBps ?? 0;
+    if (eventStatus !== 'cancelled') {
+      throw new ValidationError(
+        'Proportional balance is only available for cancelled events',
+      );
+    }
+
+    if (state.withdrawableRatioBps === null) {
+      throw new ValidationError(
+        'Cancellation ratio not yet available from contract storage',
+      );
+    }
+
+    const ratio = state.withdrawableRatioBps;
     const withdrawableAmount = computeWithdrawableAmount(
       state.totalRevenue,
       ratio,

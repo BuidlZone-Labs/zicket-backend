@@ -16,7 +16,9 @@ export function setPaymentsContractProvider(
 
 export function isPaymentsContractConfigured(): boolean {
   return Boolean(
-    process.env.SOROBAN_RPC_URL && process.env.PAYMENTS_CONTRACT_ID,
+    process.env.SOROBAN_RPC_URL &&
+    process.env.PAYMENTS_CONTRACT_ID &&
+    process.env.SOROBAN_NETWORK_PASSPHRASE,
   );
 }
 
@@ -25,7 +27,7 @@ export function getPaymentsContractProvider(): IPaymentsContractProvider {
 
   if (!isPaymentsContractConfigured()) {
     throw new Error(
-      'SOROBAN_RPC_URL and PAYMENTS_CONTRACT_ID must be configured for contract reads',
+      'SOROBAN_RPC_URL, PAYMENTS_CONTRACT_ID, and SOROBAN_NETWORK_PASSPHRASE must be configured for contract reads',
     );
   }
 

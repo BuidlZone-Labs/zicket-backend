@@ -34,6 +34,9 @@ import Transaction from '../src/models/transaction';
 
 describe('Proportional cancellation (Issue #3)', () => {
   const fixture = MID_EVENT_CANCELLATION_FIXTURE;
+  const originalSorobanRpcUrl = process.env.SOROBAN_RPC_URL;
+  const originalPaymentsContractId = process.env.PAYMENTS_CONTRACT_ID;
+  const originalNetworkPassphrase = process.env.SOROBAN_NETWORK_PASSPHRASE;
 
   const contractState: EventFinancialState = {
     onChainEventId: fixture.onChainEventId,
@@ -50,6 +53,9 @@ describe('Proportional cancellation (Issue #3)', () => {
 
   afterEach(() => {
     setPaymentsContractProvider(null);
+    process.env.SOROBAN_RPC_URL = originalSorobanRpcUrl;
+    process.env.PAYMENTS_CONTRACT_ID = originalPaymentsContractId;
+    process.env.SOROBAN_NETWORK_PASSPHRASE = originalNetworkPassphrase;
   });
 
   describe('contract-aligned financial math', () => {
@@ -126,6 +132,15 @@ describe('Proportional cancellation (Issue #3)', () => {
       expect(snapshot.withdrawableRatioBps).not.toBe(0);
       expect(snapshot.withdrawableRatioBps).not.toBe(10_000);
     });
+
+    it('rejects proportional balance for non-cancelled events', () => {
+      expect(() =>
+        OrganizerBalanceService.computeFromContractState('ongoing', {
+          ...contractState,
+          withdrawableRatioBps: null,
+        }),
+      ).toThrow('Proportional balance is only available for cancelled events');
+    });
   });
 
   describe('reconciliation reads ratio from contract storage', () => {
@@ -140,6 +155,8 @@ describe('Proportional cancellation (Issue #3)', () => {
       process.env.SOROBAN_RPC_URL = 'http://localhost:8000/soroban/rpc';
       process.env.PAYMENTS_CONTRACT_ID =
         'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4';
+      process.env.SOROBAN_NETWORK_PASSPHRASE =
+        'Test SDF Network ; September 2015';
 
       const mockFindByIdAndUpdate = jest.fn().mockResolvedValue({});
       (EventTicket.find as jest.Mock) = jest.fn().mockReturnValue({
@@ -193,9 +210,6 @@ describe('Proportional cancellation (Issue #3)', () => {
       );
       expect(report.cancelledEventsSynced).toBe(1);
       expect(report.cancelledTransactionsUpdated).toBe(1);
-
-      delete process.env.SOROBAN_RPC_URL;
-      delete process.env.PAYMENTS_CONTRACT_ID;
     });
   });
 });
