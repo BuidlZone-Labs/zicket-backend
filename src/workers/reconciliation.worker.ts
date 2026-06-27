@@ -70,8 +70,7 @@ const reconciliationWorker = new Worker(
 
     switch (name as ReconciliationJobType) {
       case ReconciliationJobType.RECONCILE_PENDING: {
-        const report =
-          await ReconciliationService.reconcilePendingTransactions();
+        const report = await ReconciliationService.reconcileAll();
 
         // Surface any errors through BullMQ's job result
         if (report.errors.length > 0) {
@@ -101,6 +100,8 @@ reconciliationWorker.on('completed', (job, result) => {
     console.log(
       `[ReconciliationWorker] ✓ Run complete — scanned: ${r.scanned}, ` +
         `confirmed: ${r.confirmed}, failed: ${r.failed}, ` +
+        `cancelledEvents: ${r.cancelledEventsSynced}, ` +
+        `cancelledTxs: ${r.cancelledTransactionsUpdated}, ` +
         `skipped: ${r.skipped}, duration: ${r.durationMs}ms`,
     );
   }

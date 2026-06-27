@@ -10,7 +10,7 @@ import { TransactionStateError } from '../errors/AppError';
  * Canonical blockchain transaction states.
  * These map 1-to-1 with Transaction.status in the DB.
  */
-export type TransactionState = 'pending' | 'confirmed' | 'failed';
+export type TransactionState = 'pending' | 'confirmed' | 'failed' | 'cancelled';
 
 /**
  * Events that drive state transitions.
@@ -19,12 +19,14 @@ export type TransactionState = 'pending' | 'confirmed' | 'failed';
  *  CHAIN_FAILED     — on-chain receipt shows status=0 (reverted)
  *  CHAIN_DROPPED    — tx not found after stale timeout (treat as failed)
  *  CHAIN_PENDING    — tx found but not yet mined / under-confirmed (no-op)
+ *  EVENT_CANCELLED  — event cancelled on-chain; stores withdrawable_ratio_bps from contract
  */
 export type TransactionEvent =
   | 'CHAIN_CONFIRMED'
   | 'CHAIN_FAILED'
   | 'CHAIN_DROPPED'
-  | 'CHAIN_PENDING';
+  | 'CHAIN_PENDING'
+  | 'EVENT_CANCELLED';
 
 /**
  * Context passed into every transition.
@@ -33,7 +35,9 @@ export interface TransitionContext {
   txHash: string;
   blockNumber?: number;
   confirmations?: number;
-  /** Source that triggered the transition: webhook, reconciliation, or direct verify */
+  /** Contract-sourced ratio (bps). Required for EVENT_CANCELLED. */
+  withdrawableRatioBps?: number;
+  /** Source that triggered the transition */
   triggeredBy: 'webhook' | 'reconciliation' | 'direct';
 }
 
@@ -57,19 +61,22 @@ export interface TransitionResult {
  * this is the core guard against false confirmations and double-processing.
  */
 const ALLOWED_TRANSITIONS: Record<TransactionState, Set<TransactionEvent>> = {
-  pending: new Set(['CHAIN_CONFIRMED', 'CHAIN_FAILED', 'CHAIN_DROPPED', 'CHAIN_PENDING']),
-  confirmed: new Set(), // terminal — no transitions allowed
-  failed: new Set(),    // terminal — no transitions allowed
+  pending: new Set([
+    'CHAIN_CONFIRMED',
+    'CHAIN_FAILED',
+    'CHAIN_DROPPED',
+    'CHAIN_PENDING',
+  ]),
+  confirmed: new Set(['EVENT_CANCELLED']),
+  failed: new Set(),
+  cancelled: new Set(),
 };
 
-/**
- * Map event → resulting state (only for state-changing events).
- */
 const EVENT_TO_STATE: Partial<Record<TransactionEvent, TransactionState>> = {
   CHAIN_CONFIRMED: 'confirmed',
   CHAIN_FAILED: 'failed',
   CHAIN_DROPPED: 'failed',
-  // CHAIN_PENDING is a no-op — state stays 'pending'
+  EVENT_CANCELLED: 'cancelled',
 };
 
 // ─── State Machine ────────────────────────────────────────────────────────────
@@ -93,13 +100,32 @@ export class TransactionStateMachine {
    *  - TicketOrder.status → 3 (failed)
    *  - Inventory released back to pool
    *
+   * Side-effects on EVENT_CANCELLED:
+   *  - Transaction.status → 'cancelled' with withdrawableRatioBps from contract
+   *  - TicketOrder.status → 2 (cancelled) for completed orders
+   *
    * @throws TransactionStateError for illegal transitions
    */
   static async apply(
     event: TransactionEvent,
     ctx: TransitionContext,
   ): Promise<TransitionResult> {
-    const { txHash, blockNumber, confirmations, triggeredBy } = ctx;
+    const {
+      txHash,
+      blockNumber,
+      confirmations,
+      triggeredBy,
+      withdrawableRatioBps,
+    } = ctx;
+
+    if (event === 'EVENT_CANCELLED' && withdrawableRatioBps === undefined) {
+      throw new TransactionStateError(
+        'EVENT_CANCELLED requires withdrawableRatioBps from contract storage',
+        txHash,
+        'unknown' as TransactionState,
+        event,
+      );
+    }
 
     // ── Load transaction ──────────────────────────────────────────────────────
     const tx = await Transaction.findOne({ transactionId: txHash });
@@ -160,22 +186,27 @@ export class TransactionStateMachine {
           status: targetState,
           ...(blockNumber !== undefined && { blockNumber }),
           ...(confirmations !== undefined && { confirmations }),
+          ...(event === 'EVENT_CANCELLED' && {
+            withdrawableRatioBps,
+          }),
           lastCheckedAt: new Date(),
         },
         { session },
       );
 
-      // Find the matching pending TicketOrder
+      const orderStatusFilter = targetState === 'cancelled' ? 1 : 0;
+
       const order = await TicketOrder.findOne({
         user: tx.user,
         eventTicket: tx.eventTicket,
-        status: 0, // pending
+        status: orderStatusFilter,
       })
         .sort({ datePurchased: -1 })
         .session(session);
 
       if (order) {
-        const newOrderStatus = targetState === 'confirmed' ? 1 : 3;
+        const newOrderStatus =
+          targetState === 'confirmed' ? 1 : targetState === 'cancelled' ? 2 : 3;
 
         await TicketOrder.findByIdAndUpdate(
           order._id,
@@ -185,18 +216,19 @@ export class TransactionStateMachine {
 
         if (targetState === 'confirmed') {
           // Confirm inventory deduction (validates consistency)
-          const confirmResult = await InventoryService.confirmInventoryDeduction(
-            tx.eventTicket.toString(),
-            order.quantity,
-            session,
-          );
+          const confirmResult =
+            await InventoryService.confirmInventoryDeduction(
+              tx.eventTicket.toString(),
+              order.quantity,
+              session,
+            );
 
           if (!confirmResult.success) {
             console.warn(
               `[StateMachine] Inventory confirmation issue for order ${order._id}: ${confirmResult.error}`,
             );
           }
-        } else {
+        } else if (targetState === 'failed') {
           // Release inventory back to pool on failure
           const releaseResult = await InventoryService.releaseInventory(
             tx.eventTicket.toString(),
@@ -236,7 +268,10 @@ export class TransactionStateMachine {
   /**
    * Convenience: check whether a transition is valid without executing it.
    */
-  static canApply(currentState: TransactionState, event: TransactionEvent): boolean {
+  static canApply(
+    currentState: TransactionState,
+    event: TransactionEvent,
+  ): boolean {
     return ALLOWED_TRANSITIONS[currentState]?.has(event) ?? false;
   }
 
@@ -277,10 +312,15 @@ export class TransactionStateMachine {
    */
   static toOrderStatus(state: TransactionState): number {
     switch (state) {
-      case 'confirmed': return 1;
-      case 'failed':    return 3;
+      case 'confirmed':
+        return 1;
+      case 'cancelled':
+        return 2;
+      case 'failed':
+        return 3;
       case 'pending':
-      default:          return 0;
+      default:
+        return 0;
     }
   }
 }

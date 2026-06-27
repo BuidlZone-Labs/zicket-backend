@@ -1,5 +1,10 @@
 import Transaction from '../models/transaction';
+import EventTicket from '../models/event-ticket';
 import { BlockchainProvider } from '../provider/blockchain.provider';
+import {
+  getPaymentsContractProvider,
+  isPaymentsContractConfigured,
+} from '../provider/payments-contract.provider';
 import {
   TransactionStateMachine,
   TransactionEvent,
@@ -26,11 +31,16 @@ export interface ReconciliationReport {
   confirmed: number;
   failed: number;
   skipped: number;
+  cancelledEventsSynced: number;
+  cancelledTransactionsUpdated: number;
   errors: string[];
   durationMs: number;
 }
 
 export class ReconciliationService {
+  /**
+   * Re-checks stale pending transactions on-chain and applies state-machine fixes.
+   */
   static async reconcilePendingTransactions(): Promise<ReconciliationReport> {
     const startTime = Date.now();
 
@@ -39,6 +49,8 @@ export class ReconciliationService {
       confirmed: 0,
       failed: 0,
       skipped: 0,
+      cancelledEventsSynced: 0,
+      cancelledTransactionsUpdated: 0,
       errors: [],
       durationMs: 0,
     };
@@ -122,5 +134,112 @@ export class ReconciliationService {
     );
 
     return report;
+  }
+
+  /**
+   * Sync proportional-cancellation financial state from the payments contract.
+   * Reads withdrawable_ratio_bps directly from contract storage (never re-derived).
+   */
+  static async reconcileCancelledEventFinances(
+    report?: ReconciliationReport,
+  ): Promise<ReconciliationReport> {
+    const startTime = Date.now();
+    const localReport: ReconciliationReport = report ?? {
+      scanned: 0,
+      confirmed: 0,
+      failed: 0,
+      skipped: 0,
+      cancelledEventsSynced: 0,
+      cancelledTransactionsUpdated: 0,
+      errors: [],
+      durationMs: 0,
+    };
+
+    if (!isPaymentsContractConfigured()) {
+      console.warn(
+        '[Reconciliation] Skipping cancelled-event sync — Soroban contract not configured',
+      );
+      return localReport;
+    }
+
+    const provider = getPaymentsContractProvider();
+
+    const cancelledEvents = await EventTicket.find({
+      eventStatus: 'cancelled',
+      onChainEventId: { $exists: true, $nin: [null, ''] },
+    })
+      .lean()
+      .limit(200);
+
+    for (const event of cancelledEvents) {
+      const onChainEventId = event.onChainEventId as string;
+
+      try {
+        const financialState =
+          await provider.getEventFinancialState(onChainEventId);
+
+        if (financialState.withdrawableRatioBps === null) {
+          localReport.skipped++;
+          continue;
+        }
+
+        await EventTicket.findByIdAndUpdate(event._id, {
+          withdrawableRatioBps: financialState.withdrawableRatioBps,
+          cancelLedger: financialState.cancelLedger,
+          organizerWithdrawn: financialState.organizerWithdrawn,
+        });
+
+        localReport.cancelledEventsSynced++;
+
+        const confirmedTxs = await Transaction.find({
+          eventTicket: event._id,
+          status: 'confirmed',
+        }).lean();
+
+        for (const tx of confirmedTxs) {
+          try {
+            const result = await TransactionStateMachine.apply(
+              'EVENT_CANCELLED',
+              {
+                txHash: tx.transactionId,
+                withdrawableRatioBps: financialState.withdrawableRatioBps,
+                triggeredBy: 'reconciliation',
+              },
+            );
+
+            if (result.transitioned) {
+              localReport.cancelledTransactionsUpdated++;
+            }
+          } catch (error) {
+            const msg = `Failed to cancel tx ${tx.transactionId} for event ${onChainEventId}: ${
+              error instanceof Error ? error.message : 'Unknown'
+            }`;
+            localReport.errors.push(msg);
+            console.error(`[Reconciliation] ${msg}`);
+          }
+        }
+      } catch (error) {
+        const msg = `Failed to reconcile cancelled event ${onChainEventId}: ${
+          error instanceof Error ? error.message : 'Unknown'
+        }`;
+        localReport.errors.push(msg);
+        console.error(`[Reconciliation] ${msg}`);
+      }
+    }
+
+    localReport.durationMs = Date.now() - startTime;
+    return localReport;
+  }
+
+  /**
+   * Full reconciliation pass: stale pending txs + cancelled-event finances.
+   */
+  static async reconcileAll(): Promise<ReconciliationReport> {
+    const startTime = Date.now();
+    const pendingReport = await this.reconcilePendingTransactions();
+    const fullReport =
+      await this.reconcileCancelledEventFinances(pendingReport);
+    fullReport.durationMs = Date.now() - startTime;
+    return fullReport;
   }
 }
