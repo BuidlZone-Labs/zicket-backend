@@ -31,7 +31,8 @@ export function isValidIdempotencyKey(key: string): boolean {
   if (!key) return false;
   // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
   // Or hex string: 32 character hex
-  const uuidRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+  const uuidRegex =
+    /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
   const hexRegex = /^[a-f0-9]{32}$/i;
   return uuidRegex.test(key) || hexRegex.test(key);
 }
@@ -51,11 +52,6 @@ export interface DuplicatePaymentResponse {
 /**
  * Attempt to extract user ID from various request contexts
  */
-export function extractUserId(
-  req: any,
-): string | null {
-  return req.user?._id ||
-    (req.user as any)?.id ||
-    req.userId ||
-    null;
+export function extractUserId(req: any): string | null {
+  return req.user?._id || (req.user as any)?.id || req.userId || null;
 }

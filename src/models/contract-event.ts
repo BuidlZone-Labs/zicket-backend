@@ -70,11 +70,14 @@ const contractEventSchema = new Schema<IContractEvent>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Compound index for idempotency
-contractEventSchema.index({ transactionHash: 1, logIndex: 1 }, { unique: true });
+contractEventSchema.index(
+  { transactionHash: 1, logIndex: 1 },
+  { unique: true },
+);
 
 export default mongoose.models.ContractEvent ||
   mongoose.model<IContractEvent>('ContractEvent', contractEventSchema);

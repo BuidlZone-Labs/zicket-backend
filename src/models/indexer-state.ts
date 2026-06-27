@@ -22,7 +22,7 @@ const indexerStateSchema = new Schema<IIndexerState>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.models.IndexerState ||

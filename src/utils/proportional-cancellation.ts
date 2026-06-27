@@ -41,4 +41,3 @@ export function computeRefundPoolAmount(
 ): bigint {
   return totalHeld - computeWithdrawableAmount(totalHeld, withdrawableRatioBps);
 }
-
