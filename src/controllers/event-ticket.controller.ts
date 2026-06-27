@@ -5,6 +5,7 @@ import {
   CreateEventStepTwoInput,
 } from '../validators/event.validator';
 import { UserAuthenticatedReq } from '../utils/types';
+import { PaymentPrivacyDisclosureService } from '../services/payment-privacy-disclosure.service';
 
 export const getEventTickets: RequestHandler = async (req, res) => {
   try {
@@ -366,6 +367,10 @@ export const getEventById: RequestHandler = async (req, res) => {
         isTrending: event.isTrending,
         eventType: event.eventType,
         paymentPrivacy: event.paymentPrivacy,
+        paymentDisclosure: PaymentPrivacyDisclosureService.buildDisclosure(
+          event.eventType,
+          event.paymentPrivacy,
+        ),
         offerReceipts: event.offerReceipts,
         hasZkEmailUpdates: event.hasZkEmailUpdates,
         hasEventReminders: event.hasEventReminders,

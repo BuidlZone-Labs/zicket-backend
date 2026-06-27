@@ -107,6 +107,9 @@ export const verifyPayment: RequestHandler = async (
 
     const { txHash, eventTicketId, ticketType, quantity, expectedAmount } =
       req.body;
+    const privacyAcknowledged =
+      req.body.privacyAcknowledged === true ||
+      req.body.privacyAcknowledged === 'true';
 
     // ── Input validation ──────────────────────────────────────────────────────
     if (!txHash || typeof txHash !== 'string' || txHash.trim() === '') {
@@ -156,6 +159,9 @@ export const verifyPayment: RequestHandler = async (
       parsedQty,
       parsedAmount,
       idempotencyKey,
+      undefined,
+      undefined,
+      privacyAcknowledged,
     );
 
     if (!result.success) {

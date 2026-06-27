@@ -6,6 +6,7 @@ import emailWorker from './workers/email.worker';
 import zkEmailWorker from './workers/zkemail.worker';
 import paymentWorker from './workers/payment.worker';
 import reconciliationWorker from './workers/reconciliation.worker';
+import retentionWorker from './workers/retention.worker';
 import indexerWorker from './workers/indexer.worker';
 
 async function startServer() {
@@ -39,6 +40,9 @@ async function startServer() {
     // Reconciliation worker (periodic stale-tx cleanup via state machine)
     console.log('✓ Reconciliation worker initialized');
 
+    // Retention worker (TTL hygiene + anonymization job retries)
+    console.log('✓ Retention worker initialized');
+
     // Start Express server
     const server = app.listen(config.port, () => {
       console.log(`✓ Server running on port ${config.port}`);
@@ -53,6 +57,7 @@ async function startServer() {
         await zkEmailWorker.close();
         await paymentWorker.close();
         await reconciliationWorker.close();
+        await retentionWorker.close();
         await queueService.close();
         console.log('All services closed');
         process.exit(0);

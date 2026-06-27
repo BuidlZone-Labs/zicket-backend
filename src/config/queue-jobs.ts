@@ -144,6 +144,20 @@ export interface ReconcilePayload {
 export type ReconciliationJobPayload = ReconcilePayload;
 
 /**
+ * #127 — Data retention / anonymization queue job types
+ */
+export enum RetentionJobType {
+  RUN_RETENTION_PASS = 'RUN_RETENTION_PASS',
+}
+
+export interface RetentionPayload {
+  triggeredBy: 'schedule' | 'manual';
+  timestamp: number;
+}
+
+export type RetentionJobPayload = RetentionPayload;
+
+/**
  * Queue names — centralised so nothing is hard-coded elsewhere
  */
 export const QUEUE_NAMES = {
@@ -151,6 +165,7 @@ export const QUEUE_NAMES = {
   ZKEMAIL: 'zkemail-queue',
   PAYMENT: 'payment-queue', // #81
   RECONCILIATION: 'reconciliation-queue', // #78
+  RETENTION: 'retention-queue', // #127
   ANALYTICS: 'analytics-queue',
 } as const;
 
@@ -167,6 +182,16 @@ export const REPEATABLE_JOBS = {
       },
       attempts: 2,
       backoff: { type: 'fixed' as const, delay: 30_000 },
+    },
+  },
+  RUN_RETENTION_PASS: {
+    name: RetentionJobType.RUN_RETENTION_PASS,
+    opts: {
+      repeat: {
+        pattern: process.env.RETENTION_CRON || '0 3 * * *',
+      },
+      attempts: 2,
+      backoff: { type: 'fixed' as const, delay: 60_000 },
     },
   },
 } as const;

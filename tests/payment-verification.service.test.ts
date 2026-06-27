@@ -27,6 +27,8 @@ const baseEvent = {
   availableTickets: 10,
   offerReceipts: false,
   privacyLevel: 1,
+  eventType: 1,
+  paymentPrivacy: 0,
   allowAnonymous: false,
   requiresVerification: false,
 };
@@ -196,6 +198,100 @@ describe('PaymentVerificationService - privacy enforcement', () => {
       );
 
       expect(mockUser.findById).not.toHaveBeenCalled();
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Transaction not found on chain');
+    });
+  });
+
+  describe('paymentPrivacy acknowledgment (#127)', () => {
+    it('rejects Standard payment without privacyAcknowledged', async () => {
+      (mockEventTicket.findById as jest.Mock).mockResolvedValue({
+        ...baseEvent,
+        eventType: 1,
+        paymentPrivacy: 1,
+      });
+
+      const result = await PaymentVerificationService.verifyAndIssueTicket(
+        '0xTxHash',
+        '507f1f77bcf86cd799439011',
+        'event123',
+        'General',
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        false,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toMatch(/privacyAcknowledged must be true/i);
+    });
+
+    it('proceeds past disclosure check for Standard payment when acknowledged', async () => {
+      const {
+        BlockchainProvider,
+      } = require('../src/provider/blockchain.provider');
+      const blockchain = BlockchainProvider.getInstance();
+      blockchain.fetchTransaction.mockResolvedValue(null);
+
+      (mockEventTicket.findById as jest.Mock).mockResolvedValue({
+        ...baseEvent,
+        eventType: 1,
+        paymentPrivacy: 1,
+      });
+
+      (mockUser.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({ _id: 'user123' }),
+        }),
+      });
+
+      const result = await PaymentVerificationService.verifyAndIssueTicket(
+        '0xTxHash',
+        '507f1f77bcf86cd799439011',
+        'event123',
+        'General',
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        true,
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Transaction not found on chain');
+    });
+
+    it('does not require acknowledgment for Anonymous payment events', async () => {
+      const {
+        BlockchainProvider,
+      } = require('../src/provider/blockchain.provider');
+      const blockchain = BlockchainProvider.getInstance();
+      blockchain.fetchTransaction.mockResolvedValue(null);
+
+      (mockEventTicket.findById as jest.Mock).mockResolvedValue({
+        ...baseEvent,
+        eventType: 1,
+        paymentPrivacy: 0,
+      });
+
+      (mockUser.findById as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue({ _id: 'user123' }),
+        }),
+      });
+
+      const result = await PaymentVerificationService.verifyAndIssueTicket(
+        '0xTxHash',
+        '507f1f77bcf86cd799439011',
+        'event123',
+        'General',
+        1,
+        10,
+      );
+
       expect(result.success).toBe(false);
       expect(result.message).toBe('Transaction not found on chain');
     });

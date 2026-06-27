@@ -14,6 +14,8 @@ export interface ITicketOrder extends Document {
   amount: number;
   zkIdMatch: boolean;
   privacyLevel: string;
+  /** Snapshot of event paymentPrivacy at purchase (0 anonymous, 1 standard). */
+  paymentPrivacy?: number | null;
   hasReceipt: boolean;
   datePurchased: Date;
   idempotencyKey?: string; // unique idempotency key for duplicate prevention
@@ -41,6 +43,7 @@ const ticketOrderSchema = new Schema<ITicketOrder>(
     amount: { type: Number, required: true, min: 0 },
     zkIdMatch: { type: Boolean, default: false },
     privacyLevel: { type: String, required: true },
+    paymentPrivacy: { type: Number, enum: [0, 1], default: null },
     hasReceipt: { type: Boolean, default: false },
     datePurchased: { type: Date, default: Date.now },
     idempotencyKey: { type: String, sparse: true, unique: true },

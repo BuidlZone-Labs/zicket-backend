@@ -13,6 +13,8 @@ import ticketOrderRoutes from './routes/ticket-order.route';
 import queueMonitorRoutes from './routes/queue-monitor.route';
 import zkEmailRoutes from './routes/zkemail.route';
 import indexerRoutes from './routes/indexer.route';
+import privacyComplianceRoutes from './routes/privacy-compliance.route';
+import accountRoutes from './routes/account.route';
 import { globalErrorHandler } from './middlewares/errorHandler';
 
 const app = express();
@@ -49,6 +51,8 @@ app.use('/ticket-orders', ticketOrderRoutes);
 app.use('/api', queueMonitorRoutes);
 app.use('/zkemail', authLimiter, zkEmailRoutes);
 app.use('/api/events', indexerRoutes);
+app.use('/compliance', privacyComplianceRoutes);
+app.use('/account', accountRoutes);
 app.use(protectedRoute);
 
 app.use(globalErrorHandler);

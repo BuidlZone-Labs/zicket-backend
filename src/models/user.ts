@@ -19,6 +19,8 @@ export interface IUser extends Document {
     emailOnTicketPurchase: boolean;
     emailOnTicketUpdate: boolean;
   };
+  /** Set when the user exercises right-to-erasure (off-chain anonymization). */
+  anonymizedAt?: Date;
 }
 
 const userSchema = new Schema<IUser>(
@@ -51,6 +53,7 @@ const userSchema = new Schema<IUser>(
       emailOnTicketPurchase: { type: Boolean, default: true },
       emailOnTicketUpdate: { type: Boolean, default: true },
     },
+    anonymizedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
