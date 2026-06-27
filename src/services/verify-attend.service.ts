@@ -9,7 +9,10 @@ import {
   VerifyAttendFailedError,
 } from '../errors/verifyAttendError';
 import { isZkPassportProofExpired } from '../utils/zkpassport-expiry';
-import { attendanceNullifierDigest } from '../utils/attendance-nullifier-digest';
+import {
+  attendanceNullifierDigest,
+  AttendanceNullifierPepperError,
+} from '../utils/attendance-nullifier-digest';
 import { EventContractConfigError } from '../provider/event-contract.factory';
 
 export interface VerifyAttendSuccess {

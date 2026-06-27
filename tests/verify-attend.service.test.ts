@@ -40,6 +40,7 @@ describe('VerifyAttendService (#121)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.ATTENDANCE_NULLIFIER_PEPPER = 'test-pepper-value';
     mockGetContract.mockReturnValue(mockContract as any);
   });
 

@@ -13,8 +13,12 @@ import {
 } from './event-contract.provider';
 
 function nullifierToBytes32(nullifier: string): Buffer {
-  const hex = BigInt(nullifier).toString(16).padStart(64, '0').slice(-64);
-  const buf = Buffer.from(hex, 'hex');
+  const hex = BigInt(nullifier).toString(16);
+  if (hex.length > 64) {
+    throw new Error('Nullifier exceeds 32 bytes');
+  }
+  const padded = hex.padStart(64, '0');
+  const buf = Buffer.from(padded, 'hex');
   if (buf.length !== 32) {
     throw new Error('Nullifier must encode to exactly 32 bytes');
   }
