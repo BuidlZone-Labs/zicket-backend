@@ -1,5 +1,6 @@
 import './utils/logger';
 import express from 'express';
+import helmet from 'helmet';
 import protectedRoute from './routes/protected.route';
 import otpRoute from './routes/otp.route';
 import authRoute from './routes/auth.route';
@@ -20,6 +21,8 @@ import { globalErrorHandler } from './middlewares/errorHandler';
 const app = express();
 
 app.set('trust proxy', 1);
+
+app.use(helmet());
 
 app.use(express.json());
 
