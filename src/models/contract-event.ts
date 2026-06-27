@@ -8,6 +8,17 @@ export interface IContractEvent extends Document {
   logIndex: number;
   topics: string[];
   data: string;
+  /**
+   * Parsed event arguments. For privacy-stripped events (e.g.
+   * `AnonEventRegistration`), `args` MUST NOT contain attendee
+   * identifiers — no `payer`, no `user`, no `attendeeId`, no
+   * commitment hash that can be reverse-correlated to a user.
+   *
+   * Schema-level guarantee: this model intentionally carries NO
+   * `user`, `userId`, `attendeeId`, or `session` field. Any future
+   * contributor adding such a field is undoing contract-layer privacy
+   * guarantees and should NOT merge.
+   */
   args?: Record<string, any>;
   timestamp: Date;
   createdAt: Date;
