@@ -185,8 +185,8 @@ export class PaymentVerificationService {
       [transaction] = await Transaction.create(
         [
           {
-            user: new mongoose.Types.ObjectId(userId),
-            eventTicket: new mongoose.Types.ObjectId(eventTicketId),
+            user: new (mongoose.Types.ObjectId as any)(userId),
+            eventTicket: new (mongoose.Types.ObjectId as any)(eventTicketId),
             amount: expectedAmountUsd,
             transactionDate: new Date(),
             status: 'pending',
@@ -202,8 +202,8 @@ export class PaymentVerificationService {
       [order] = await TicketOrder.create(
         [
           {
-            user: new mongoose.Types.ObjectId(userId),
-            eventTicket: new mongoose.Types.ObjectId(eventTicketId),
+            user: new (mongoose.Types.ObjectId as any)(userId),
+            eventTicket: new (mongoose.Types.ObjectId as any)(eventTicketId),
             ticketType,
             eventName: event.name,
             status: 0, // pending — state machine will move to 1

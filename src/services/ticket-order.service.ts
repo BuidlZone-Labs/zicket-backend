@@ -26,7 +26,7 @@ export class TicketOrderService {
       const validLimit = Math.max(1, Math.min(limit, 50));
       const skip = (validPage - 1) * validLimit;
 
-      const filter = { user: new mongoose.Types.ObjectId(userId) };
+      const filter = { user: new (mongoose.Types.ObjectId as any)(userId) };
 
       const [orders, total] = await Promise.all([
         TicketOrder.find(filter)
@@ -66,7 +66,7 @@ export class TicketOrderService {
 
       // 1. Find all events organized by this user
       const events = await EventTicket.find({
-        organizedBy: new mongoose.Types.ObjectId(organizerId),
+        organizedBy: new (mongoose.Types.ObjectId as any)(organizerId),
       })
         .select('_id')
         .lean();
