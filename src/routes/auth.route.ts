@@ -53,11 +53,16 @@ authRoute.get(
 
     const token = generateToken(req.user as any);
 
-    // Redirect to frontend with token
-    res.redirect(`${process.env.FRONTEND_URL}/oauth?token=${token}`);
+    const isProduction = process.env.NODE_ENV === 'production';
 
-    // Send token in response body
-    // res.status(200).json({ token });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 1000,
+    });
+
+    res.redirect(process.env.FRONTEND_URL!);
   },
 );
 
