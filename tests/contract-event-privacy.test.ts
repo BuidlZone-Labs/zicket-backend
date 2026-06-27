@@ -42,8 +42,7 @@ describe('ContractEvent privacy guarantees', () => {
       // (for array fields). Direct `field.ref` can miss standard refs.
       for (const path of Object.keys(schemaPaths)) {
         const field = schemaPaths[path] as any;
-        const ref =
-          field.options?.ref ?? field.caster?.options?.ref ?? null;
+        const ref = field.options?.ref ?? field.caster?.options?.ref ?? null;
         if (ref) {
           expect(ref).not.toBe('User');
           expect(ref).not.toBe('Session');

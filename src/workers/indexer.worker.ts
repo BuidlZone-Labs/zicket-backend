@@ -3,9 +3,12 @@ import indexerService from '../services/indexer.service';
 export class IndexerWorker {
   private static instance: IndexerWorker;
   private intervalId?: NodeJS.Timeout;
-  
+
   // Default to 15 seconds polling
-  private pollInterval = parseInt(process.env.INDEXER_POLL_INTERVAL || '15000', 10);
+  private pollInterval = parseInt(
+    process.env.INDEXER_POLL_INTERVAL || '15000',
+    10,
+  );
 
   private constructor() {}
 
@@ -16,7 +19,7 @@ export class IndexerWorker {
 
   async initialize() {
     console.log('[IndexerWorker] Initializing event indexer...');
-    
+
     // Initial sync to catch up on any missed blocks
     await indexerService.syncEvents();
 

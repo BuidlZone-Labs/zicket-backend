@@ -1,6 +1,7 @@
 # Pull Request — Zicket Backend
 
 ## Linked issue
+
 Closes #<!-- issue number -->
 
 > **Rule:** Every PR must close exactly one issue. If your changes span multiple issues, split the PR.
@@ -8,6 +9,7 @@ Closes #<!-- issue number -->
 ---
 
 ## What this PR does
+
 <!-- One paragraph, behaviour-level not file-level.
      Bad:  "Added verify-attend endpoint and updated event service."
      Good: "Attendees can now submit a zkPassport proof to unlock gated free events.
@@ -17,6 +19,7 @@ Closes #<!-- issue number -->
 ---
 
 ## Change type
+
 - [ ] New endpoint
 - [ ] Auth / middleware change
 - [ ] Database schema / migration
@@ -29,11 +32,12 @@ Closes #<!-- issue number -->
 ---
 
 ## Endpoint(s) affected
+
 <!-- For every new or changed endpoint. -->
 
-| Method | Path | Auth required? | Notes |
-|--------|------|-----------------|-------|
-| <!-- POST --> | <!-- /events/:id/verify-attend --> | <!-- none / JWT / organizer-only --> | |
+| Method        | Path                               | Auth required?                       | Notes |
+| ------------- | ---------------------------------- | ------------------------------------ | ----- |
+| <!-- POST --> | <!-- /events/:id/verify-attend --> | <!-- none / JWT / organizer-only --> |       |
 
 > ⚠️ **Anonymous-path check:** if this endpoint is part of an anonymous browsing, discovery,
 > or free-attendance flow, confirm it is explicitly excluded from JWT middleware rather than
@@ -43,10 +47,11 @@ Closes #<!-- issue number -->
 ---
 
 ## Data handling
+
 <!-- Mandatory for anything touching PII, wallet addresses, zk proofs, or commitments. -->
 
-| Data | Stored where | Retention | Erasable on request? |
-|------|--------------|-----------|----------------------|
+| Data                                 | Stored where                            | Retention                  | Erasable on request? |
+| ------------------------------------ | --------------------------------------- | -------------------------- | -------------------- |
 | <!-- e.g. zkPassport proof bytes --> | <!-- DB / not stored / relayed only --> | <!-- e.g. never stored --> | <!-- yes/no/n.a. --> |
 
 - [ ] Raw proof material (zkPassport proofs, zkEmail addresses) is never persisted — only commitments/nullifiers/hashes
@@ -56,6 +61,7 @@ Closes #<!-- issue number -->
 ---
 
 ## Contract / on-chain consistency
+
 <!-- Mandatory for anything touching payments, escrow, cancellation, or ticket state. -->
 
 - [ ] The state machine / enum used here matches the actual contract states (not a simplified backend-only model)
@@ -70,6 +76,7 @@ Closes #<!-- issue number -->
 ---
 
 ## Rate limiting / anti-abuse coordination
+
 <!-- Mandatory for any anonymous-action or claim-style endpoint. -->
 
 - [ ] If this endpoint has an equivalent on-chain rate limit (e.g. anonymous ticket claim window), the backend limit is configured to be equal to or looser than the contract limit — never tighter in a way that masks a contract success/failure
@@ -79,6 +86,7 @@ Closes #<!-- issue number -->
 ---
 
 ## Indexer / event consumption
+
 <!-- Mandatory if this PR ingests or reacts to on-chain events. -->
 
 - [ ] If consuming a privacy-stripped event (e.g. one with no payer/attendee field), no correlation logic (timestamp matching, sequential ID inference, session join) is used to back-fill identity
@@ -109,6 +117,7 @@ Closes #<!-- issue number -->
 > ✅ Strong: `test_verify_attend_rejects_reused_nullifier_same_event` — proves the actual security property
 
 **Edge cases covered:**
+
 - [ ] Happy path for each new/changed endpoint
 - [ ] Auth rejection path (missing token, wrong role, expired token)
 - [ ] Anonymous path explicitly tested with no auth header present
@@ -120,6 +129,7 @@ Closes #<!-- issue number -->
 ---
 
 ## Acceptance criteria sign-off
+
 <!-- Copy from the linked issue. State HOW each is satisfied, not just check the box. -->
 
 - [ ] **AC:** <!-- paste criterion -->
@@ -130,6 +140,7 @@ Closes #<!-- issue number -->
 ---
 
 ## What this PR deliberately does NOT cover
+
 <!-- Name every known gap and link the follow-up issue. No silent scope-narrowing. -->
 
 - <!-- e.g. Backend-side coordination with on-chain rate limiter — tracked in #___ -->
@@ -137,6 +148,7 @@ Closes #<!-- issue number -->
 ---
 
 ## Reviewer focus areas
+
 <!-- Tell the reviewer exactly where to spend time. -->
 
 1.

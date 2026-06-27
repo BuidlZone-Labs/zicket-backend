@@ -9,7 +9,9 @@ import InventoryService from '../src/services/inventory.service';
 
 jest.mock('../src/services/paymentVerification.service', () => ({
   PaymentVerificationService: {
-    verify: jest.fn<any>().mockImplementation(async () => ({ confirmations: 2 })),
+    verify: jest
+      .fn<any>()
+      .mockImplementation(async () => ({ confirmations: 2 })),
   },
 }));
 
@@ -22,7 +24,9 @@ jest.mock('../src/state-machine/transaction.state-machine', () => ({
 jest.mock('../src/services/inventory.service', () => ({
   __esModule: true,
   default: {
-    reserveInventoryTransactional: jest.fn<any>().mockResolvedValue({ success: true }),
+    reserveInventoryTransactional: jest
+      .fn<any>()
+      .mockResolvedValue({ success: true }),
   },
 }));
 
@@ -34,8 +38,18 @@ jest.mock('../src/models/transaction', () => ({
   __esModule: true,
   default: {
     findOne: jest.fn<any>().mockImplementation(async (query: any) => {
-      if (query.idempotencyKey) return mockTransactions.find(t => t.idempotencyKey === query.idempotencyKey) || null;
-      if (query.transactionId) return mockTransactions.find(t => t.transactionId === query.transactionId) || null;
+      if (query.idempotencyKey)
+        return (
+          mockTransactions.find(
+            (t) => t.idempotencyKey === query.idempotencyKey,
+          ) || null
+        );
+      if (query.transactionId)
+        return (
+          mockTransactions.find(
+            (t) => t.transactionId === query.transactionId,
+          ) || null
+        );
       return null;
     }),
     create: jest.fn<any>().mockImplementation(async (docs: any[]) => {
@@ -44,7 +58,10 @@ jest.mock('../src/models/transaction', () => ({
       return created;
     }),
     find: jest.fn<any>().mockImplementation(async (query: any) => {
-      if (query.transactionId) return mockTransactions.filter(t => t.transactionId === query.transactionId);
+      if (query.transactionId)
+        return mockTransactions.filter(
+          (t) => t.transactionId === query.transactionId,
+        );
       return [];
     }),
   },
@@ -54,7 +71,11 @@ jest.mock('../src/models/ticket-order', () => ({
   __esModule: true,
   default: {
     findOne: jest.fn<any>().mockImplementation(async (query: any) => {
-      if (query.idempotencyKey) return mockOrders.find(o => o.idempotencyKey === query.idempotencyKey) || null;
+      if (query.idempotencyKey)
+        return (
+          mockOrders.find((o) => o.idempotencyKey === query.idempotencyKey) ||
+          null
+        );
       return null;
     }),
     create: jest.fn<any>().mockImplementation(async (docs: any[]) => {
@@ -63,7 +84,10 @@ jest.mock('../src/models/ticket-order', () => ({
       return created;
     }),
     find: jest.fn<any>().mockImplementation(async (query: any) => {
-      if (query.idempotencyKey) return mockOrders.filter(o => o.idempotencyKey === query.idempotencyKey);
+      if (query.idempotencyKey)
+        return mockOrders.filter(
+          (o) => o.idempotencyKey === query.idempotencyKey,
+        );
       return [];
     }),
   },
@@ -88,8 +112,13 @@ jest.mock('../src/models/user', () => ({
   default: {
     findById: jest.fn<any>().mockReturnValue({
       select: jest.fn<any>().mockReturnValue({
-        lean: jest.fn<any>().mockResolvedValue({ _id: 'mock-user-id', emailVerifiedAt: new Date() })
-      })
+        lean: jest
+          .fn<any>()
+          .mockResolvedValue({
+            _id: 'mock-user-id',
+            emailVerifiedAt: new Date(),
+          }),
+      }),
     }),
   },
 }));
@@ -123,13 +152,23 @@ describe('Duplicate Payment Prevention', () => {
   describe('Replay Attack Prevention (txHash)', () => {
     it('should reject duplicate txHash on second attempt without idempotency key', async () => {
       const result1 = await PaymentVerificationService.verifyAndIssueTicket(
-        testTxHash, testUserId, testEventTicketId, 'General', 1, testAmount
+        testTxHash,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
       );
 
       expect(result1.success).toBe(true);
 
       const result2 = await PaymentVerificationService.verifyAndIssueTicket(
-        testTxHash, testUserId, testEventTicketId, 'General', 1, testAmount
+        testTxHash,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
       );
 
       expect(result2.success).toBe(false);
@@ -143,14 +182,26 @@ describe('Duplicate Payment Prevention', () => {
       const uniqueTxHash = '0x' + 'b'.repeat(64);
 
       const result1 = await PaymentVerificationService.verifyAndIssueTicket(
-        uniqueTxHash, testUserId, testEventTicketId, 'VIP', 2, testAmount, idempotencyKey
+        uniqueTxHash,
+        testUserId,
+        testEventTicketId,
+        'VIP',
+        2,
+        testAmount,
+        idempotencyKey,
       );
 
       expect(result1.success).toBe(true);
       const transactionId1 = result1.transactionId;
 
       const result2 = await PaymentVerificationService.verifyAndIssueTicket(
-        uniqueTxHash, testUserId, testEventTicketId, 'VIP', 2, testAmount, idempotencyKey
+        uniqueTxHash,
+        testUserId,
+        testEventTicketId,
+        'VIP',
+        2,
+        testAmount,
+        idempotencyKey,
       );
 
       expect(result2.success).toBe(true);
@@ -165,13 +216,25 @@ describe('Duplicate Payment Prevention', () => {
       const idempotencyKey2 = '550e8400-e29b-41d4-a716-446655440003';
 
       const result1 = await PaymentVerificationService.verifyAndIssueTicket(
-        uniqueTxHash, testUserId, testEventTicketId, 'General', 1, testAmount, idempotencyKey1
+        uniqueTxHash,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
+        idempotencyKey1,
       );
 
       expect(result1.success).toBe(true);
 
       const result2 = await PaymentVerificationService.verifyAndIssueTicket(
-        uniqueTxHash, testUserId, testEventTicketId, 'General', 1, testAmount, idempotencyKey2
+        uniqueTxHash,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
+        idempotencyKey2,
       );
 
       expect(result2.success).toBe(false);
@@ -185,14 +248,26 @@ describe('Duplicate Payment Prevention', () => {
       const txHash1 = '0x' + 'd'.repeat(64);
 
       const result1 = await PaymentVerificationService.verifyAndIssueTicket(
-        txHash1, testUserId, testEventTicketId, 'General', 1, testAmount, idempotencyKey
+        txHash1,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
+        idempotencyKey,
       );
 
       expect(result1.success).toBe(true);
 
       const txHash2 = '0x' + 'e'.repeat(64);
       const result2 = await PaymentVerificationService.verifyAndIssueTicket(
-        txHash2, testUserId, testEventTicketId, 'General', 1, testAmount, idempotencyKey
+        txHash2,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
+        idempotencyKey,
       );
 
       expect(result2.success).toBe(true);
@@ -206,20 +281,36 @@ describe('Duplicate Payment Prevention', () => {
       const idempotencyKey = '550e8400-e29b-41d4-a716-446655440005';
 
       const result1 = await PaymentVerificationService.verifyAndIssueTicket(
-        txHash, testUserId, testEventTicketId, 'General', 1, testAmount, idempotencyKey
+        txHash,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
+        idempotencyKey,
       );
 
       expect(result1.success).toBe(true);
 
       const result2 = await PaymentVerificationService.verifyAndIssueTicket(
-        txHash, testUserId, testEventTicketId, 'General', 1, testAmount, idempotencyKey
+        txHash,
+        testUserId,
+        testEventTicketId,
+        'General',
+        1,
+        testAmount,
+        idempotencyKey,
       );
 
       expect(result2.success).toBe(true);
       expect(result2.transactionId).toBe(result1.transactionId);
 
-      expect(mockTransactions.filter(t => t.transactionId === txHash)).toHaveLength(1);
-      expect(mockOrders.filter(o => o.idempotencyKey === idempotencyKey)).toHaveLength(1);
+      expect(
+        mockTransactions.filter((t) => t.transactionId === txHash),
+      ).toHaveLength(1);
+      expect(
+        mockOrders.filter((o) => o.idempotencyKey === idempotencyKey),
+      ).toHaveLength(1);
     });
   });
 });
