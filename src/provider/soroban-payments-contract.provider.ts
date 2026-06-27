@@ -46,11 +46,13 @@ export class SorobanPaymentsContractProvider implements IPaymentsContractProvide
     this.contract = new Contract(contractId);
   }
 
+  /** Returns the singleton Soroban RPC provider (lazy-initialized from env). */
   static getInstance(): SorobanPaymentsContractProvider {
     if (!this._instance) this._instance = new SorobanPaymentsContractProvider();
     return this._instance;
   }
 
+  /** Reads and caches the contract-wide platform fee in basis points. */
   async getPlatformFeeBps(): Promise<number> {
     if (this.cachedPlatformFeeBps !== null) {
       return this.cachedPlatformFeeBps;
@@ -61,6 +63,10 @@ export class SorobanPaymentsContractProvider implements IPaymentsContractProvide
     return this.cachedPlatformFeeBps;
   }
 
+  /**
+   * Simulates contract reads for cancellation ratio, revenue, and organizer flags.
+   * `withdrawable_ratio_bps` is always taken from on-chain storage.
+   */
   async getEventFinancialState(
     onChainEventId: string,
   ): Promise<EventFinancialState> {
@@ -89,6 +95,7 @@ export class SorobanPaymentsContractProvider implements IPaymentsContractProvide
     };
   }
 
+  /** Runs a read-only Soroban simulation for a contract method. */
   private async simulateRead(
     method: string,
     eventId?: string,

@@ -38,6 +38,9 @@ export interface ReconciliationReport {
 }
 
 export class ReconciliationService {
+  /**
+   * Re-checks stale pending transactions on-chain and applies state-machine fixes.
+   */
   static async reconcilePendingTransactions(): Promise<ReconciliationReport> {
     const startTime = Date.now();
 

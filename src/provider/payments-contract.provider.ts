@@ -1,7 +1,9 @@
 import { EventFinancialState } from '../types/payments-contract.types';
 
 export interface IPaymentsContractProvider {
+  /** Reads cancellation ratio, revenue, and organizer flags from contract storage. */
   getEventFinancialState(onChainEventId: string): Promise<EventFinancialState>;
+  /** Returns the contract-wide platform fee in basis points. */
   getPlatformFeeBps(): Promise<number>;
 }
 

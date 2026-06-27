@@ -3,6 +3,7 @@
  * (withdraw, claim_refund, cancel_event). Integer division matches Soroban i128/u32.
  */
 
+/** Basis-point denominator used by the payments contract (10_000 = 100%). */
 export const BPS_DENOMINATOR = 10_000;
 
 /** Organizer withdrawable amount before platform fee (withdraw()). */

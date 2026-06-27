@@ -22,5 +22,6 @@ export function assertValidSorobanSymbol(value: string, fieldName = 'eventId'): 
   }
 }
 
+/** Mongoose validation message for invalid on-chain event identifiers. */
 export const SOROBAN_SYMBOL_VALIDATION_MESSAGE =
   'Must be a valid Soroban Symbol (1-32 chars, alphanumeric and underscore only)';
