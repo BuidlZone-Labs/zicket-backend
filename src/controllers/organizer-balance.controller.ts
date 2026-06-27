@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import EventTicket from '../models/event-ticket';
 import { OrganizerBalanceService } from '../services/organizer-balance.service';
 import { UserAuthenticatedReq } from '../utils/types';
+import { assertValidSorobanSymbol } from '../utils/soroban-symbol';
 import { AppError } from '../errors/AppError';
 
 /**
@@ -52,6 +53,16 @@ export const getOrganizerBalance: RequestHandler = async (
       return res.status(400).json({
         error: 'Not configured',
         message: 'Event has no on-chain identifier linked',
+      });
+    }
+
+    try {
+      assertValidSorobanSymbol(event.onChainEventId, 'onChainEventId');
+    } catch {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message:
+          'onChainEventId must be a valid Soroban Symbol (1-32 chars, alphanumeric and underscore only)',
       });
     }
 

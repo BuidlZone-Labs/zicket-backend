@@ -32,6 +32,11 @@ jest.mock('../src/state-machine/transaction.state-machine', () => {
 import EventTicket from '../src/models/event-ticket';
 import Transaction from '../src/models/transaction';
 
+import {
+  isValidSorobanSymbol,
+  assertValidSorobanSymbol,
+} from '../src/utils/soroban-symbol';
+
 describe('Proportional cancellation (Issue #3)', () => {
   const fixture = MID_EVENT_CANCELLATION_FIXTURE;
   const originalSorobanRpcUrl = process.env.SOROBAN_RPC_URL;
@@ -56,6 +61,25 @@ describe('Proportional cancellation (Issue #3)', () => {
     process.env.SOROBAN_RPC_URL = originalSorobanRpcUrl;
     process.env.PAYMENTS_CONTRACT_ID = originalPaymentsContractId;
     process.env.SOROBAN_NETWORK_PASSPHRASE = originalNetworkPassphrase;
+  });
+
+  describe('soroban symbol validation', () => {
+    it('accepts valid contract event ids', () => {
+      expect(isValidSorobanSymbol('EVENTCAN')).toBe(true);
+      expect(isValidSorobanSymbol('event_1')).toBe(true);
+    });
+
+    it('rejects invalid symbol characters and length', () => {
+      expect(isValidSorobanSymbol('my-event')).toBe(false);
+      expect(isValidSorobanSymbol('a'.repeat(33))).toBe(false);
+      expect(isValidSorobanSymbol('')).toBe(false);
+    });
+
+    it('assertValidSorobanSymbol throws for invalid ids', () => {
+      expect(() => assertValidSorobanSymbol('bad-id')).toThrow(
+        'eventId must be a valid Soroban Symbol',
+      );
+    });
   });
 
   describe('contract-aligned financial math', () => {

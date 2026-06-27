@@ -10,6 +10,7 @@ import {
 } from '@stellar/stellar-sdk';
 import { EventFinancialState } from '../types/payments-contract.types';
 import { IPaymentsContractProvider } from './payments-contract.provider';
+import { assertValidSorobanSymbol, isValidSorobanSymbol } from '../utils/soroban-symbol';
 
 interface EventConfigOnChain {
   cancel_ledger?: number | null;
@@ -63,6 +64,8 @@ export class SorobanPaymentsContractProvider implements IPaymentsContractProvide
   async getEventFinancialState(
     onChainEventId: string,
   ): Promise<EventFinancialState> {
+    assertValidSorobanSymbol(onChainEventId, 'onChainEventId');
+
     const platformFeeBps = await this.getPlatformFeeBps();
     const [configVal, revenueVal] = await Promise.all([
       this.simulateRead('get_event_config', onChainEventId),
@@ -94,6 +97,12 @@ export class SorobanPaymentsContractProvider implements IPaymentsContractProvide
       'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
       '0',
     );
+
+    if (eventId && !isValidSorobanSymbol(eventId)) {
+      throw new Error(
+        `eventId must be a valid Soroban Symbol (1-32 chars, alphanumeric and underscore only)`,
+      );
+    }
 
     const args = eventId ? [nativeToScVal(eventId, { type: 'symbol' })] : [];
 

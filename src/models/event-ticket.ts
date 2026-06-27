@@ -1,4 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import {
+  isValidSorobanSymbol,
+  SOROBAN_SYMBOL_VALIDATION_MESSAGE,
+} from '../utils/soroban-symbol';
 
 export interface IEventTicket extends Document {
   name: string;
@@ -76,6 +80,13 @@ const eventTicketSchema = new Schema<IEventTicket>(
       index: true,
       trim: true,
       minlength: 1,
+      validate: {
+        validator(value: string | null | undefined) {
+          if (value == null || value === '') return true;
+          return isValidSorobanSymbol(value);
+        },
+        message: SOROBAN_SYMBOL_VALIDATION_MESSAGE,
+      },
     },
     withdrawableRatioBps: { type: Number, default: null },
     cancelLedger: { type: Number, default: null },

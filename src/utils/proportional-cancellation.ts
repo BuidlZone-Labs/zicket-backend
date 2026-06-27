@@ -33,9 +33,11 @@ export function computeOrganizerPayout(
   return withdrawableAmount - feeAmount;
 }
 
+/** Attendee refund pool (total held minus organizer withdrawable share). */
 export function computeRefundPoolAmount(
   totalHeld: bigint,
   withdrawableRatioBps: number,
 ): bigint {
   return totalHeld - computeWithdrawableAmount(totalHeld, withdrawableRatioBps);
 }
+

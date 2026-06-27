@@ -14,6 +14,7 @@ export function setPaymentsContractProvider(
   providerOverride = provider;
 }
 
+/** Returns true when all Soroban env vars required for contract reads are set. */
 export function isPaymentsContractConfigured(): boolean {
   return Boolean(
     process.env.SOROBAN_RPC_URL &&
@@ -22,6 +23,7 @@ export function isPaymentsContractConfigured(): boolean {
   );
 }
 
+/** Returns the active payments contract provider (override mock or Soroban RPC). */
 export function getPaymentsContractProvider(): IPaymentsContractProvider {
   if (providerOverride) return providerOverride;
 
