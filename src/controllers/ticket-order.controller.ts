@@ -3,6 +3,8 @@ import { TicketOrderService } from '../services/ticket-order.service';
 import { PaymentVerificationService } from '../verification/payment-verification.service';
 import { UserAuthenticatedReq } from '../utils/types';
 import { getIdempotencyKey } from '../middlewares/idempotency';
+import TicketOrder from '../models/ticket-order';
+import EventTicket from '../models/event-ticket';
 
 /**
  * Controller for Ticket Orders and Payments transparency
@@ -193,8 +195,16 @@ export const updateTicketOrderStatus: RequestHandler = async (
   res,
 ) => {
   try {
+    const userId = req.user?._id || (req.user as any)?.id;
     const { orderId } = req.params as { orderId: string };
     const { status } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'User authentication required',
+      });
+    }
 
     if (!orderId) {
       return res.status(400).json({
@@ -210,12 +220,7 @@ export const updateTicketOrderStatus: RequestHandler = async (
       });
     }
 
-    const { order, notificationJobId } =
-      await TicketOrderService.updateOrderStatusWithNotification(
-        orderId,
-        status,
-      );
-
+    const order = await TicketOrder.findById(orderId);
     if (!order) {
       return res.status(404).json({
         error: 'Not found',
@@ -223,11 +228,32 @@ export const updateTicketOrderStatus: RequestHandler = async (
       });
     }
 
+    const eventTicket = await EventTicket.findById(order.eventTicket);
+    if (!eventTicket) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Associated event ticket not found',
+      });
+    }
+
+    if (eventTicket.organizedBy.toString() !== userId.toString()) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have permission to update this ticket order',
+      });
+    }
+
+    const { order: updatedOrder, notificationJobId } =
+      await TicketOrderService.updateOrderStatusWithNotification(
+        orderId,
+        status,
+      );
+
     res.status(200).json({
       success: true,
       message: 'Ticket order status updated successfully',
       data: {
-        order,
+        order: updatedOrder,
         notificationJobId,
       },
     });
