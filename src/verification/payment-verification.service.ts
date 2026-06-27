@@ -11,6 +11,7 @@ import {
   ZkProviderType,
 } from '../services/zk-orchestrator.service';
 import { TransactionStateMachine } from '../state-machine/transaction.state-machine';
+import { PaymentPrivacyDisclosureService } from '../services/payment-privacy-disclosure.service';
 
 /**
  * Orchestrates payment verification (delegated to PaymentVerificationService)
@@ -56,6 +57,7 @@ export class PaymentVerificationService {
     idempotencyKey?: string,
     zkProofPayload?: ZkProofPayload,
     zkProvider?: ZkProviderType,
+    privacyAcknowledged?: boolean,
   ): Promise<VerificationResult> {
     // ── 1. Idempotency guard: check if this request was already processed ─────
     if (idempotencyKey) {
@@ -90,6 +92,15 @@ export class PaymentVerificationService {
     const event = await EventTicket.findById(eventTicketId);
     if (!event) {
       return { success: false, message: 'Event not found' };
+    }
+
+    const ackError = PaymentPrivacyDisclosureService.validateAcknowledgment(
+      event.eventType,
+      event.paymentPrivacy,
+      privacyAcknowledged,
+    );
+    if (ackError) {
+      return { success: false, message: ackError };
     }
 
     // ── 4. Privacy enforcement ────────────────────────────────────────────────
@@ -211,6 +222,7 @@ export class PaymentVerificationService {
             amount: expectedAmountUsd,
             zkIdMatch: !!zkProofPayload,
             privacyLevel: String(event.privacyLevel),
+            paymentPrivacy: event.paymentPrivacy ?? null,
             hasReceipt: event.offerReceipts ?? false,
             datePurchased: new Date(),
             idempotencyKey: idempotencyKey || undefined,

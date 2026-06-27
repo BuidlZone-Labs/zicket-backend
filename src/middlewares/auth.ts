@@ -5,9 +5,35 @@ import {
   validateAndGetUser,
 } from '../utils/helper';
 
+/**
+ * Authenticates JWT and requires verified email for local accounts (issue #122).
+ */
 const authGuard = async (req: UserAuthenticatedReq, res: any, next: any) => {
+  return authenticateRequest(req, res, next, { requireVerifiedEmail: true });
+};
+
+/**
+ * Authenticates JWT without requiring verified email.
+ * Used for right-to-erasure flows (issue #127).
+ */
+const authGuardIdentity = async (
+  req: UserAuthenticatedReq,
+  res: any,
+  next: any,
+) => {
+  return authenticateRequest(req, res, next, { requireVerifiedEmail: false });
+};
+
+/**
+ * Shared JWT authentication path; optionally enforces verified email for local users.
+ */
+async function authenticateRequest(
+  req: UserAuthenticatedReq,
+  res: any,
+  next: any,
+  options: { requireVerifiedEmail: boolean },
+) {
   try {
-    // Handle JWT guard (local & oauth)
     const token = extractToken(req);
     if (!token) {
       return res.status(401).json({
@@ -17,10 +43,11 @@ const authGuard = async (req: UserAuthenticatedReq, res: any, next: any) => {
 
     const user = await validateAndGetUser(token);
 
-    // Defense in depth: a valid JWT is not enough. Local accounts must have a
-    // verified email before reaching any protected route (see issue #122).
-    // Google accounts are verified by the provider and carry emailVerifiedAt.
-    if (user.provider === 'local' && !user.emailVerifiedAt) {
+    if (
+      options.requireVerifiedEmail &&
+      user.provider === 'local' &&
+      !user.emailVerifiedAt
+    ) {
       return res.status(403).json({
         error:
           'Forbidden: Please verify your email before accessing this resource',
@@ -33,6 +60,6 @@ const authGuard = async (req: UserAuthenticatedReq, res: any, next: any) => {
     const { error, code } = handleAuthError(err);
     return res.status(code).json({ error });
   }
-};
+}
 
-export { authGuard };
+export { authGuard, authGuardIdentity };
