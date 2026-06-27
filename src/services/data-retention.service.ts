@@ -18,7 +18,9 @@ const STALE_PENDING_MS = 60_000;
  * Operational retention pass — TTL-backed collections and stuck erasure jobs.
  */
 export class DataRetentionService {
-  /** Runs a scheduled retention pass over TTL collections and stuck erasure jobs. */
+  /**
+   * Runs a scheduled retention pass over TTL collections and stuck erasure jobs.
+   */
   static async runRetentionPass(): Promise<RetentionReport> {
     const startTime = Date.now();
 

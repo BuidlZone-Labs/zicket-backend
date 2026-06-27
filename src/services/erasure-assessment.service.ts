@@ -17,7 +17,9 @@ export interface ErasureAssessment {
  * Assesses right-to-erasure impact: off-chain vs immutable on-chain data (Issue #127).
  */
 export class ErasureAssessmentService {
-  /** Evaluates whether a user has erasable off-chain data or permanent on-chain wallet exposure. */
+  /**
+   * Evaluates whether a user has erasable off-chain data or permanent on-chain wallet exposure.
+   */
   static async assessUser(userId: string): Promise<ErasureAssessment> {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       throw new Error('Invalid user id');

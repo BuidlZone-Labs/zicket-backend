@@ -20,7 +20,9 @@ const ANONYMIZED_EMAIL_DOMAIN = 'anonymized.zicket.local';
  * On-chain Soroban data is never modified.
  */
 export class AnonymizationService {
-  /** Submits an off-chain erasure request and runs anonymization for the user. */
+  /**
+   * Submits an off-chain erasure request and runs anonymization for the user.
+   */
   static async requestErasure(userId: string): Promise<AnonymizationResult> {
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       throw new Error('Invalid user id');
@@ -56,7 +58,9 @@ export class AnonymizationService {
     return this.executeJob(job);
   }
 
-  /** Processes a queued anonymization job (worker retry path). */
+  /**
+   * Processes a queued anonymization job (worker retry path).
+   */
   static async executeJob(
     job: IAnonymizationJob,
   ): Promise<AnonymizationResult> {
@@ -105,7 +109,9 @@ export class AnonymizationService {
     }
   }
 
-  /** Anonymizes persisted PII on the user document (off-chain only). */
+  /**
+   * Anonymizes persisted PII on the user document (off-chain only).
+   */
   private static async anonymizeUserDocument(
     user: InstanceType<typeof User>,
   ): Promise<void> {

@@ -24,7 +24,9 @@ export const retentionQueue = new Queue(QUEUE_NAMES.RETENTION, {
   },
 });
 
-/** Registers the repeatable retention cron after env validation (server startup). */
+/**
+ * Registers the repeatable retention cron after env validation (server startup).
+ */
 export async function initializeRetentionWorker(): Promise<void> {
   const { name, opts } = REPEATABLE_JOBS.RUN_RETENTION_PASS;
 

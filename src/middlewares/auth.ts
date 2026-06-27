@@ -5,7 +5,9 @@ import {
   validateAndGetUser,
 } from '../utils/helper';
 
-/** Authenticates JWT and requires verified email for local accounts (issue #122). */
+/**
+ * Authenticates JWT and requires verified email for local accounts (issue #122).
+ */
 const authGuard = async (req: UserAuthenticatedReq, res: any, next: any) => {
   return authenticateRequest(req, res, next, { requireVerifiedEmail: true });
 };
@@ -22,6 +24,9 @@ const authGuardIdentity = async (
   return authenticateRequest(req, res, next, { requireVerifiedEmail: false });
 };
 
+/**
+ * Shared JWT authentication path; optionally enforces verified email for local users.
+ */
 async function authenticateRequest(
   req: UserAuthenticatedReq,
   res: any,
