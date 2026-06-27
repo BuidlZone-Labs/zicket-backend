@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/BuidlZone-Labs/zicket-backend#readme",
   "dependencies": {
+    "@stellar/stellar-sdk": "^16.0.1",
     "@types/passport-google-oauth20": "^2.0.17",
     "@zk-email/helpers": "^6.4.2",
     "bcrypt": "^6.0.0",

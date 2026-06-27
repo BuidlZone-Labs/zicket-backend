@@ -10,6 +10,7 @@ import {
   scanTicket,
   validateTicket,
 } from '../controllers/event-ticket.controller';
+import { getOrganizerBalance } from '../controllers/organizer-balance.controller';
 import { authGuard } from '../middlewares/auth';
 
 const eventTicketRoutes = Router();
@@ -31,6 +32,13 @@ eventTicketRoutes.get('/category/:category', getEventTicketsByCategory);
 
 // GET /api/event-tickets/search - Search event tickets
 eventTicketRoutes.get('/search', searchEventTickets);
+
+// GET /api/event-tickets/:eventId/organizer-balance - Proportional balance from contract
+eventTicketRoutes.get(
+  '/:eventId/organizer-balance',
+  authGuard,
+  getOrganizerBalance,
+);
 
 // GET /api/event-tickets/:eventId - Fetch a single event by ID
 eventTicketRoutes.get('/:eventId', getEventById);

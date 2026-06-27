@@ -11,6 +11,8 @@ export interface ITransaction extends Document {
    * Terminal states (confirmed, failed) cannot be overwritten.
    */
   status: 'pending' | 'confirmed' | 'failed' | 'cancelled' | 'refunded';
+  /** Set when status=cancelled — mirrored from contract withdrawable_ratio_bps. */
+  withdrawableRatioBps?: number | null;
   transactionId: string; // blockchain tx hash — unique identifier
   idempotencyKey?: string; // unique idempotency key for safe retries
   // ── Blockchain-specific fields ──────────────────────────────────────────────
@@ -35,6 +37,7 @@ const transactionSchema = new Schema<ITransaction>(
       enum: ['pending', 'confirmed', 'failed', 'cancelled', 'refunded'],
       default: 'pending',
     },
+    withdrawableRatioBps: { type: Number, default: null },
     transactionId: { type: String, required: true, unique: true },
     idempotencyKey: { type: String, sparse: true, unique: true },
     // Blockchain metadata — populated by the state machine on each transition
@@ -46,7 +49,10 @@ const transactionSchema = new Schema<ITransaction>(
 );
 
 // Compound index for duplicate detection: (user + eventTicket + transactionId)
-transactionSchema.index({ user: 1, eventTicket: 1, transactionId: 1 }, { unique: true });
+transactionSchema.index(
+  { user: 1, eventTicket: 1, transactionId: 1 },
+  { unique: true },
+);
 // Index for reconciliation queries (find stale pending transactions quickly)
 transactionSchema.index({ status: 1, transactionDate: 1 });
 

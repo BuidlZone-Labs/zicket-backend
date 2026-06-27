@@ -20,6 +20,12 @@ export interface IEventTicket extends Document {
   availableTickets: number; // number of tickets still available
   soldTickets: number; // number of tickets sold
   eventStatus: string; // upcoming, ongoing, completed, cancelled
+  /** Soroban Symbol for the linked on-chain event (payments contract). */
+  onChainEventId?: string;
+  /** Synced from contract storage — never derived off-chain. */
+  withdrawableRatioBps?: number | null;
+  cancelLedger?: number | null;
+  organizerWithdrawn?: boolean;
   imageUrl: string; // image representing the event (Cloudinary URL)
   cloudinary_public_id?: string; // Cloudinary public ID for invalidation/destroy (required for new tickets)
   tags: string[]; // tags for better searchability
@@ -64,6 +70,10 @@ const eventTicketSchema = new Schema<IEventTicket>(
       enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
       default: 'upcoming',
     },
+    onChainEventId: { type: String, sparse: true, index: true },
+    withdrawableRatioBps: { type: Number, default: null },
+    cancelLedger: { type: Number, default: null },
+    organizerWithdrawn: { type: Boolean, default: false },
     imageUrl: { type: String, required: true },
     cloudinary_public_id: { type: String, required: false },
     tags: [{ type: String }],
