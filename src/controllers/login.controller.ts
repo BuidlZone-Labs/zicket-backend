@@ -1,16 +1,25 @@
 import { RequestHandler } from 'express';
+import { ZodError } from 'zod';
 import bcrypt from 'bcrypt';
 import User from '../models/user';
 import { generateAccessToken } from '../utils/token';
+import { LoginSchema } from '../validators/auth.validator';
 
 export const loginController: RequestHandler = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      res.status(400).json({ message: 'Email and password are required' });
+    // Validate and parse with Zod before any database query.
+    // This prevents NoSQL injection: passing { "$ne": null } as email
+    // would fail the z.string().email() check and return 400.
+    const parsed = LoginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: 'Invalid request',
+        errors: parsed.error.flatten().fieldErrors,
+      });
       return;
     }
+
+    const { email, password } = parsed.data;
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -40,9 +49,8 @@ export const loginController: RequestHandler = async (req, res, next) => {
     }
 
     const token = generateAccessToken(user);
-
     res.status(200).json({ message: 'Login successful', token });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
