@@ -4,7 +4,7 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js'],
   testMatch: ['**/tests/**/*.test.(ts|js)'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json', diagnostics: false }],
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 };
