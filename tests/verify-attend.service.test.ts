@@ -8,6 +8,7 @@ import {
   NullifierAlreadyUsedError,
   VerifyAttendFailedError,
 } from '../src/errors/verifyAttendError';
+import { attendanceNullifierDigest } from '../src/utils/attendance-nullifier-digest';
 
 jest.mock('../src/models/event-ticket');
 jest.mock('../src/models/attendance-nullifier');
@@ -69,7 +70,7 @@ describe('VerifyAttendService (#121)', () => {
     );
     expect(mockAttendanceNullifier.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        nullifier: 'nullifier-abc',
+        nullifier: attendanceNullifierDigest(eventId, 'nullifier-abc'),
         onChainTxHash: 'tx_hash_1',
       }),
     );

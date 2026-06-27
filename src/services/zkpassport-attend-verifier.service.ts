@@ -10,6 +10,8 @@ export interface ZkPassportAttendVerification {
   nullifier: string;
 }
 
+const RELAY_TIMEOUT_MS = 15_000;
+
 /**
  * Verifies zkPassport attendance proofs via external relay or local circuit (#121).
  * Raw proof bytes are never persisted — only the nullifier hash is returned.
@@ -41,10 +43,34 @@ export class ZkPassportAttendVerifier {
     return this.verifyLocally(payload);
   }
 
+  private static assertSecureRelayUrl(relayUrl: string): boolean {
+    try {
+      const url = new URL(relayUrl);
+      const isLocalHttp =
+        url.protocol === 'http:' &&
+        (url.hostname === 'localhost' || url.hostname === '127.0.0.1');
+
+      if (url.protocol === 'https:' || isLocalHttp) {
+        return true;
+      }
+
+      console.error(
+        '[ZkPassportAttendVerifier] ZKPASSPORT_RELAY_URL must use https outside localhost',
+      );
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   private static async verifyViaRelay(
     relayUrl: string,
     payload: ZkProofPayload,
   ): Promise<ZkPassportAttendVerification | null> {
+    if (!this.assertSecureRelayUrl(relayUrl)) {
+      return null;
+    }
+
     try {
       const body = JSON.stringify({
         proof: payload.proof,
@@ -78,6 +104,11 @@ export class ZkPassportAttendVerifier {
             });
           },
         );
+
+        req.setTimeout(RELAY_TIMEOUT_MS, () => {
+          req.destroy(new Error('zkPassport relay request timed out'));
+        });
+
         req.on('error', reject);
         req.write(body);
         req.end();
@@ -115,14 +146,19 @@ export class ZkPassportAttendVerifier {
       );
 
       if (!fs.existsSync(vKeyPath)) {
-        if (process.env.NODE_ENV === 'production') {
+        const allowMock =
+          process.env.NODE_ENV === 'development' &&
+          process.env.ZKPASSPORT_MOCK_VERIFY === 'true';
+
+        if (!allowMock) {
           console.error(
-            '[ZkPassportAttendVerifier] Missing vKey in production',
+            '[ZkPassportAttendVerifier] Missing vKey and mock verify disabled',
           );
           return null;
         }
+
         console.warn(
-          '[ZkPassportAttendVerifier] Missing vKey — mock verify for dev',
+          '[ZkPassportAttendVerifier] ZKPASSPORT_MOCK_VERIFY enabled — dev only',
         );
         return { nullifier: payload.publicSignals[0].toString() };
       }

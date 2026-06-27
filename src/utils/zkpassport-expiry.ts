@@ -1,6 +1,6 @@
 /**
  * Parses zkPassport expiration from public signals (index 2 per query-circuit layout).
- * Supports Unix seconds or YYYYMMDD packed integers.
+ * Supports Unix seconds or YYYYMMDD packed integers (UTC end-of-day).
  */
 export function extractZkPassportExpiryUnix(publicSignals: string[]): number | null {
   if (publicSignals.length < 3) {
@@ -18,14 +18,14 @@ export function extractZkPassportExpiryUnix(publicSignals: string[]): number | n
     const year = parseInt(packed.slice(0, 4), 10);
     const month = parseInt(packed.slice(4, 6), 10) - 1;
     const day = parseInt(packed.slice(6, 8), 10);
-    return Math.floor(new Date(year, month, day, 23, 59, 59).getTime() / 1000);
+    return Math.floor(Date.UTC(year, month, day, 23, 59, 59) / 1000);
   }
 
   return null;
 }
 
 /**
- * Returns true when the proof is still valid at `nowMs` (default: current time).
+ * Returns true when the proof is expired at `nowMs` (defaults to current time).
  */
 export function isZkPassportProofExpired(
   publicSignals: string[],

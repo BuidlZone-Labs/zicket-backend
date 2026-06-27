@@ -9,6 +9,8 @@ import {
   VerifyAttendFailedError,
 } from '../errors/verifyAttendError';
 import { isZkPassportProofExpired } from '../utils/zkpassport-expiry';
+import { attendanceNullifierDigest } from '../utils/attendance-nullifier-digest';
+import { EventContractConfigError } from '../provider/event-contract.factory';
 
 export interface VerifyAttendSuccess {
   eventId: string;
@@ -56,9 +58,14 @@ export class VerifyAttendService {
       throw new VerifyAttendFailedError();
     }
 
+    const nullifierDigest = attendanceNullifierDigest(
+      eventId,
+      nullifierFromProof,
+    );
+
     const existing = await AttendanceNullifier.findOne({
       eventId: new mongoose.Types.ObjectId(eventId),
-      nullifier: nullifierFromProof,
+      nullifier: nullifierDigest,
     }).lean();
 
     if (existing) {
@@ -82,6 +89,9 @@ export class VerifyAttendService {
       );
       txHash = result.txHash;
     } catch (error) {
+      if (error instanceof EventContractConfigError) {
+        throw error;
+      }
       console.error('[VerifyAttendService] contract verify_and_attend failed:', error);
       throw new VerifyAttendFailedError();
     }
@@ -89,7 +99,7 @@ export class VerifyAttendService {
     try {
       await AttendanceNullifier.create({
         eventId: new mongoose.Types.ObjectId(eventId),
-        nullifier,
+        nullifier: nullifierDigest,
         onChainTxHash: txHash,
       });
     } catch (error) {
@@ -107,7 +117,7 @@ export class VerifyAttendService {
     return {
       eventId,
       onChainEventId: event.onChainEventId,
-      nullifier,
+      nullifier: nullifierDigest,
       txHash,
     };
   }

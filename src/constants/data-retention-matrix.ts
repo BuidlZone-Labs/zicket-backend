@@ -61,7 +61,7 @@ export const DATA_RETENTION_MATRIX: DataRetentionRow[] = [
     retention: 'Event lifetime + audit window',
     erasableOnRequest: 'no',
     notes:
-      'Only the nullifier hash is stored after verify-attend; raw passport data is never saved',
+      'Stores HMAC(eventId:nullifier) digest only; raw nullifier is never saved',
   },
   {
     data: 'ContractEvent indexer records',

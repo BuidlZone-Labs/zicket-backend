@@ -5,6 +5,7 @@ import {
   NullifierAlreadyUsedError,
   VerifyAttendFailedError,
 } from '../errors/verifyAttendError';
+import { EventContractConfigError } from '../provider/event-contract.factory';
 
 /**
  * POST /events/:id/verify-attend
@@ -50,11 +51,20 @@ export const verifyAttend: RequestHandler = async (req, res) => {
       });
     }
 
+    if (error instanceof EventContractConfigError) {
+      console.error('[VerifyAttend] contract configuration error:', error);
+      return res.status(503).json({
+        success: false,
+        error: 'SERVICE_UNAVAILABLE',
+        message: 'Attendance verification is temporarily unavailable.',
+      });
+    }
+
     console.error('[VerifyAttend] unexpected error:', error);
-    res.status(400).json({
+    res.status(500).json({
       success: false,
-      error: 'VERIFICATION_FAILED',
-      message: 'Attendance verification failed.',
+      error: 'INTERNAL_ERROR',
+      message: 'Attendance verification is temporarily unavailable.',
     });
   }
 };

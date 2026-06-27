@@ -14,7 +14,16 @@ import {
 
 function nullifierToBytes32(nullifier: string): Buffer {
   const hex = BigInt(nullifier).toString(16).padStart(64, '0').slice(-64);
-  return Buffer.from(hex, 'hex');
+  const buf = Buffer.from(hex, 'hex');
+  if (buf.length !== 32) {
+    throw new Error('Nullifier must encode to exactly 32 bytes');
+  }
+  return buf;
+}
+
+/** Encodes a 32-byte nullifier as Soroban BytesN<32> (fixed-length bytes ScVal). */
+function nullifierToScVal(nullifier: string) {
+  return nativeToScVal(nullifierToBytes32(nullifier), { type: 'bytes' });
 }
 
 /**
@@ -75,7 +84,7 @@ export class SorobanEventContractProvider implements IEventContractProvider {
         this.contract.call(
           'verify_and_attend',
           nativeToScVal(onChainEventId, { type: 'symbol' }),
-          nativeToScVal(nullifierToBytes32(nullifier), { type: 'bytes' }),
+          nullifierToScVal(nullifier),
         ),
       )
       .setTimeout(180)
@@ -89,6 +98,17 @@ export class SorobanEventContractProvider implements IEventContractProvider {
     if (sendResult.status === 'ERROR') {
       throw new Error(
         `verify_and_attend submission failed: ${sendResult.errorResult?.toXDR('base64')}`,
+      );
+    }
+
+    const polled = await this.server.pollTransaction(sendResult.hash, {
+      attempts: 30,
+      sleepStrategy: rpc.LinearSleepStrategy,
+    });
+
+    if (polled.status !== 'SUCCESS') {
+      throw new Error(
+        `verify_and_attend transaction failed: ${polled.status}`,
       );
     }
 

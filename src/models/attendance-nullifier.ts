@@ -16,7 +16,7 @@ const attendanceNullifierSchema = new Schema<IAttendanceNullifier>(
       ref: 'EventTicket',
       index: true,
     },
-    nullifier: { type: String, required: true, index: true },
+    nullifier: { type: String, required: true, index: true }, // HMAC digest, not raw nullifier
     onChainTxHash: { type: String },
   },
   { timestamps: true },
