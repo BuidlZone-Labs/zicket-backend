@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import User from '../models/user';
 import { generateOTP } from '../utils/otp';
 import emailService from '../services/email.service';
+import { SignupSchema } from '../validators/auth.validator';
 
 const OTP_EXPIRY_MINUTES = 10;
 
@@ -11,13 +12,19 @@ export const signupController: RequestHandler = async (
   res: Response,
 ) => {
   try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      res.status(400).json({ message: 'All fields are required' });
+    // Validate first to prevent NoSQL injection (also fixes #137)
+    const parsed = SignupSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: 'Invalid request',
+        errors: parsed.error.flatten().fieldErrors,
+      });
       return;
     }
 
+    const { name, email, password } = parsed.data;
+
+    // Check for existing user before attempting insert
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       res.status(400).json({ message: 'Email is already in use' });
@@ -26,33 +33,30 @@ export const signupController: RequestHandler = async (
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    const newUser = new User({
+    const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      provider: 'local',
       otp,
-      otpExpires,
+      otpExpiry,
     });
-    await newUser.save();
 
-    try {
-      await emailService.sendVerificationOtp(email, otp);
-    } catch (emailError: any) {
-      console.error(
-        'Failed to send verification OTP email:',
-        emailError?.message,
-      );
-      // User is created; they can use resend-otp if they didn't receive it
-    }
+    await emailService.sendOTPEmail(email, otp);
 
     res.status(201).json({
-      message:
-        'User registered successfully. Please verify your account with the OTP sent to your email.',
+      message: 'Account created. Please verify your email.',
+      userId: user._id,
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    // Fix race condition: catch MongoDB duplicate key error (code 11000).
+    // Without this, concurrent signups with same email return 500 with raw
+    // DB error message, leaking internal schema details to the caller.
+    if (error.code === 11000 || error.name === 'MongoServerError') {
+      res.status(409).json({ message: 'Email is already in use' });
+      return;
+    }
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
