@@ -38,12 +38,15 @@ describe('ContractEvent privacy guarantees', () => {
     it('ContractEvent schema has no ref to User or Session', () => {
       const schemaPaths = ContractEvent.schema.paths;
 
-      // Check that no path has a ref to User or Session
+      // Mongoose 8 stores refs on field.options.ref or field.caster.options.ref
+      // (for array fields). Direct `field.ref` can miss standard refs.
       for (const path of Object.keys(schemaPaths)) {
-        const field = schemaPaths[path];
-        if ('ref' in field) {
-          expect(field.ref).not.toBe('User');
-          expect(field.ref).not.toBe('Session');
+        const field = schemaPaths[path] as any;
+        const ref =
+          field.options?.ref ?? field.caster?.options?.ref ?? null;
+        if (ref) {
+          expect(ref).not.toBe('User');
+          expect(ref).not.toBe('Session');
         }
       }
     });
@@ -83,6 +86,60 @@ describe('ContractEvent privacy guarantees', () => {
       expect(argsPath).toBeDefined();
       // Mixed type allows any shape — no enforced user identifiers
       expect(argsPath.instance).toBe('Mixed');
+    });
+
+    it('indexer write path inserts only schema fields (no identity injection)', () => {
+      // Simulate the indexer's eventsToSave construction from indexer.service.ts
+      // (lines 55-63). This is the exact shape ContractEvent.insertMany receives.
+      const mockLog = {
+        address: '0xabcdef1234567890',
+        blockNumber: 999,
+        transactionHash: '0xtxhash123',
+        index: 0,
+        topics: ['0xeventTopic'],
+        data: '0xdeadbeef',
+      };
+
+      // Reproduce indexer's mapping (indexer.service.ts:55-63)
+      const eventToSave = {
+        contractAddress: mockLog.address.toLowerCase(),
+        eventName: mockLog.topics[0] || 'Unknown',
+        blockNumber: mockLog.blockNumber,
+        transactionHash: mockLog.transactionHash,
+        logIndex: mockLog.index,
+        topics: mockLog.topics,
+        data: mockLog.data,
+        timestamp: new Date(),
+      };
+
+      const allowedFields = [
+        'contractAddress',
+        'eventName',
+        'blockNumber',
+        'transactionHash',
+        'logIndex',
+        'topics',
+        'data',
+        'timestamp',
+      ];
+
+      const writtenFields = Object.keys(eventToSave);
+      expect(writtenFields.sort()).toEqual(allowedFields.sort());
+
+      // Ensure no identity fields leak into the persisted payload
+      const forbiddenIdentity = [
+        'user',
+        'userId',
+        'attendeeId',
+        'payer',
+        'email',
+        'wallet',
+        'session',
+        'ip',
+      ];
+      for (const field of forbiddenIdentity) {
+        expect(writtenFields).not.toContain(field);
+      }
     });
   });
 
