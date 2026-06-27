@@ -136,10 +136,10 @@ describe('TicketOrder controller', () => {
   });
 
   describe('updateTicketOrderStatus', () => {
-    const orderId = 'order789';
-    const organizerId = 'org123';
-    const otherUserId = 'other456';
-    const eventTicketId = 'eventTicket999';
+    const orderId = '507f191e810c19729de860ea';
+    const organizerId = '507f191e810c19729de860eb';
+    const otherUserId = '507f191e810c19729de860ec';
+    const eventTicketId = '507f191e810c19729de860ed';
 
     it('returns 401 when user is not authenticated', async () => {
       const req = {
@@ -172,6 +172,23 @@ describe('TicketOrder controller', () => {
       expect(res.json).toHaveBeenCalledWith({
         error: 'Bad request',
         message: 'Order ID is required',
+      });
+    });
+
+    it('returns 400 when orderId has invalid format', async () => {
+      const req = {
+        user: { _id: organizerId },
+        params: { orderId: 'not-a-valid-objectid' },
+        body: { status: 1 },
+      };
+      const res = createResponse();
+
+      await updateTicketOrderStatus(req as any, res as any, jest.fn());
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Bad request',
+        message: 'Invalid order ID format',
       });
     });
 

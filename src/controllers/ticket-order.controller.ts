@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { RequestHandler } from 'express';
 import { TicketOrderService } from '../services/ticket-order.service';
 import { PaymentVerificationService } from '../verification/payment-verification.service';
@@ -210,6 +211,13 @@ export const updateTicketOrderStatus: RequestHandler = async (
       return res.status(400).json({
         error: 'Bad request',
         message: 'Order ID is required',
+      });
+    }
+
+    if (!mongoose.isValidObjectId(orderId)) {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'Invalid order ID format',
       });
     }
 
