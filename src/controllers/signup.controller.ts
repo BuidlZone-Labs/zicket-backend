@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import User from '../models/user';
 import { generateOTP } from '../utils/otp';
 import emailService from '../services/email.service';
+import { SignupSchema } from '../validators/auth.validator';
 
 const OTP_EXPIRY_MINUTES = 10;
 
@@ -11,12 +12,18 @@ export const signupController: RequestHandler = async (
   res: Response,
 ) => {
   try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      res.status(400).json({ message: 'All fields are required' });
+    // Validate and parse with Zod before any database query.
+    // Prevents NoSQL injection via MongoDB query operators in email/password fields.
+    const parsed = SignupSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: 'Invalid request',
+        errors: parsed.error.flatten().fieldErrors,
+      });
       return;
     }
+
+    const { name, email, password } = parsed.data;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -26,31 +33,21 @@ export const signupController: RequestHandler = async (
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+    const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    const newUser = new User({
+    const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      provider: 'local',
       otp,
-      otpExpires,
+      otpExpiry,
     });
-    await newUser.save();
 
-    try {
-      await emailService.sendVerificationOtp(email, otp);
-    } catch (emailError: any) {
-      console.error(
-        'Failed to send verification OTP email:',
-        emailError?.message,
-      );
-      // User is created; they can use resend-otp if they didn't receive it
-    }
+    await emailService.sendOTPEmail(email, otp);
 
     res.status(201).json({
-      message:
-        'User registered successfully. Please verify your account with the OTP sent to your email.',
+      message: 'Account created. Please verify your email.',
+      userId: user._id,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
