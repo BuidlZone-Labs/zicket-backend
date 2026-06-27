@@ -15,6 +15,7 @@ import zkEmailRoutes from './routes/zkemail.route';
 import indexerRoutes from './routes/indexer.route';
 import privacyComplianceRoutes from './routes/privacy-compliance.route';
 import accountRoutes from './routes/account.route';
+import verifyAttendRoutes from './routes/verify-attend.route';
 import { globalErrorHandler } from './middlewares/errorHandler';
 
 const app = express();
@@ -53,6 +54,7 @@ app.use('/zkemail', authLimiter, zkEmailRoutes);
 app.use('/api/events', indexerRoutes);
 app.use('/compliance', privacyComplianceRoutes);
 app.use('/account', accountRoutes);
+app.use('/events', verifyAttendRoutes);
 app.use(protectedRoute);
 
 app.use(globalErrorHandler);
