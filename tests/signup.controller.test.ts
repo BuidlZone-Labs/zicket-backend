@@ -73,6 +73,43 @@ describe('signup controller', () => {
     });
   });
 
+  it('returns 400 without leaking database details when save hits duplicate key', async () => {
+    (User.findOne as jest.Mock).mockResolvedValue(null);
+    (User as unknown as jest.Mock).mockImplementationOnce(function (
+      this: any,
+      data: any,
+    ) {
+      Object.assign(this, data);
+      this.save = jest.fn().mockRejectedValue({
+        code: 11000,
+        message:
+          'E11000 duplicate key error collection: zicket.users index: email_1 dup key',
+      });
+      return this;
+    });
+
+    const req = {
+      body: {
+        name: 'Race User',
+        email: 'race@example.com',
+        password: 'secret123',
+      },
+    };
+    const res = createResponse();
+    await signupController(req as any, res as any, jest.fn());
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Email is already in use',
+    });
+    expect(res.json).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('E11000'),
+      }),
+    );
+    expect(mockSendVerificationOtp).not.toHaveBeenCalled();
+  });
+
   it('creates user with OTP and sends verification email', async () => {
     (User.findOne as jest.Mock).mockResolvedValue(null);
 
