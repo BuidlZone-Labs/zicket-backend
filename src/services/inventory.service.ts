@@ -64,7 +64,7 @@ export class InventoryService {
       // Only succeeds if availableTickets >= quantity
       const updatedEvent = await EventTicket.findOneAndUpdate(
         {
-          _id: new mongoose.Types.ObjectId(eventTicketId),
+          _id: new (mongoose.Types.ObjectId as any)(eventTicketId),
           availableTickets: { $gte: quantity }, // Key: ensure enough tickets
         },
         {
