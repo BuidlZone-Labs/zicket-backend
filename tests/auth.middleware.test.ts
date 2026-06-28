@@ -1,6 +1,7 @@
 import { authGuard } from '../src/middlewares/auth';
 import User from '../src/models/user';
 import { JwtVerify } from '../src/middlewares/jwt';
+import jwt from 'jsonwebtoken';
 
 jest.mock('../src/models/user');
 jest.mock('../src/middlewares/jwt');
@@ -57,7 +58,7 @@ describe('authGuard middleware — cookie-based auth (Google OAuth)', () => {
 
   it('rejects a request with an invalid cookie token', async () => {
     (JwtVerify as jest.Mock).mockImplementation(() => {
-      throw new Error('Invalid token');
+      throw new jwt.JsonWebTokenError('Invalid token');
     });
 
     const req = {
