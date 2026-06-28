@@ -7,23 +7,11 @@ import {
   TransactionBuilder,
 } from '@stellar/stellar-sdk';
 import { assertValidSorobanSymbol } from '../utils/soroban-symbol';
+import { nullifierToBytes32 } from '../utils/nullifier-bytes';
 import {
   IEventContractProvider,
   VerifyAndAttendResult,
 } from './event-contract.provider';
-
-function nullifierToBytes32(nullifier: string): Buffer {
-  const hex = BigInt(nullifier).toString(16);
-  if (hex.length > 64) {
-    throw new Error('Nullifier exceeds 32 bytes');
-  }
-  const padded = hex.padStart(64, '0');
-  const buf = Buffer.from(padded, 'hex');
-  if (buf.length !== 32) {
-    throw new Error('Nullifier must encode to exactly 32 bytes');
-  }
-  return buf;
-}
 
 /** Encodes a 32-byte nullifier as Soroban BytesN<32> (fixed-length bytes ScVal). */
 function nullifierToScVal(nullifier: string) {
@@ -111,9 +99,7 @@ export class SorobanEventContractProvider implements IEventContractProvider {
     });
 
     if (polled.status !== 'SUCCESS') {
-      throw new Error(
-        `verify_and_attend transaction failed: ${polled.status}`,
-      );
+      throw new Error(`verify_and_attend transaction failed: ${polled.status}`);
     }
 
     return { txHash: sendResult.hash };

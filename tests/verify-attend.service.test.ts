@@ -29,9 +29,10 @@ const mockGetContract = getEventContractProvider as jest.MockedFunction<
 describe('VerifyAttendService (#121)', () => {
   const eventId = new mongoose.Types.ObjectId().toString();
   const futureExpiry = Math.floor(Date.now() / 1000) + 86_400;
+  const nullifier = '42';
   const proofPayload = {
     proof: { pi_a: ['1'], pi_b: [['1']], pi_c: ['1'] },
-    publicSignals: ['nullifier-abc', 'birth', futureExpiry.toString()],
+    publicSignals: [nullifier, 'birth', futureExpiry.toString()],
   };
 
   const mockContract = {
@@ -59,19 +60,22 @@ describe('VerifyAttendService (#121)', () => {
       lean: jest.fn().mockResolvedValue(null),
     } as any);
 
-    mockVerifier.verify.mockResolvedValue({ nullifier: 'nullifier-abc' });
+    mockVerifier.verify.mockResolvedValue({ nullifier });
     mockAttendanceNullifier.create.mockResolvedValue({} as any);
 
-    const result = await VerifyAttendService.verifyAttend(eventId, proofPayload);
+    const result = await VerifyAttendService.verifyAttend(
+      eventId,
+      proofPayload,
+    );
 
     expect(mockVerifier.verify).toHaveBeenCalledWith(proofPayload);
     expect(mockContract.verifyAndAttend).toHaveBeenCalledWith(
       'EVT_VERIFY',
-      'nullifier-abc',
+      nullifier,
     );
     expect(mockAttendanceNullifier.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        nullifier: attendanceNullifierDigest(eventId, 'nullifier-abc'),
+        nullifier: attendanceNullifierDigest(eventId, nullifier),
         onChainTxHash: 'tx_hash_1',
       }),
     );
@@ -90,7 +94,11 @@ describe('VerifyAttendService (#121)', () => {
     } as any);
 
     mockAttendanceNullifier.findOne.mockReturnValue({
-      lean: jest.fn().mockResolvedValue({ nullifier: 'nullifier-abc' }),
+      lean: jest
+        .fn()
+        .mockResolvedValue({
+          nullifier: attendanceNullifierDigest(eventId, nullifier),
+        }),
     } as any);
 
     await expect(
@@ -118,7 +126,7 @@ describe('VerifyAttendService (#121)', () => {
       lean: jest.fn().mockResolvedValue(null),
     } as any);
 
-    mockVerifier.verify.mockResolvedValue({ nullifier: 'nullifier-abc' });
+    mockVerifier.verify.mockResolvedValue({ nullifier });
     mockAttendanceNullifier.create.mockResolvedValue({} as any);
 
     await expect(
@@ -152,7 +160,7 @@ describe('VerifyAttendService (#121)', () => {
     const expiredPayload = {
       proof: proofPayload.proof,
       publicSignals: [
-        'nullifier-abc',
+        nullifier,
         'birth',
         (Math.floor(Date.now() / 1000) - 60).toString(),
       ],

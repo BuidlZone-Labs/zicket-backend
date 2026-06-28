@@ -20,9 +20,10 @@ app.use('/events', verifyAttendRoutes);
 describe('POST /events/:id/verify-attend (#121)', () => {
   const eventId = '507f1f77bcf86cd799439011';
   const futureExpiry = Math.floor(Date.now() / 1000) + 86_400;
+  const nullifier = '42';
   const body = {
     proof: { pi_a: ['1'], pi_b: [['1']], pi_c: ['1'] },
-    publicSignals: ['nullifier-xyz', 'birth', futureExpiry.toString()],
+    publicSignals: [nullifier, 'birth', futureExpiry.toString()],
   };
 
   beforeEach(() => {
@@ -33,7 +34,7 @@ describe('POST /events/:id/verify-attend (#121)', () => {
     mockVerifyAttend.verifyAttend.mockResolvedValue({
       eventId,
       onChainEventId: 'EVT_1',
-      nullifier: 'nullifier-xyz',
+      nullifier,
       txHash: 'tx_abc',
     });
 
@@ -51,7 +52,9 @@ describe('POST /events/:id/verify-attend (#121)', () => {
   });
 
   it('returns generic failure without leaking claim details', async () => {
-    mockVerifyAttend.verifyAttend.mockRejectedValue(new VerifyAttendFailedError());
+    mockVerifyAttend.verifyAttend.mockRejectedValue(
+      new VerifyAttendFailedError(),
+    );
 
     const res = await request(app)
       .post(`/events/${eventId}/verify-attend`)

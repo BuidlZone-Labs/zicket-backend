@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { nullifierToCanonicalHex } from './nullifier-bytes';
 
 export class AttendanceNullifierPepperError extends Error {
   constructor() {
@@ -22,6 +23,6 @@ export function attendanceNullifierDigest(
 
   return crypto
     .createHmac('sha256', pepper)
-    .update(`${eventId}:${nullifier}`)
+    .update(`${eventId}:${nullifierToCanonicalHex(nullifier)}`)
     .digest('hex');
 }
