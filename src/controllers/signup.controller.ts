@@ -59,6 +59,11 @@ export const signupController: RequestHandler = async (
         'User registered successfully. Please verify your account with the OTP sent to your email.',
     });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    if (error?.code === 11000) {
+      res.status(400).json({ message: 'Email is already in use' });
+      return;
+    }
+
+    res.status(500).json({ message: 'An error occurred. Please try again.' });
   }
 };
