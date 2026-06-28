@@ -1,9 +1,97 @@
 import { authGuard } from '../src/middlewares/auth';
 import User from '../src/models/user';
 import { JwtVerify } from '../src/middlewares/jwt';
+import jwt from 'jsonwebtoken';
 
 jest.mock('../src/models/user');
 jest.mock('../src/middlewares/jwt');
+
+const parseCookie = (header: string | undefined, name: string): string | undefined => {
+  if (!header) return undefined;
+  const cookies = header.split(';').map((c) => c.trim().split('='));
+  const cookie = cookies.find(([key]) => key === name);
+  return cookie?.[1];
+};
+
+describe('authGuard middleware — cookie-based auth (Google OAuth)', () => {
+  const createResponse = () => ({
+    status: jest.fn().mockReturnThis(),
+    json: jest.fn().mockReturnThis(),
+  });
+
+  const createRequest = () => ({
+    headers: {},
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (JwtVerify as jest.Mock).mockReturnValue({
+      id: 'user-id-1',
+      email: 'user@example.com',
+    });
+  });
+
+  it('accepts a valid token from the cookie header', async () => {
+    const verifiedUser = {
+      _id: 'user-id-1',
+      email: 'user@example.com',
+      provider: 'google',
+      emailVerifiedAt: undefined,
+    };
+    (User.findById as jest.Mock).mockResolvedValue(verifiedUser);
+
+    const token = 'valid.jwt.token';
+    const req = {
+      headers: {
+        cookie: `token=${token}; other=value`,
+      },
+    };
+    const res = createResponse();
+    const next = jest.fn();
+
+    await authGuard(req as any, res as any, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(res.status).not.toHaveBeenCalled();
+    expect((req as any).user).toBe(verifiedUser);
+  });
+
+  it('rejects a request with an invalid cookie token', async () => {
+    (JwtVerify as jest.Mock).mockImplementation(() => {
+      throw new jwt.JsonWebTokenError('Invalid token');
+    });
+
+    const req = {
+      headers: {
+        cookie: 'token=invalid.jwt.token',
+      },
+    };
+    const res = createResponse();
+    const next = jest.fn();
+
+    await authGuard(req as any, res as any, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Unauthorized: Invalid token',
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('rejects a request with an empty cookie header', async () => {
+    const req = createRequest();
+    const res = createResponse();
+    const next = jest.fn();
+
+    await authGuard(req as any, res as any, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Unauthorized: No token provided',
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+});
 
 // Regression coverage for issue #122: a valid JWT alone must not grant access to
 // protected routes. Unverified local accounts have to be blocked at the guard,
