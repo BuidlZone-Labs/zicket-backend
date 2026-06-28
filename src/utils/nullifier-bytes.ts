@@ -3,11 +3,16 @@
  * Ensures equivalent decimal encodings (e.g. "1" vs "01") map to the same value.
  */
 export function nullifierToCanonicalHex(nullifier: string): string {
-  const hex = BigInt(nullifier).toString(16);
+  const value = BigInt(nullifier);
+  if (value < 0n) {
+    throw new Error('Nullifier must be non-negative');
+  }
+  const hex = value.toString(16);
   if (hex.length > 64) {
     throw new Error('Nullifier exceeds 32 bytes');
   }
   return hex.padStart(64, '0');
+}
 }
 
 /**
