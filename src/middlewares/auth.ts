@@ -62,4 +62,15 @@ async function authenticateRequest(
   }
 }
 
-export { authGuard, authGuardIdentity };
+/**
+ * Requires the authenticated user to have the 'admin' role.
+ * Must be used after authGuard (which sets req.user).
+ */
+const adminGuard = (req: UserAuthenticatedReq, res: any, next: any) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: Admin access required' });
+  }
+  return next();
+};
+
+export { authGuard, authGuardIdentity, adminGuard };

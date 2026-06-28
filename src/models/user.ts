@@ -6,6 +6,7 @@ export interface IUser extends Document {
   password?: string;
   googleId?: string;
   provider: 'local' | 'google';
+  role: 'user' | 'admin';
   otp?: number;
   otpExpires?: Date;
   emailVerifiedAt?: Date;
@@ -39,6 +40,12 @@ const userSchema = new Schema<IUser>(
       required: true,
       enum: ['local', 'google'],
       default: 'local',
+    },
+    role: {
+      type: String,
+      required: true,
+      enum: ['user', 'admin'],
+      default: 'user',
     },
     otp: { type: Number, required: false },
     otpExpires: { type: Date, required: false },
