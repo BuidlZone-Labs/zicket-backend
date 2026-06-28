@@ -1,5 +1,7 @@
 import './utils/logger';
 import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
 import protectedRoute from './routes/protected.route';
 import otpRoute from './routes/otp.route';
 import authRoute from './routes/auth.route';
@@ -20,6 +22,15 @@ import { globalErrorHandler } from './middlewares/errorHandler';
 const app = express();
 
 app.set('trust proxy', 1);
+
+app.use(helmet());
+
+const corsOptions: cors.CorsOptions = {
+  origin: process.env.FRONTEND_URL,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
