@@ -28,7 +28,11 @@ function sanitizeObject(obj: any, seen = new WeakSet()): any {
   if (typeof obj === 'number' || typeof obj === 'boolean') return obj;
   if (obj instanceof Date) return obj.toISOString();
   if (obj instanceof Error) {
-    return { name: obj.name, message: sanitizeString(obj.message), stack: obj.stack };
+    return {
+      name: obj.name,
+      message: sanitizeString(obj.message),
+      stack: obj.stack,
+    };
   }
   if (Array.isArray(obj)) return obj.map((v) => sanitizeObject(v, seen));
   if (typeof obj === 'object') {
@@ -70,7 +74,9 @@ const originalConsole = {
   info: console.info.bind(console),
   warn: console.warn.bind(console),
   error: console.error.bind(console),
-  debug: (console as any).debug ? (console as any).debug.bind(console) : console.log.bind(console),
+  debug: (console as any).debug
+    ? (console as any).debug.bind(console)
+    : console.log.bind(console),
 };
 
 // Override console methods with structured, sanitized output

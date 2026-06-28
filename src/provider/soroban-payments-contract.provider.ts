@@ -10,7 +10,10 @@ import {
 } from '@stellar/stellar-sdk';
 import { EventFinancialState } from '../types/payments-contract.types';
 import { IPaymentsContractProvider } from './payments-contract.provider';
-import { assertValidSorobanSymbol, isValidSorobanSymbol } from '../utils/soroban-symbol';
+import {
+  assertValidSorobanSymbol,
+  isValidSorobanSymbol,
+} from '../utils/soroban-symbol';
 
 interface EventConfigOnChain {
   cancel_ledger?: number | null;

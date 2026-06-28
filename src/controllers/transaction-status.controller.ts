@@ -71,7 +71,8 @@ export const getTransactionStatus: RequestHandler = async (
       .lean();
 
     // A state is terminal when no further transitions are possible
-    const isTerminal = currentState === 'confirmed' || currentState === 'failed';
+    const isTerminal =
+      currentState === 'confirmed' || currentState === 'failed';
 
     return res.status(200).json({
       success: true,

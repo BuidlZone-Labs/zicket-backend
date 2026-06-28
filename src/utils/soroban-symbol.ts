@@ -14,7 +14,10 @@ export function isValidSorobanSymbol(value: string): boolean {
 /**
  * Validates a Soroban Symbol or throws with a clear message.
  */
-export function assertValidSorobanSymbol(value: string, fieldName = 'eventId'): void {
+export function assertValidSorobanSymbol(
+  value: string,
+  fieldName = 'eventId',
+): void {
   if (!isValidSorobanSymbol(value)) {
     throw new Error(
       `${fieldName} must be a valid Soroban Symbol (1-${SOROBAN_SYMBOL_MAX_LENGTH} chars, alphanumeric and underscore only)`,

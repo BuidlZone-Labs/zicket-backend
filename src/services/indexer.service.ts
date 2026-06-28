@@ -5,8 +5,10 @@ import IndexerState from '../models/indexer-state';
 
 export class IndexerService {
   private static instance: IndexerService;
-  
-  private contractAddress = (process.env.INDEXER_CONTRACT_ADDRESS || '').toLowerCase();
+
+  private contractAddress = (
+    process.env.INDEXER_CONTRACT_ADDRESS || ''
+  ).toLowerCase();
   private maxBlockRange = 2000;
 
   static getInstance(): IndexerService {
@@ -16,15 +18,19 @@ export class IndexerService {
 
   async syncEvents() {
     if (!this.contractAddress) {
-      console.warn('[Indexer] No INDEXER_CONTRACT_ADDRESS configured. Skipping sync.');
+      console.warn(
+        '[Indexer] No INDEXER_CONTRACT_ADDRESS configured. Skipping sync.',
+      );
       return;
     }
 
     try {
       const provider = BlockchainProvider.getInstance().getProvider();
       const currentBlock = await provider.getBlockNumber();
-      
-      let state = await IndexerState.findOne({ contractAddress: this.contractAddress });
+
+      let state = await IndexerState.findOne({
+        contractAddress: this.contractAddress,
+      });
       if (!state) {
         state = new IndexerState({
           contractAddress: this.contractAddress,
@@ -33,7 +39,7 @@ export class IndexerService {
       }
 
       let fromBlock = state.lastIndexedBlock + 1;
-      
+
       if (fromBlock > currentBlock) {
         return; // Already up to date
       }
@@ -42,12 +48,14 @@ export class IndexerService {
         let toBlock = fromBlock + this.maxBlockRange - 1;
         if (toBlock > currentBlock) toBlock = currentBlock;
 
-        console.log(`[Indexer] Syncing events for ${this.contractAddress} from block ${fromBlock} to ${toBlock}`);
+        console.log(
+          `[Indexer] Syncing events for ${this.contractAddress} from block ${fromBlock} to ${toBlock}`,
+        );
 
         const logs = await provider.getLogs({
           address: this.contractAddress,
           fromBlock,
-          toBlock
+          toBlock,
         });
 
         if (logs.length > 0) {
@@ -60,7 +68,7 @@ export class IndexerService {
             logIndex: log.index,
             topics: log.topics,
             data: log.data,
-            timestamp: new Date(), 
+            timestamp: new Date(),
           }));
 
           try {
@@ -76,7 +84,7 @@ export class IndexerService {
 
         state.lastIndexedBlock = toBlock;
         await state.save();
-        
+
         fromBlock = toBlock + 1;
       }
     } catch (error) {

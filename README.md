@@ -87,7 +87,6 @@ npm test
 npx ts-node src/scripts/log-demo.ts
 ```
 
-
 <br>
 
 # 🤝 Contributing

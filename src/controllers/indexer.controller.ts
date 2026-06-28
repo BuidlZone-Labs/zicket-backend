@@ -3,10 +3,17 @@ import ContractEvent from '../models/contract-event';
 
 export const getEvents = async (req: Request, res: Response) => {
   try {
-    const { contractAddress, eventName, transactionHash, page = '1', limit = '50' } = req.query;
+    const {
+      contractAddress,
+      eventName,
+      transactionHash,
+      page = '1',
+      limit = '50',
+    } = req.query;
 
     const query: any = {};
-    if (contractAddress) query.contractAddress = (contractAddress as string).toLowerCase();
+    if (contractAddress)
+      query.contractAddress = (contractAddress as string).toLowerCase();
     if (eventName) query.eventName = eventName;
     if (transactionHash) query.transactionHash = transactionHash;
 
@@ -20,7 +27,7 @@ export const getEvents = async (req: Request, res: Response) => {
         .skip(skip)
         .limit(limitNum)
         .lean(),
-      ContractEvent.countDocuments(query)
+      ContractEvent.countDocuments(query),
     ]);
 
     res.json({
@@ -30,8 +37,8 @@ export const getEvents = async (req: Request, res: Response) => {
         page: pageNum,
         limit: limitNum,
         total,
-        pages: Math.ceil(total / limitNum)
-      }
+        pages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
     console.error('[IndexerController] Error fetching events:', error);

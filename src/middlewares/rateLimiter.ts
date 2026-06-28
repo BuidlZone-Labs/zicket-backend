@@ -106,19 +106,23 @@ const createAnonymousActionLimiter = (
     keyGenerator: (req: Request) => {
       const ip = req.ip || req.connection.remoteAddress || 'unknown';
       // Use x-device-id if provided, else fallback to User-Agent
-      const deviceId = req.headers['x-device-id'] || req.headers['x-session-id'];
+      const deviceId =
+        req.headers['x-device-id'] || req.headers['x-session-id'];
       const userAgent = req.get('User-Agent') || 'unknown-agent';
-      
+
       const sessionFingerprint = deviceId ? deviceId : userAgent;
       return `${ip}:${sessionFingerprint}`;
     },
     handler: (req: Request, res: Response) => {
-      console.warn(`Anonymous rate limit exceeded for ${req.ip} on ${req.path}`, {
-        ip: req.ip,
-        path: req.path,
-        userAgent: req.get('User-Agent'),
-        timestamp: new Date().toISOString(),
-      });
+      console.warn(
+        `Anonymous rate limit exceeded for ${req.ip} on ${req.path}`,
+        {
+          ip: req.ip,
+          path: req.path,
+          userAgent: req.get('User-Agent'),
+          timestamp: new Date().toISOString(),
+        },
+      );
 
       res.status(429).json({
         error: message,
@@ -208,7 +212,9 @@ export const productionLimits = {
 };
 
 // Helper function to get appropriate limiter based on environment
-export const getLimiter = (type: 'login' | 'otp' | 'magicLink' | 'signup' | 'anonymous') => {
+export const getLimiter = (
+  type: 'login' | 'otp' | 'magicLink' | 'signup' | 'anonymous',
+) => {
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (isProduction) {
