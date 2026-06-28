@@ -56,6 +56,14 @@ export const DATA_RETENTION_MATRIX: DataRetentionRow[] = [
     notes: 'Verified in memory; only commitments may be stored on User',
   },
   {
+    data: 'zkPassport attendance nullifier (per event)',
+    storedWhere: 'mongodb',
+    retention: 'Event lifetime + audit window',
+    erasableOnRequest: 'no',
+    notes:
+      'Stores HMAC(eventId:nullifier) digest only; raw nullifier is never saved',
+  },
+  {
     data: 'ContractEvent indexer records',
     storedWhere: 'mongodb',
     retention: 'Indefinite (no attendee identity)',
