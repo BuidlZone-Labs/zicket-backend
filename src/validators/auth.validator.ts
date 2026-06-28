@@ -8,7 +8,7 @@ export const LoginSchema = z.object({
 export type LoginInput = z.infer<typeof LoginSchema>;
 
 export const SignupSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().trim().min(1, 'Name is required'),
   email: z.string().email('Invalid email format'),
   password: z.string().min(1, 'Password is required'),
 });
