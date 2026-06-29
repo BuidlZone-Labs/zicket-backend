@@ -271,6 +271,9 @@ export class EventTicketService {
       tags: string[];
     },
   ): Promise<IEventTicket> {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
       const {
         privacyLevel,
@@ -300,40 +303,50 @@ export class EventTicketService {
         attendanceMode || this.mapPrivacyLevelToAttendanceMode(privacyLevel);
 
       // Create the event with all privacy settings
-      const event = await EventTicket.create({
-        ...baseEventData,
-        privacyLevel,
-        attendanceMode: mappedAttendanceMode,
-        eventType,
-        locationType,
-        location,
-        paymentPrivacy,
-        offerReceipts,
-        hasZkEmailUpdates,
-        hasEventReminders,
-        ticketType: ticketTypes,
-        totalTickets,
-        availableTickets: totalTickets,
-        soldTickets: 0,
-        isPublished,
-        allowAnonymous,
-        requiresVerification,
-      });
+      const event = await EventTicket.create(
+        [
+          {
+            ...baseEventData,
+            privacyLevel,
+            attendanceMode: mappedAttendanceMode,
+            eventType,
+            locationType,
+            location,
+            paymentPrivacy,
+            offerReceipts,
+            hasZkEmailUpdates,
+            hasEventReminders,
+            ticketType: ticketTypes,
+            totalTickets,
+            availableTickets: totalTickets,
+            soldTickets: 0,
+            isPublished,
+            allowAnonymous,
+            requiresVerification,
+          },
+        ],
+        { session },
+      ).then((docs) => docs[0]);
 
       if (event.cloudinary_public_id && baseEventData.organizedBy) {
-        try {
-          await Media.findOneAndUpdate(
-            { publicId: event.cloudinary_public_id },
-            { userId: baseEventData.organizedBy, publicId: event.cloudinary_public_id },
-            { upsert: true, new: true },
+        const existingMedia = await Media.findOne({
+          publicId: event.cloudinary_public_id,
+          userId: baseEventData.organizedBy,
+        }).session(session);
+        if (!existingMedia) {
+          throw new Error(
+            `Media with publicId ${event.cloudinary_public_id} does not exist or is not owned by organizer`,
           );
-        } catch (e) {
-          if ((e as any)?.code !== 11000) throw e;
         }
       }
 
+      await session.commitTransaction();
+      session.endSession();
+
       return event;
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       throw new Error(
         `Failed to create event with privacy settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
