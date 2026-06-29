@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import EventTicket, { IEventTicket } from '../models/event-ticket';
 import TicketOrder, { ITicketOrder } from '../models/ticket-order';
 import User from '../models/user';
+import Media from '../models/media';
 import zkEmailNotificationService from './zk-email-notification.service';
 
 import { CreateEventStepTwoInput } from '../validators/event.validator';
@@ -318,6 +319,18 @@ export class EventTicketService {
         allowAnonymous,
         requiresVerification,
       });
+
+      if (event.cloudinary_public_id && baseEventData.organizedBy) {
+        try {
+          await Media.findOneAndUpdate(
+            { publicId: event.cloudinary_public_id },
+            { userId: baseEventData.organizedBy, publicId: event.cloudinary_public_id },
+            { upsert: true, new: true },
+          );
+        } catch (e) {
+          if ((e as any)?.code !== 11000) throw e;
+        }
+      }
 
       return event;
     } catch (error) {
