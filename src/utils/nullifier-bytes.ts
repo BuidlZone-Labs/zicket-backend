@@ -13,17 +13,6 @@ export function nullifierToCanonicalHex(nullifier: string): string {
   }
   return hex.padStart(64, '0');
 }
-export function nullifierToCanonicalHex(nullifier: string): string {
-  const value = BigInt(nullifier);
-  if (value < 0n) {
-    throw new Error('Nullifier must be non-negative');
-  }
-  const hex = value.toString(16);
-  if (hex.length > 64) {
-    throw new Error('Nullifier exceeds 32 bytes');
-  }
-  return hex.padStart(64, '0');
-}
 
 /**
  * Converts a zkPassport nullifier public signal to a 32-byte buffer for Soroban BytesN<32>.
