@@ -18,6 +18,8 @@ import indexerRoutes from './routes/indexer.route';
 import privacyComplianceRoutes from './routes/privacy-compliance.route';
 import accountRoutes from './routes/account.route';
 import verifyAttendRoutes from './routes/verify-attend.route';
+import healthRoute from './routes/health.route';
+import docsRoute from './routes/docs.route';
 import { globalErrorHandler } from './middlewares/errorHandler';
 
 const app = express();
@@ -41,15 +43,11 @@ app.get('/', (req, res) => {
   res.send('Welcome to Zicket API');
 });
 
-// Health check endpoint (Issue #97)
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    service: 'zicket-backend',
-  });
-});
+// Health metrics endpoint (Issue #180)
+app.use('/health', healthRoute);
+
+// OpenAPI Swagger documentation (Issue #180)
+app.use('/api/docs', docsRoute);
 
 app.use('/auth', authLimiter);
 
