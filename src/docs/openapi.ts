@@ -34,7 +34,8 @@ export const openApiSpec = {
             },
           },
           '503': {
-            description: 'One or more critical subsystems (DB / Redis) are degraded or disconnected.',
+            description:
+              'One or more critical subsystems (DB / Redis) are degraded or disconnected.',
             content: {
               'application/json': {
                 schema: {
@@ -90,7 +91,9 @@ export const openApiSpec = {
           },
         },
         responses: {
-          '200': { description: 'Authentication successful with JWT bearer token' },
+          '200': {
+            description: 'Authentication successful with JWT bearer token',
+          },
           '401': { description: 'Invalid credentials' },
         },
       },
