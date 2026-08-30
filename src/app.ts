@@ -2,6 +2,7 @@ import './utils/logger';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import protectedRoute from './routes/protected.route';
 import otpRoute from './routes/otp.route';
 import authRoute from './routes/auth.route';
@@ -19,6 +20,8 @@ import privacyComplianceRoutes from './routes/privacy-compliance.route';
 import accountRoutes from './routes/account.route';
 import verifyAttendRoutes from './routes/verify-attend.route';
 import developerRoutes from './routes/developer.route';
+import healthRoutes from './routes/health.route';
+import swaggerSpec from './config/swagger';
 import { globalErrorHandler } from './middlewares/errorHandler';
 
 const app = express();
@@ -42,15 +45,12 @@ app.get('/', (req, res) => {
   res.send('Welcome to Zicket API');
 });
 
-// Health check endpoint (Issue #97)
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    service: 'zicket-backend',
-  });
-});
+// Swagger UI documentation endpoint
+app.use('/api/docs', swaggerUi.serve);
+app.get('/api/docs', swaggerUi.setup(swaggerSpec, { explorer: true }));
+
+// Health check endpoint - comprehensive metrics
+app.use('/health', healthRoutes);
 
 app.use('/auth', authLimiter);
 
