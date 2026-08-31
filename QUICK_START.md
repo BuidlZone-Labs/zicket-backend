@@ -10,21 +10,25 @@
 ## Getting Started (5 minutes)
 
 ### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 2. Start Development Server
+
 ```bash
 npm run dev
 ```
 
 ### 3. Open Swagger UI
+
 ```
 http://localhost:3000/api/docs
 ```
 
 ### 4. Test Health Endpoint
+
 ```bash
 curl http://localhost:3000/health
 ```
@@ -34,21 +38,25 @@ curl http://localhost:3000/health
 ## Testing
 
 ### Run All Tests
+
 ```bash
 npm test
 ```
 
 ### Run Health Tests Only
+
 ```bash
 npm test -- tests/health.test.ts
 ```
 
 ### Test Swagger UI
+
 ```bash
 curl http://localhost:3000/api/docs
 ```
 
 ### Test Health Endpoint
+
 ```bash
 # Health check
 curl http://localhost:3000/health
@@ -62,17 +70,20 @@ curl http://localhost:3000/health | jq
 ## Key Endpoints
 
 ### Swagger Documentation
+
 ```
 GET /api/docs          - Interactive UI
 GET /api/docs/swagger.json - Raw OpenAPI spec
 ```
 
 ### Health Metrics
+
 ```
 GET /health            - System health status
 ```
 
 ### Example Response
+
 ```json
 {
   "status": "healthy",
@@ -103,50 +114,55 @@ GET /health            - System health status
 
 ## Status Codes
 
-| Status | Code | Meaning |
-|--------|------|---------|
-| Healthy | 200 | All services operational |
-| Degraded | 200 | Services running but indexer lagging |
-| Unhealthy | 503 | Critical services (DB/Redis) down |
+| Status    | Code | Meaning                              |
+| --------- | ---- | ------------------------------------ |
+| Healthy   | 200  | All services operational             |
+| Degraded  | 200  | Services running but indexer lagging |
+| Unhealthy | 503  | Critical services (DB/Redis) down    |
 
 ---
 
 ## Files to Know
 
-| File | Purpose |
-|------|---------|
-| `src/services/health.service.ts` | Health metrics logic |
-| `src/routes/health.route.ts` | Health endpoint handler |
-| `src/config/swagger.ts` | Swagger configuration |
-| `tests/health.test.ts` | Test suite |
-| `docs/SWAGGER_HEALTH_SETUP.md` | Detailed setup guide |
-| `docs/IMPLEMENTATION_SUMMARY.md` | Technical details |
+| File                             | Purpose                 |
+| -------------------------------- | ----------------------- |
+| `src/services/health.service.ts` | Health metrics logic    |
+| `src/routes/health.route.ts`     | Health endpoint handler |
+| `src/config/swagger.ts`          | Swagger configuration   |
+| `tests/health.test.ts`           | Test suite              |
+| `docs/SWAGGER_HEALTH_SETUP.md`   | Detailed setup guide    |
+| `docs/IMPLEMENTATION_SUMMARY.md` | Technical details       |
 
 ---
 
 ## Common Tasks
 
 ### Check MongoDB Status
+
 ```bash
 curl http://localhost:3000/health | jq '.database'
 ```
 
 ### Check Redis Status
+
 ```bash
 curl http://localhost:3000/health | jq '.redis'
 ```
 
 ### Check Indexer Status
+
 ```bash
 curl http://localhost:3000/health | jq '.indexer'
 ```
 
 ### Get Just Overall Status
+
 ```bash
 curl http://localhost:3000/health | jq '.status'
 ```
 
 ### Monitor Health Continuously
+
 ```bash
 watch -n 5 'curl -s http://localhost:3000/health | jq'
 ```
@@ -164,16 +180,19 @@ watch -n 5 'curl -s http://localhost:3000/health | jq'
 ## Troubleshooting
 
 ### Swagger UI blank?
+
 - Check browser console for errors
 - Verify npm dependencies installed
 - Try clearing browser cache
 
 ### Health endpoint returns disconnected?
+
 - Check MongoDB is running: `mongo --version`
 - Check Redis is running: `redis-cli ping`
 - Check connection strings in environment
 
 ### Tests failing?
+
 - Run `npm install` first
 - Ensure MongoDB and Redis are running
 - Check Node.js version (14+ required)
@@ -240,6 +259,7 @@ Response (200 or 503)
 ## Monitoring & Observability
 
 Use `/health` for:
+
 - ✅ Kubernetes probes
 - ✅ Docker health checks
 - ✅ Infrastructure monitoring
@@ -261,6 +281,7 @@ Use `/health` for:
 ## Support
 
 For issues or questions:
+
 1. Check `docs/SWAGGER_HEALTH_SETUP.md` (Troubleshooting section)
 2. Review `tests/health.test.ts` for examples
 3. See GitHub issue #180 for context

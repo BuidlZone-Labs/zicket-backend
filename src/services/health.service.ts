@@ -53,7 +53,7 @@ class HealthService {
   async checkDatabase(): Promise<HealthMetrics['database']> {
     try {
       const startTime = Date.now();
-      
+
       // Check connection state
       const readyState = mongoose.connection.readyState;
       if (readyState !== 1) {
@@ -86,7 +86,7 @@ class HealthService {
   async checkRedis(): Promise<HealthMetrics['redis']> {
     try {
       await this.initializeRedis();
-      
+
       if (!this.redisClient) {
         return {
           status: 'disconnected',
@@ -95,7 +95,7 @@ class HealthService {
       }
 
       const startTime = Date.now();
-      
+
       // Perform PING command to check connection
       const pong = await this.redisClient.ping();
       const responseTime = Date.now() - startTime;

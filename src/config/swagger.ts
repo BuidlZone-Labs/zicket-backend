@@ -6,7 +6,8 @@ const options = {
     info: {
       title: 'Zicket Backend API',
       version: '1.0.0',
-      description: 'REST API for Zicket event ticketing platform built on blockchain',
+      description:
+        'REST API for Zicket event ticketing platform built on blockchain',
       contact: {
         name: 'Zicket Team',
         url: 'https://github.com/BuidlZone-Labs/zicket-backend',
@@ -15,7 +16,10 @@ const options = {
     servers: [
       {
         url: process.env.API_BASE_URL || 'http://localhost:3000',
-        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
+        description:
+          process.env.NODE_ENV === 'production'
+            ? 'Production server'
+            : 'Development server',
       },
     ],
     components: {
@@ -34,7 +38,6 @@ const options = {
         },
       },
     },
-
   },
   apis: [
     'src/routes/**/*.ts', // Include all route files

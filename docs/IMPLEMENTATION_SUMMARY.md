@@ -13,6 +13,7 @@
 ## What Was Implemented
 
 ### 1. OpenAPI 3.0 Specification & Swagger UI
+
 - **File**: `src/config/swagger.ts`
 - **Endpoint**: `GET /api/docs` (Swagger UI)
 - **Endpoint**: `GET /api/docs/swagger.json` (OpenAPI spec)
@@ -24,6 +25,7 @@
   - Server configuration with environment support
 
 ### 2. Enhanced Health Metrics Endpoint
+
 - **File**: `src/routes/health.route.ts`
 - **Service**: `src/services/health.service.ts`
 - **Endpoint**: `GET /health`
@@ -39,19 +41,24 @@
   - ✅ Comprehensive diagnostic messages
 
 ### 3. Response Status Codes
+
 - **200 OK**: Service is healthy or degraded
 - **503 Service Unavailable**: Critical services (MongoDB or Redis) are disconnected
 
 ### 4. Health Status Logic
+
 **Overall Status Calculation**:
+
 - **Unhealthy** (503): Database OR Redis disconnected
 - **Degraded** (200): All critical services connected but indexer is lagging (50%+ contracts)
 - **Healthy** (200): All services operational
 
 ### 5. JSDoc Documentation
+
 Added comprehensive Swagger documentation to route files:
 
 **auth.route.ts**:
+
 - `/auth/signup` - Register user
 - `/auth/login` - Authenticate user
 - `/auth/verify-account` - Verify OTP
@@ -62,6 +69,7 @@ Added comprehensive Swagger documentation to route files:
 - `/auth/google/callback` - OAuth callback
 
 **event-ticket.route.ts**:
+
 - `/event-tickets/trending` - Trending events
 - `/event-tickets/scan` - Scan ticket for entry
 - `/event-tickets/validate` - Validate ticket
@@ -75,11 +83,13 @@ Added comprehensive Swagger documentation to route files:
 - `/event-tickets/{eventId}/waitlist` - Waitlist operations
 
 **account.route.ts**:
+
 - `/account/erasure-assessment` - Data erasure assessment
 - `/account/request-erasure` - Request erasure
 - `/account/developer-keys` - Developer key operations
 
 **health.route.ts**:
+
 - `/health` - Health check
 
 ---
@@ -174,12 +184,14 @@ Added comprehensive Swagger documentation to route files:
 ## Acceptance Criteria Verification
 
 ### ✅ Swagger UI available at /api/docs
+
 - Implementation: `src/app.ts` line 50-51
 - Middleware: `swagger-ui-express`
 - Configuration: `src/config/swagger.ts`
 - Status: **COMPLETE**
 
 ### ✅ Detailed health metrics exposed at /health
+
 - Implementation: `src/routes/health.route.ts`
 - Service: `src/services/health.service.ts`
 - Metrics included:
@@ -197,12 +209,14 @@ Added comprehensive Swagger documentation to route files:
 - Status: **COMPLETE**
 
 ### ✅ DB or Redis disconnection causes /health to return HTTP 503
+
 - Implementation: `src/routes/health.route.ts` line 91-97
 - Logic: If `metrics.status === 'unhealthy'`, return 503
 - Unhealthy determination: `src/services/health.service.ts` line 173-178
 - Status: **COMPLETE**
 
 ### ✅ Tests: Test /api/docs renders Swagger UI
+
 - File: `tests/health.test.ts` line 103-111
 - Test cases:
   - Serves Swagger UI HTML ✅
@@ -213,6 +227,7 @@ Added comprehensive Swagger documentation to route files:
 - Status: **COMPLETE**
 
 ### ✅ Tests: Test /health returns valid JSON state
+
 - File: `tests/health.test.ts` line 8-87
 - Test cases:
   - Returns correct structure ✅
@@ -325,12 +340,12 @@ Interactive UI at /api/docs
 
 ## Dependencies Added
 
-| Package | Version | Type | Purpose |
-|---------|---------|------|---------|
-| swagger-ui-express | ^5.0.0 | dependency | Express middleware for Swagger UI |
-| swagger-jsdoc | ^6.2.8 | dependency | Convert JSDoc to OpenAPI spec |
-| @types/swagger-ui-express | ^4.1.6 | devDependency | TypeScript types for swagger-ui |
-| @types/swagger-jsdoc | ^6.0.3 | devDependency | TypeScript types for swagger-jsdoc |
+| Package                   | Version | Type          | Purpose                            |
+| ------------------------- | ------- | ------------- | ---------------------------------- |
+| swagger-ui-express        | ^5.0.0  | dependency    | Express middleware for Swagger UI  |
+| swagger-jsdoc             | ^6.2.8  | dependency    | Convert JSDoc to OpenAPI spec      |
+| @types/swagger-ui-express | ^4.1.6  | devDependency | TypeScript types for swagger-ui    |
+| @types/swagger-jsdoc      | ^6.0.3  | devDependency | TypeScript types for swagger-jsdoc |
 
 All dependencies are well-maintained and actively updated.
 
@@ -339,6 +354,7 @@ All dependencies are well-maintained and actively updated.
 ## Future Enhancements
 
 ### Planned (not in scope for this issue)
+
 1. Additional health metrics:
    - Queue status (active/failed/delayed jobs)
    - Memory usage
@@ -359,24 +375,29 @@ All dependencies are well-maintained and actively updated.
 ## Installation & Verification Steps
 
 ### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 2. Start Development Server
+
 ```bash
 npm run dev
 ```
 
 ### 3. Verify Swagger UI
+
 Open: `http://localhost:3000/api/docs`
 
 ### 4. Test Health Endpoint
+
 ```bash
 curl http://localhost:3000/health
 ```
 
 ### 5. Run Tests
+
 ```bash
 npm test -- tests/health.test.ts
 ```
@@ -386,16 +407,20 @@ npm test -- tests/health.test.ts
 ## Troubleshooting
 
 ### Issue: "Cannot find module 'swagger-ui-express'"
+
 **Solution**: Run `npm install`
 
 ### Issue: Swagger UI blank/not loading
+
 **Solution**: Check browser console for errors, verify `/api/docs` is accessible
 
 ### Issue: Health endpoint returns disconnected status
+
 **Cause**: MongoDB or Redis not running
 **Solution**: Start MongoDB and Redis services
 
 ### Issue: Indexer status always unavailable
+
 **Cause**: No IndexerState records in MongoDB
 **Solution**: Create test IndexerState record or let indexer worker populate them
 

@@ -7,6 +7,7 @@ This document describes the OpenAPI 3.0 specification and enhanced health metric
 ## Features Added
 
 ### 1. Swagger UI Documentation
+
 - **Endpoint**: `GET /api/docs`
 - **Description**: Interactive Swagger UI for exploring and testing the API
 - **Features**:
@@ -16,6 +17,7 @@ This document describes the OpenAPI 3.0 specification and enhanced health metric
   - Real-time API exploration
 
 ### 2. Enhanced Health Metrics Endpoint
+
 - **Endpoint**: `GET /health`
 - **Description**: Comprehensive health check endpoint reporting system status
 - **Returns**: Detailed metrics on database, Redis, and indexer health
@@ -30,6 +32,7 @@ npm install --save-dev @types/swagger-ui-express @types/swagger-jsdoc
 ```
 
 The dependencies have been added to `package.json`:
+
 - `swagger-ui-express@^5.0.0` - Express middleware for Swagger UI
 - `swagger-jsdoc@^6.2.8` - JSDoc to OpenAPI specification generator
 - `@types/swagger-ui-express@^4.1.6` - TypeScript types for Swagger UI
@@ -40,6 +43,7 @@ The dependencies have been added to `package.json`:
 **File**: `src/services/health.service.ts`
 
 The health service provides methods to check:
+
 - **Database (MongoDB)**: Connection state, response time, pool size
 - **Redis**: Connection status, response time via PING
 - **Indexer**: Blockchain event indexing status and lag detection
@@ -71,6 +75,7 @@ GET /health
 ```
 
 #### Response Codes:
+
 - **200 OK**: Service is healthy or degraded (detailed metrics provided)
 - **503 Service Unavailable**: Critical services (MongoDB or Redis) are disconnected
 
@@ -224,6 +229,7 @@ curl -X GET http://localhost:3000/health
 ### 2. Access Swagger UI
 
 Open in browser:
+
 ```
 http://localhost:3000/api/docs
 ```
@@ -241,6 +247,7 @@ Route files have been updated with comprehensive JSDoc comments for Swagger gene
 ### Documented Routes:
 
 **src/routes/auth.route.ts**
+
 - POST /auth/signup
 - POST /auth/login
 - POST /auth/verify-account
@@ -251,6 +258,7 @@ Route files have been updated with comprehensive JSDoc comments for Swagger gene
 - GET /auth/google/callback
 
 **src/routes/event-ticket.route.ts**
+
 - GET /event-tickets/trending
 - POST /event-tickets/scan
 - POST /event-tickets/validate
@@ -266,6 +274,7 @@ Route files have been updated with comprehensive JSDoc comments for Swagger gene
 - GET /event-tickets/{eventId}/waitlist/status
 
 **src/routes/account.route.ts**
+
 - GET /account/erasure-assessment
 - POST /account/request-erasure
 - POST /account/developer-keys
@@ -273,6 +282,7 @@ Route files have been updated with comprehensive JSDoc comments for Swagger gene
 - DELETE /account/developer-keys/{id}
 
 **src/routes/health.route.ts**
+
 - GET /health
 
 ## Testing
@@ -286,6 +296,7 @@ npm test -- tests/health.test.ts
 ### Test Cases
 
 **Health Endpoint Tests** (`tests/health.test.ts`):
+
 - ✓ Returns health metrics with correct structure
 - ✓ Has valid status values (healthy, degraded, unhealthy)
 - ✓ Has valid database status (connected, disconnected)
@@ -297,6 +308,7 @@ npm test -- tests/health.test.ts
 - ✓ Includes diagnostic messages for each component
 
 **Swagger UI Tests**:
+
 - ✓ Serves Swagger UI HTML at /api/docs
 - ✓ Exposes OpenAPI JSON specification
 - ✓ Includes health endpoint in spec
@@ -317,6 +329,7 @@ The health endpoint calculates overall status based on component statuses:
 ### Indexer Lag Detection
 
 Contracts are considered "lagging" if not updated in the last 5 minutes. Status:
+
 - **Healthy**: < 50% of contracts lagging
 - **Lagging**: >= 50% of contracts lagging
 - **Unavailable**: No indexed contracts found
@@ -328,6 +341,7 @@ Contracts are considered "lagging" if not updated in the last 5 minutes. Status:
 The `/health` endpoint can be used for:
 
 1. **Kubernetes/Container Liveness Probes**:
+
    ```yaml
    livenessProbe:
      httpGet:
@@ -421,6 +435,7 @@ The `/health` endpoint can be used for:
 ### Issue: Swagger UI not loading
 
 **Solution**: Ensure `swagger-ui-express` is installed:
+
 ```bash
 npm install swagger-ui-express
 ```
@@ -428,6 +443,7 @@ npm install swagger-ui-express
 ### Issue: Health endpoint returns "disconnected" for Redis
 
 **Solution**: Verify Redis is running and accessible:
+
 ```bash
 redis-cli ping
 ```
@@ -439,6 +455,7 @@ redis-cli ping
 ### Issue: Indexer status always "unavailable"
 
 **Solution**: Verify IndexerState records exist in MongoDB:
+
 ```bash
 db.getCollection('indexerstates').find()
 ```
