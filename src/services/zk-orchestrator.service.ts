@@ -6,6 +6,7 @@ import * as snarkjs from 'snarkjs';
 import { packedNBytesToString } from '@zk-email/helpers';
 import User, { IUser } from '../models/user';
 import queueService from './queue.service';
+import logger from '../utils/logger';
 
 export type ZkProviderType = 'zk-email' | 'zk-passport';
 
@@ -60,7 +61,14 @@ export class ZkIntegrationOrchestrator {
 
       // 2. Handle Verification Success
       if (verificationSuccess) {
-        await this.updateUserVerificationStatus(request.userId, usedProvider);
+        try {
+          await this.updateUserVerificationStatus(request.userId, usedProvider);
+        } catch (updateErr) {
+          logger.warn(
+            `[ZkOrchestrator] Failed to persist verification status for user ${request.userId}:`,
+            updateErr,
+          );
+        }
         return {
           success: true,
           providerUsed: usedProvider,
@@ -72,7 +80,7 @@ export class ZkIntegrationOrchestrator {
 
       // 3. Handle Failure Cases and Fallback
       if (request.allowFallback) {
-        console.warn(
+        logger.warn(
           `[ZkOrchestrator] ${request.provider} failed, falling back to standard verification for user ${request.userId}`,
         );
 
@@ -95,7 +103,7 @@ export class ZkIntegrationOrchestrator {
         isFallback: false,
       };
     } catch (error) {
-      console.error(`[ZkOrchestrator] Error during verification:`, error);
+      logger.error(`[ZkOrchestrator] Error during verification:`, error);
       return {
         success: false,
         providerUsed: request.provider,
@@ -120,7 +128,7 @@ export class ZkIntegrationOrchestrator {
       const vKeyPath = path.join(__dirname, '../../config/zk-email-vkey.json');
 
       if (!fs.existsSync(vKeyPath)) {
-        console.warn(
+        logger.warn(
           '[ZkOrchestrator] Missing vKey for zk-email, falling back to mock verification for dev',
         );
         return { isValid: true, email: 'verified-zk-email@example.com' };
@@ -144,7 +152,7 @@ export class ZkIntegrationOrchestrator {
 
       return { isValid: true, email };
     } catch (error) {
-      console.error('[ZkOrchestrator] zk-email verification error:', error);
+      logger.error('[ZkOrchestrator] zk-email verification error:', error);
       return { isValid: false };
     }
   }
@@ -167,7 +175,7 @@ export class ZkIntegrationOrchestrator {
       );
 
       if (!fs.existsSync(vKeyPath)) {
-        console.warn(
+        logger.warn(
           '[ZkOrchestrator] Missing vKey for zk-passport, falling back to mock verification for dev',
         );
         return { isValid: true, passportId: 'ZK_PASSPORT_ID_12345' };
@@ -187,7 +195,7 @@ export class ZkIntegrationOrchestrator {
 
       return { isValid: true, passportId };
     } catch (error) {
-      console.error('[ZkOrchestrator] zk-passport verification error:', error);
+      logger.error('[ZkOrchestrator] zk-passport verification error:', error);
       return { isValid: false };
     }
   }

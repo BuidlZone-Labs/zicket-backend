@@ -3,6 +3,7 @@ import Transaction from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
 import { TransactionStateMachine } from '../state-machine/transaction.state-machine';
 import { UserAuthenticatedReq } from '../utils/types';
+import logger from '../utils/logger';
 
 /**
  * GET /ticket-orders/transaction-status/:txHash
@@ -88,7 +89,7 @@ export const getTransactionStatus: RequestHandler = async (
       },
     });
   } catch (error) {
-    console.error('[TransactionStatusController] Error:', error);
+    logger.error('[TransactionStatusController] Error:', error);
     return res.status(500).json({
       error: 'Internal server error',
       message:

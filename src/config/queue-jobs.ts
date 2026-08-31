@@ -86,10 +86,10 @@ export interface EmailJobResult {
   timestamp: Date;
 }
 
-// â”€â”€â”€ #81 + #78: Payment & Reconciliation Jobs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- #81 + #78: Payment & Reconciliation Jobs ---
 
 /**
- * #81 â€” Payment queue job types
+ * #81 - Payment queue job types
  */
 export enum PaymentJobType {
   PROCESS_WEBHOOK_EVENT = 'PROCESS_WEBHOOK_EVENT',
@@ -97,7 +97,7 @@ export enum PaymentJobType {
 
 /**
  * Payload for PROCESS_WEBHOOK_EVENT.
- * Mirrors WebhookPaymentEvent from webhook.service.ts â€” keep in sync.
+ * Mirrors WebhookPaymentEvent from webhook.service.ts - keep in sync.
  */
 export interface ProcessWebhookEventPayload {
   txHash: string;
@@ -140,7 +140,7 @@ export interface ZkEmailJobResult {
 // (Removed duplicate partial QUEUE_NAMES definition.)
 
 /**
- * #78 â€” Reconciliation queue job types
+ * #78 - Reconciliation queue job types
  */
 export enum ReconciliationJobType {
   RECONCILE_PENDING = 'RECONCILE_PENDING',
@@ -154,7 +154,7 @@ export interface ReconcilePayload {
 export type ReconciliationJobPayload = ReconcilePayload;
 
 /**
- * #127 â€” Data retention / anonymization queue job types
+ * #127 - Data retention / anonymization queue job types
  */
 export enum RetentionJobType {
   RUN_RETENTION_PASS = 'RUN_RETENTION_PASS',
@@ -168,7 +168,36 @@ export interface RetentionPayload {
 export type RetentionJobPayload = RetentionPayload;
 
 /**
- * Queue names â€” centralised so nothing is hard-coded elsewhere
+ * #179 - Post-event anonymization queue job types
+ */
+export enum AnonymizationJobType {
+  POST_EVENT_ANONYMIZE = 'POST_EVENT_ANONYMIZE',
+}
+
+export interface PostEventAnonymizePayload {
+  triggeredBy: 'schedule' | 'manual';
+  /** Override default RETENTION_DAYS when running manually. */
+  retentionDaysOverride?: number;
+  timestamp: number;
+}
+
+export type AnonymizationJobPayload = PostEventAnonymizePayload;
+
+/**
+ * #168 - Waitlist queue job types
+ */
+export enum WaitlistJobType {
+  EXPIRE_HOLD = 'EXPIRE_HOLD',
+}
+
+export interface ExpireHoldPayload {
+  waitlistId: string;
+}
+
+export type WaitlistJobPayload = ExpireHoldPayload;
+
+/**
+ * Queue names - centralised so nothing is hard-coded elsewhere
  */
 export const QUEUE_NAMES = {
   EMAIL: 'email-queue',
@@ -178,10 +207,11 @@ export const QUEUE_NAMES = {
   RETENTION: 'retention-queue', // #127
   ANALYTICS: 'analytics-queue',
   WAITLIST: 'waitlist-queue', // #168
+  ANONYMIZATION: 'anonymization-queue', // #179
 } as const;
 
 /**
- * Repeatable job keys â€” used to register / cancel scheduled jobs
+ * Repeatable job keys - used to register / cancel scheduled jobs
  */
 export const REPEATABLE_JOBS = {
   RECONCILE_PENDING: {
@@ -205,17 +235,14 @@ export const REPEATABLE_JOBS = {
       backoff: { type: 'fixed' as const, delay: 60_000 },
     },
   },
+  POST_EVENT_ANONYMIZE: {
+    name: AnonymizationJobType.POST_EVENT_ANONYMIZE,
+    opts: {
+      repeat: {
+        pattern: process.env.ANONYMIZATION_CRON || '0 4 * * *', // daily at 4 AM
+      },
+      attempts: 2,
+      backoff: { type: 'fixed' as const, delay: 60_000 },
+    },
+  },
 } as const;
-
-/**
- * #168 - Waitlist queue job types
- */
-export enum WaitlistJobType {
-  EXPIRE_HOLD = 'EXPIRE_HOLD',
-}
-
-export interface ExpireHoldPayload {
-  waitlistId: string;
-}
-
-export type WaitlistJobPayload = ExpireHoldPayload;

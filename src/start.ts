@@ -11,6 +11,11 @@ import retentionWorker, {
 } from './workers/retention.worker';
 import indexerWorker from './workers/indexer.worker';
 import waitlistWorker from './workers/waitlist.worker';
+import anonymizationWorker, {
+  initializeAnonymizationWorker,
+  anonymizationQueue,
+} from './workers/anonymization.worker';
+import logger from './utils/logger';
 
 async function startServer() {
   try {
@@ -19,44 +24,49 @@ async function startServer() {
 
     // Connect to MongoDB
     await mongoConnect();
-    console.log('âœ“ MongoDB connected');
+    logger.info('MongoDB connected');
 
     // Initialize queue service
     await queueService.initialize();
-    console.log('âœ“ Queue service initialized');
+    logger.info('Queue service initialized');
 
     // Initialize email worker
     await emailWorker.initialize();
-    console.log('âœ“ Email worker initialized');
+    logger.info('Email worker initialized');
 
     // Initialize zkEmail worker
     await zkEmailWorker.initialize();
-    console.log('âœ“ zkEmail worker initialized');
+    logger.info('zkEmail worker initialized');
 
     // Initialize indexer worker
     await indexerWorker.initialize();
-    console.log('âœ“ Indexer worker initialized');
+    logger.info('Indexer worker initialized');
 
     // Payment worker (processes webhook events via state machine)
-    console.log('âœ“ Payment worker initialized');
+    logger.info('Payment worker initialized');
 
     // Reconciliation worker (periodic stale-tx cleanup via state machine)
-    console.log('âœ“ Reconciliation worker initialized');
+    logger.info('Reconciliation worker initialized');
 
     // Retention worker (TTL hygiene + anonymization job retries)
     await initializeRetentionWorker();
-    console.log('âœ“ Retention worker initialized');
+    logger.info('Retention worker initialized');
 
     await waitlistWorker.initialize();
-    console.log('Waitlist worker initialized');
+    logger.info('Waitlist worker initialized');
+
+    // Anonymization worker (post-event PII redaction)
+    await initializeAnonymizationWorker();
+    await anonymizationWorker.run();
+    logger.info('Anonymization worker initialized');
 
     // Start Express server
     const server = app.listen(config.port, () => {
-      console.log(`âœ“ Server running on port ${config.port}`);
+      logger.info(`Server running on port ${config.port}`);
     });
 
     server.on('error', (error) => {
-      console.error('Failed to start server:', error);
+      logger.error({ err: error }, 'Failed to start server');
       void closeAllServices().finally(() => process.exit(1));
     });
 
@@ -67,6 +77,8 @@ async function startServer() {
         ['paymentWorker', () => paymentWorker.close()],
         ['reconciliationWorker', () => reconciliationWorker.close()],
         ['waitlistWorker', () => waitlistWorker.close()],
+        ['anonymizationWorker', () => anonymizationWorker.close()],
+        ['anonymizationQueue', () => anonymizationQueue.close()],
         ['retentionWorker', () => retentionWorker.close()],
         ['indexerWorker', () => Promise.resolve(indexerWorker.stop())],
         ['queueService', () => queueService.close()],
@@ -78,7 +90,7 @@ async function startServer() {
           await close();
         } catch (error) {
           hadError = true;
-          console.error(`Failed to close ${name}:`, error);
+          logger.error({ err: error }, `Failed to close ${name}`);
         }
       }
       return hadError;
@@ -86,11 +98,11 @@ async function startServer() {
 
     // Graceful shutdown
     const gracefulShutdown = async () => {
-      console.log('\nðŸ›‘ Shutting down gracefully...');
+      logger.info('Shutting down gracefully...');
       server.close(async () => {
-        console.log('Express server stopped');
+        logger.info('Express server stopped');
         const hadError = await closeAllServices();
-        console.log(
+        logger.info(
           hadError ? 'Some services failed to close' : 'All services closed',
         );
         process.exit(hadError ? 1 : 0);
@@ -98,7 +110,7 @@ async function startServer() {
 
       // Force shutdown after 10 seconds
       setTimeout(() => {
-        console.error('Forced shutdown after timeout');
+        logger.error('Forced shutdown after timeout');
         process.exit(1);
       }, 10000);
     };
@@ -106,7 +118,7 @@ async function startServer() {
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error({ err: error }, 'Failed to start server');
     process.exit(1);
   }
 }

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
 
 /**
  * Optional Captcha verification middleware
@@ -54,7 +55,7 @@ export const verifyCaptcha = async (
 
     return next();
   } catch (error) {
-    console.error('Captcha verification failed:', error);
+    logger.error('Captcha verification failed:', error);
     return res
       .status(500)
       .json({ error: 'Internal server error during captcha verification.' });

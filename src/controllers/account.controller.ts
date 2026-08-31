@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import { UserAuthenticatedReq } from '../utils/types';
 import { ErasureAssessmentService } from '../services/erasure-assessment.service';
 import { AnonymizationService } from '../services/anonymization.service';
+import logger from '../utils/logger';
 
 /**
  * GET /account/erasure-assessment
@@ -30,7 +31,7 @@ export const getErasureAssessment: RequestHandler = async (
       data: assessment,
     });
   } catch (error) {
-    console.error('[Account] getErasureAssessment:', error);
+    logger.error('[Account] getErasureAssessment:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to assess erasure impact',
@@ -77,7 +78,7 @@ export const requestErasure: RequestHandler = async (
       return res.status(409).json({ error: 'Conflict', message });
     }
 
-    console.error('[Account] requestErasure:', error);
+    logger.error('[Account] requestErasure:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to process erasure request',

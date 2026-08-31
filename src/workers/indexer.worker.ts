@@ -1,4 +1,5 @@
 import indexerService from '../services/indexer.service';
+import logger from '../utils/logger';
 
 export class IndexerWorker {
   private static instance: IndexerWorker;
@@ -18,7 +19,7 @@ export class IndexerWorker {
   }
 
   async initialize() {
-    console.log('[IndexerWorker] Initializing event indexer...');
+    logger.info('[IndexerWorker] Initializing event indexer...');
 
     // Initial sync to catch up on any missed blocks
     await indexerService.syncEvents();
@@ -28,7 +29,7 @@ export class IndexerWorker {
       try {
         await indexerService.syncEvents();
       } catch (err) {
-        console.error('[IndexerWorker] Error during sync loop:', err);
+        logger.error('[IndexerWorker] Error during sync loop:', err);
       }
     }, this.pollInterval);
   }

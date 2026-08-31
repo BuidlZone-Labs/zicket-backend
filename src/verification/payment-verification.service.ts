@@ -12,6 +12,7 @@ import {
 } from '../services/zk-orchestrator.service';
 import { TransactionStateMachine } from '../state-machine/transaction.state-machine';
 import { PaymentPrivacyDisclosureService } from '../services/payment-privacy-disclosure.service';
+import logger from '../utils/logger';
 
 /**
  * Orchestrates payment verification (delegated to PaymentVerificationService)
@@ -251,7 +252,7 @@ export class PaymentVerificationService {
     } catch (smError) {
       // Log but don't fail the request — the records exist and reconciliation
       // will fix the state on the next run.
-      console.error(
+      logger.error(
         `[PaymentVerificationService] State machine confirmation failed for ${txHash}:`,
         smError,
       );

@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import { RecommendationService } from '../services/recommendation.service';
+import logger from '../utils/logger';
 
 /**
  * #84 — Event Recommendation Controller
@@ -35,7 +36,7 @@ export const getRecommendations: RequestHandler = async (req, res) => {
 
     res.status(200).json({ success: true, data: publicResult });
   } catch (error) {
-    console.error('[RecommendationController] Error:', error);
+    logger.error('[RecommendationController] Error:', error);
     res.status(500).json({
       error: 'Internal server error',
       message:

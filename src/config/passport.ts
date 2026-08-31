@@ -4,6 +4,7 @@ import User from '../models/user';
 import zkOrchestratorService from '../services/zk-orchestrator.service';
 import { generateAccessToken } from '../utils/token';
 import dotenv from 'dotenv';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -48,7 +49,7 @@ passport.use(
         try {
           await zkOrchestratorService.orchestrateForUser(user);
         } catch (error: any) {
-          console.error(
+          logger.error(
             'zk orchestration failed during Google auth:',
             error.message || error,
           );

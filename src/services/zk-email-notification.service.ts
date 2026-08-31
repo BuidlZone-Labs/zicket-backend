@@ -2,6 +2,7 @@ import queueService from './queue.service';
 import { IUser } from '../models/user';
 import { ITicketOrder } from '../models/ticket-order';
 import { IEventTicket } from '../models/event-ticket';
+import logger from '../utils/logger';
 
 /**
  * ZkEmailNotificationService - Privacy-preserving notification service
@@ -19,7 +20,7 @@ class ZkEmailNotificationService {
     try {
       // Check user notification preference
       if (!user.notificationPreferences?.emailOnTicketPurchase) {
-        console.log(
+        logger.info(
           `Skipping purchase notification for ${user.email} - notifications disabled`,
         );
         return null;
@@ -36,12 +37,12 @@ class ZkEmailNotificationService {
         orderId: order._id.toString(),
       });
 
-      console.log(
+      logger.info(
         `Ticket purchase notification queued for ${user.email}, Job ID: ${jobId}`,
       );
       return jobId;
     } catch (error: any) {
-      console.error(
+      logger.error(
         'Error queuing ticket purchase notification:',
         error.message,
       );
@@ -60,7 +61,7 @@ class ZkEmailNotificationService {
     try {
       // Check user notification preference
       if (!user.notificationPreferences?.emailOnTicketUpdate) {
-        console.log(
+        logger.info(
           `Skipping update notification for ${user.email} - notifications disabled`,
         );
         return null;
@@ -75,12 +76,12 @@ class ZkEmailNotificationService {
         privacyLevel: order.privacyLevel,
       });
 
-      console.log(
+      logger.info(
         `Ticket update notification queued for ${user.email}, Job ID: ${jobId}`,
       );
       return jobId;
     } catch (error: any) {
-      console.error('Error queuing ticket update notification:', error.message);
+      logger.error('Error queuing ticket update notification:', error.message);
       throw new Error('Failed to queue ticket update notification');
     }
   }
@@ -98,7 +99,7 @@ class ZkEmailNotificationService {
       // Cancellation notifications are critical, so we might bypass preference
       // check if the event is cancelled, but let's stick to update preference for now
       if (!user.notificationPreferences?.emailOnTicketUpdate) {
-        console.log(
+        logger.info(
           `Skipping cancellation notification for ${user.email} - notifications disabled`,
         );
         return null;
@@ -111,12 +112,12 @@ class ZkEmailNotificationService {
         reason,
       });
 
-      console.log(
+      logger.info(
         `Event cancellation notification queued for ${user.email}, Job ID: ${jobId}`,
       );
       return jobId;
     } catch (error: any) {
-      console.error(
+      logger.error(
         'Error queuing event cancellation notification:',
         error.message,
       );

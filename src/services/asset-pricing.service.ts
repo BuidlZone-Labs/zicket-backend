@@ -1,3 +1,5 @@
+import logger from '../utils/logger';
+
 /**
  * Asset pricing for payment verification.
  * Converts USD ticket amounts into on-chain base units using a live (or cached)
@@ -198,7 +200,7 @@ export async function getUsdPerAsset(
     cache = { quote, expiresAt: now + cfg.cacheTtlMs };
     return quote;
   } catch (err) {
-    console.warn(
+    logger.warn(
       `[AssetPricingService] live price failed for ${asset}:`,
       err instanceof Error ? err.message : err,
     );

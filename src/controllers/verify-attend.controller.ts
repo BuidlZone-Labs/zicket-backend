@@ -7,6 +7,7 @@ import {
 } from '../errors/verifyAttendError';
 import { EventContractConfigError } from '../provider/event-contract.factory';
 import { AttendanceNullifierPepperError } from '../utils/attendance-nullifier-digest';
+import logger from '../utils/logger';
 
 /**
  * POST /events/:id/verify-attend
@@ -56,7 +57,7 @@ export const verifyAttend: RequestHandler = async (req, res, next) => {
       error instanceof EventContractConfigError ||
       error instanceof AttendanceNullifierPepperError
     ) {
-      console.error('[VerifyAttend] contract configuration error:', error);
+      logger.error('[VerifyAttend] contract configuration error:', error);
       return res.status(503).json({
         success: false,
         error: 'SERVICE_UNAVAILABLE',

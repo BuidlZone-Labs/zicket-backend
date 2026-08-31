@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import logger from '../utils/logger';
 require('dotenv').config();
 
 let env = process.env.NODE_ENV;
@@ -11,21 +12,21 @@ if (env == 'development') {
 }
 
 mongoose.connection.once('open', () => {
-  console.log('MongoDB connection established!');
+  logger.info('MongoDB connection established!');
 });
 
 mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
+  logger.error('MongoDB connection error:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB connection disconnected.');
+  logger.info('MongoDB connection disconnected.');
 });
 
 export async function mongoConnect() {
   if (mongoose.connection.readyState === 1) {
     // If connection already exists, reuse it.
-    console.log('MongoDB connection already exists, reusing it.');
+    logger.info('MongoDB connection already exists, reusing it.');
     return;
   }
 
@@ -33,12 +34,12 @@ export async function mongoConnect() {
     dbName: dbName,
     maxPoolSize: 5,
   });
-  console.log(`Connected to MongoDB with database name: ${dbName}`);
+  logger.info(`Connected to MongoDB with database name: ${dbName}`);
 }
 
 export async function mongoDisconnect() {
   await mongoose.disconnect();
-  console.log('MongoDB disconnected');
+  logger.info('MongoDB disconnected');
 }
 
 // Handling app termination and closing connection gracefully

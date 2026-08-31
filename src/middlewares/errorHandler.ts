@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError, ValidationError } from '../errors/AppError';
+import logger from '../utils/logger';
 
 interface ErrorResponse {
   status: number;
@@ -85,7 +86,7 @@ export function globalErrorHandler(
   }
 
   // Unhandled / unexpected error — log full details, send generic 500
-  console.error('[ErrorHandler] Unhandled error:', err);
+  logger.error('[ErrorHandler] Unhandled error:', err);
   const body: ErrorResponse = {
     status: 500,
     message: 'Internal server error',

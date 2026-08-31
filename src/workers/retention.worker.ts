@@ -7,6 +7,7 @@ import {
   REPEATABLE_JOBS,
 } from '../config/queue-jobs';
 import { DataRetentionService } from '../services/data-retention.service';
+import logger from '../utils/logger';
 
 /**
  * #127 — Retention Worker
@@ -36,7 +37,7 @@ export async function initializeRetentionWorker(): Promise<void> {
     opts,
   );
 
-  console.log(
+  logger.info(
     `[RetentionWorker] Repeatable job registered — pattern: ${opts.repeat.pattern}`,
   );
 }
@@ -46,7 +47,7 @@ const retentionWorker = new Worker(
   async (job: Job<RetentionPayload>) => {
     const { name, data } = job;
 
-    console.log(
+    logger.info(
       `[RetentionWorker] Starting run — triggeredBy: ${data.triggeredBy}`,
     );
 
@@ -57,7 +58,7 @@ const retentionWorker = new Worker(
       }
 
       default:
-        console.warn(`[RetentionWorker] Unknown job type: ${name}`);
+        logger.warn(`[RetentionWorker] Unknown job type: ${name}`);
     }
   },
   {
@@ -71,7 +72,7 @@ const retentionWorker = new Worker(
 retentionWorker.on('completed', (job, result) => {
   const r = result as any;
   if (r) {
-    console.log(
+    logger.info(
       `[RetentionWorker] ✓ Run complete — tempData: ${r.tempDataCount}, ` +
         `logs: ${r.logCount}, pendingJobs: ${r.pendingAnonymizationJobs}, ` +
         `processed: ${r.anonymizationJobsProcessed}, ` +
@@ -81,11 +82,11 @@ retentionWorker.on('completed', (job, result) => {
 });
 
 retentionWorker.on('failed', (job, err) => {
-  console.error(`[RetentionWorker] Job ${job?.id} failed: ${err.message}`);
+  logger.error(`[RetentionWorker] Job ${job?.id} failed: ${err.message}`);
 });
 
 retentionWorker.on('error', (err) => {
-  console.error('[RetentionWorker] Worker error:', err);
+  logger.error('[RetentionWorker] Worker error:', err);
 });
 
 export default retentionWorker;

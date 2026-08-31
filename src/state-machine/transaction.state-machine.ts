@@ -3,6 +3,7 @@ import Transaction, { ITransaction } from '../models/transaction';
 import TicketOrder from '../models/ticket-order';
 import InventoryService from '../services/inventory.service';
 import { TransactionStateError } from '../errors/AppError';
+import logger from '../utils/logger';
 
 // ─── State & Event Definitions ────────────────────────────────────────────────
 
@@ -243,7 +244,7 @@ export class TransactionStateMachine {
               );
 
             if (!confirmResult.success) {
-              console.warn(
+              logger.warn(
                 `[StateMachine] Inventory confirmation issue for order ${order._id}: ${confirmResult.error}`,
               );
             }
@@ -257,7 +258,7 @@ export class TransactionStateMachine {
           );
 
           if (!releaseResult.success) {
-            console.warn(
+            logger.warn(
               `[StateMachine] Inventory release issue for order ${order._id}: ${releaseResult.error}`,
             );
           }
@@ -266,7 +267,7 @@ export class TransactionStateMachine {
 
       await session.commitTransaction();
 
-      console.info(
+      logger.info(
         `[StateMachine] tx=${txHash} ${currentState} → ${targetState} ` +
           `(event=${event}, triggeredBy=${triggeredBy})`,
       );

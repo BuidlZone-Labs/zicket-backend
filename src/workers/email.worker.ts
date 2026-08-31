@@ -14,6 +14,7 @@ import {
 } from '../config/queue-jobs';
 import nodemailer, { Transporter } from 'nodemailer';
 import dotenv from 'dotenv';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -51,25 +52,25 @@ class EmailWorker {
 
       // Event handlers
       this.worker.on('completed', (job) => {
-        console.log(
+        logger.info(
           `ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“ Email job ${job.id} completed successfully`,
         );
       });
 
       this.worker.on('failed', (job, error) => {
-        console.error(
+        logger.error(
           `ÃƒÂ¢Ã…â€œÃ¢â‚¬â€ Email job ${job?.id} failed (attempt ${job?.attemptsMade}/${job?.opts.attempts}):`,
           error.message,
         );
       });
 
       this.worker.on('error', (error) => {
-        console.error('Email worker error:', error);
+        logger.error('Email worker error:', error);
       });
 
-      console.log('Email worker initialized successfully');
+      logger.info('Email worker initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize EmailWorker:', error);
+      logger.error('Failed to initialize EmailWorker:', error);
       throw error;
     }
   }
@@ -82,7 +83,7 @@ class EmailWorker {
       const jobType = job.name as EmailJobType;
       const payload = job.data as EmailJobPayload;
 
-      console.log(
+      logger.info(
         `Processing email job: ${jobType} [ID: ${job.id}], Attempt: ${job.attemptsMade + 1}/${job.opts.attempts}`,
       );
 
@@ -128,7 +129,7 @@ class EmailWorker {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Job ${job.id} error:`, errorMessage);
+      logger.error(`Job ${job.id} error:`, errorMessage);
 
       // Throw to trigger retry
       throw error;
@@ -509,7 +510,7 @@ class EmailWorker {
       text,
     });
 
-    console.log(
+    logger.info(
       `Email sent successfully to ${to}, Message ID: ${info.messageId}`,
     );
 
@@ -526,7 +527,7 @@ class EmailWorker {
   async close(): Promise<void> {
     if (this.worker) {
       await this.worker.close();
-      console.log('Email worker closed');
+      logger.info('Email worker closed');
     }
   }
 
@@ -597,7 +598,7 @@ class EmailWorker {
         timestamp: new Date(),
       };
     } catch (error: any) {
-      console.error(
+      logger.error(
         'Error sending waitlist spot-available email:',
         error.message,
       );

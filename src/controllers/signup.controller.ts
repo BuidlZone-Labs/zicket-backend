@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import User from '../models/user';
 import { generateOTP } from '../utils/otp';
 import emailService from '../services/email.service';
+import logger from '../utils/logger';
 
 const OTP_EXPIRY_MINUTES = 10;
 
@@ -33,7 +34,7 @@ export const signupController: RequestHandler = async (
     try {
       await emailService.sendVerificationOtp(email, otp);
     } catch (emailError: any) {
-      console.error(
+      logger.error(
         'Failed to send verification OTP email:',
         emailError?.message,
       );

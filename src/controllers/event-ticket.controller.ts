@@ -7,6 +7,7 @@ import {
 import { UserAuthenticatedReq } from '../utils/types';
 import { PaymentPrivacyDisclosureService } from '../services/payment-privacy-disclosure.service';
 import { decodePaginationCursor } from '../utils/pagination-cursor';
+import logger from '../utils/logger';
 
 export const getEventTickets: RequestHandler = async (req, res, next) => {
   try {
@@ -194,7 +195,7 @@ export const createEventWithPrivacySettings: RequestHandler = async (
       },
     });
   } catch (error: any) {
-    console.error('Error creating event with privacy settings:', error);
+    logger.error('Error creating event with privacy settings:', error);
 
     // Handle Zod validation errors
     if (error.errors) {
@@ -293,7 +294,7 @@ export const updateEventPrivacySettings: RequestHandler = async (
       },
     });
   } catch (error: any) {
-    console.error('Error updating event privacy settings:', error);
+    logger.error('Error updating event privacy settings:', error);
 
     // Handle Zod validation errors
     if (error.errors) {

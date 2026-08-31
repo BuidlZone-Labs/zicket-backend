@@ -9,6 +9,7 @@ import {
   WebhookService,
   WebhookPaymentEvent,
 } from '../services/webhook.service';
+import logger from '../utils/logger';
 
 /**
  * #81 — Payment Worker
@@ -27,7 +28,7 @@ const paymentWorker = new Worker(
   async (job: Job<ProcessWebhookEventPayload>) => {
     const { name, data } = job;
 
-    console.log(
+    logger.info(
       `[PaymentWorker] Processing job: ${name} | txHash: ${data.txHash}`,
     );
 
@@ -47,16 +48,16 @@ const paymentWorker = new Worker(
         const result = await WebhookService.handlePaymentEvent(event);
 
         if (!result.processed) {
-          console.warn(`[PaymentWorker] Not processed: ${result.message}`);
+          logger.warn(`[PaymentWorker] Not processed: ${result.message}`);
         } else {
-          console.log(`[PaymentWorker] ✓ ${result.message}`);
+          logger.info(`[PaymentWorker] ✓ ${result.message}`);
         }
 
         return result;
       }
 
       default:
-        console.warn(`[PaymentWorker] Unknown job type: ${name}`);
+        logger.warn(`[PaymentWorker] Unknown job type: ${name}`);
     }
   },
   {
@@ -68,14 +69,14 @@ const paymentWorker = new Worker(
 );
 
 paymentWorker.on('failed', (job, err) => {
-  console.error(
+  logger.error(
     `[PaymentWorker] Job ${job?.id} (${job?.name}) failed:`,
     err.message,
   );
 });
 
 paymentWorker.on('error', (err) => {
-  console.error('[PaymentWorker] Worker error:', err);
+  logger.error('[PaymentWorker] Worker error:', err);
 });
 
 export default paymentWorker;

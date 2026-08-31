@@ -7,6 +7,7 @@ import {
   USER_FACING_PRIVACY_POLICY,
 } from '../constants/data-retention-matrix';
 import { PaymentPrivacyDisclosureService } from '../services/payment-privacy-disclosure.service';
+import logger from '../utils/logger';
 
 /**
  * GET /compliance/data-retention
@@ -75,7 +76,7 @@ export const getPaymentPrivacyDisclosure: RequestHandler = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[PrivacyCompliance] getPaymentPrivacyDisclosure:', error);
+    logger.error('[PrivacyCompliance] getPaymentPrivacyDisclosure:', error);
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to load payment privacy disclosure',

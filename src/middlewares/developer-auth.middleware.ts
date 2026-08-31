@@ -5,6 +5,7 @@ import DeveloperApiKey, {
 } from '../models/developer-key';
 import { extractDeveloperApiKeyPrefix } from '../utils/developer-api-key';
 import { UnauthorizedError, ForbiddenError } from '../errors/AppError';
+import logger from '../utils/logger';
 
 export const DEVELOPER_API_KEY_HEADER = 'x-zicket-api-key';
 
@@ -89,7 +90,7 @@ export function developerAuthGuard(
         { _id: apiKey._id },
         { $set: { lastUsedAt: new Date() } },
       ).catch((err) => {
-        console.error('[developerAuthGuard] failed to record lastUsedAt:', err);
+        logger.error('[developerAuthGuard] failed to record lastUsedAt:', err);
       });
 
       (req as DeveloperAuthenticatedReq).developer = {

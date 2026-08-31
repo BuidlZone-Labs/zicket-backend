@@ -5,6 +5,7 @@ import http from 'http';
 import * as snarkjs from 'snarkjs';
 import { ZkProofPayload } from '../services/zk-orchestrator.service';
 import { isZkPassportProofExpired } from '../utils/zkpassport-expiry';
+import logger from '../utils/logger';
 
 export interface ZkPassportAttendVerification {
   nullifier: string;
@@ -54,7 +55,7 @@ export class ZkPassportAttendVerifier {
         return true;
       }
 
-      console.error(
+      logger.error(
         '[ZkPassportAttendVerifier] ZKPASSPORT_RELAY_URL must use https outside localhost',
       );
       return false;
@@ -135,7 +136,7 @@ export class ZkPassportAttendVerifier {
 
       return { nullifier };
     } catch (error) {
-      console.error('[ZkPassportAttendVerifier] relay error:', error);
+      logger.error('[ZkPassportAttendVerifier] relay error:', error);
       return null;
     }
   }
@@ -155,13 +156,13 @@ export class ZkPassportAttendVerifier {
           process.env.ZKPASSPORT_MOCK_VERIFY === 'true';
 
         if (!allowMock) {
-          console.error(
+          logger.error(
             '[ZkPassportAttendVerifier] Missing vKey and mock verify disabled',
           );
           return null;
         }
 
-        console.warn(
+        logger.warn(
           '[ZkPassportAttendVerifier] ZKPASSPORT_MOCK_VERIFY enabled — dev only',
         );
         return { nullifier: payload.publicSignals[0].toString() };
@@ -180,7 +181,7 @@ export class ZkPassportAttendVerifier {
 
       return { nullifier: payload.publicSignals[0].toString() };
     } catch (error) {
-      console.error('[ZkPassportAttendVerifier] local verify error:', error);
+      logger.error('[ZkPassportAttendVerifier] local verify error:', error);
       return null;
     }
   }

@@ -5,6 +5,7 @@ import { OrganizerBalanceService } from '../services/organizer-balance.service';
 import { UserAuthenticatedReq } from '../utils/types';
 import { assertValidSorobanSymbol } from '../utils/soroban-symbol';
 import { AppError } from '../errors/AppError';
+import logger from '../utils/logger';
 
 /**
  * GET /event-tickets/:eventId/organizer-balance
@@ -84,7 +85,7 @@ export const getOrganizerBalance: RequestHandler = async (
       data: balance,
     });
   } catch (error) {
-    console.error('Error fetching organizer balance:', error);
+    logger.error('Error fetching organizer balance:', error);
 
     if (error instanceof AppError && error.isOperational) {
       return res.status(error.statusCode).json({

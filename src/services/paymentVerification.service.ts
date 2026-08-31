@@ -8,6 +8,7 @@ import {
   resolveExpectedPaymentBaseUnits,
   isPricingConfigError,
 } from './asset-pricing.service';
+import logger from '../utils/logger';
 
 export interface VerifyRequest {
   txHash: string;
@@ -42,7 +43,7 @@ async function withRpcRetry<T>(
       return result;
     } catch (err) {
       lastErr = err;
-      console.warn(
+      logger.warn(
         `[PaymentVerificationService] ${label} attempt ${attempt + 1} failed:`,
         err,
       );
@@ -156,7 +157,7 @@ export class PaymentVerificationService {
         );
       }
       const detail = err instanceof Error ? err.message : String(err);
-      console.error(
+      logger.error(
         `[PaymentVerificationService] pricing unavailable for order=${orderRef}: ${detail}`,
       );
       throw new ServiceUnavailableError(
@@ -170,7 +171,7 @@ export class PaymentVerificationService {
       );
     }
 
-    console.info(
+    logger.info(
       `[PaymentVerificationService] Verified tx=${txHash} for order=${orderRef}: ${chainTx.confirmations} confirmations, value=${chainTx.valueWei} base units, price=${priceMeta}.`,
     );
 

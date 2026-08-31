@@ -8,6 +8,7 @@ import {
   ValidationError,
   ConflictError,
 } from '../errors/AppError';
+import logger from '../utils/logger';
 
 const HOLD_MINUTES_ENV = process.env.WAITLIST_HOLD_MINUTES;
 const HOLD_MINUTES =
@@ -242,7 +243,7 @@ export class WaitlistService {
         { $set: { status: 'converted' } },
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `Failed to mark waitlist entry converted for user ${userId}, event ${eventId}:`,
         error,
       );

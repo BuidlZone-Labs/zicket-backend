@@ -6,6 +6,7 @@ import {
   ZkEmailJobResult,
   QUEUE_NAMES,
 } from '../config/queue-jobs';
+import logger from '../utils/logger';
 
 class ZkEmailWorker {
   private worker: Worker | null = null;
@@ -24,23 +25,23 @@ class ZkEmailWorker {
       );
 
       this.worker.on('completed', (job) => {
-        console.log(`✓ zkEmail job ${job.id} completed successfully`);
+        logger.info(`✓ zkEmail job ${job.id} completed successfully`);
       });
 
       this.worker.on('failed', (job, error) => {
-        console.error(
+        logger.error(
           `✗ zkEmail job ${job?.id} failed (attempt ${job?.attemptsMade}/${job?.opts.attempts}):`,
           error.message,
         );
       });
 
       this.worker.on('error', (error) => {
-        console.error('zkEmail worker error:', error);
+        logger.error('zkEmail worker error:', error);
       });
 
-      console.log('zkEmail worker initialized successfully');
+      logger.info('zkEmail worker initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize ZkEmailWorker:', error);
+      logger.error('Failed to initialize ZkEmailWorker:', error);
       throw error;
     }
   }
@@ -49,7 +50,7 @@ class ZkEmailWorker {
     try {
       const jobType = job.name as ZkEmailJobType;
 
-      console.log(
+      logger.info(
         `Processing zkEmail job: ${jobType} [ID: ${job.id}], Attempt: ${job.attemptsMade + 1}/${job.opts.attempts}`,
       );
 
@@ -66,7 +67,7 @@ class ZkEmailWorker {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error(`zkEmail job ${job.id} error:`, errorMessage);
+      logger.error(`zkEmail job ${job.id} error:`, errorMessage);
       throw error;
     }
   }
@@ -79,7 +80,7 @@ class ZkEmailWorker {
 
     // hashedEmail is the SHA256 hex digest of the user's email address.
     // No raw email is stored or logged here.
-    console.log(`Triggering zkEmail flow for job ${jobId}`);
+    logger.info(`Triggering zkEmail flow for job ${jobId}`);
 
     const relayUrl = process.env.ZKEMAIL_RELAY_URL;
 
@@ -117,9 +118,9 @@ class ZkEmailWorker {
         req.end();
       });
 
-      console.log(`zkEmail relay notified for job ${jobId}`);
+      logger.info(`zkEmail relay notified for job ${jobId}`);
     } else {
-      console.log(
+      logger.info(
         `zkEmail relay URL not configured (ZKEMAIL_RELAY_URL). Job ${jobId} recorded.`,
       );
     }
@@ -134,7 +135,7 @@ class ZkEmailWorker {
   async close(): Promise<void> {
     if (this.worker) {
       await this.worker.close();
-      console.log('zkEmail worker closed');
+      logger.info('zkEmail worker closed');
     }
   }
 }

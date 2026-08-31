@@ -1,5 +1,6 @@
 import Redis from 'redis';
 import { redisConfig } from '../config/queue';
+import logger from '../utils/logger';
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -30,12 +31,12 @@ export class DeveloperRateLimitService {
       DeveloperRateLimitService.redisClient = Redis.createClient(redisConfig);
 
       DeveloperRateLimitService.redisClient.on('error', (err) => {
-        console.error('[DeveloperRateLimitService] Redis error:', err);
+        logger.error('[DeveloperRateLimitService] Redis error:', err);
       });
 
       if (!DeveloperRateLimitService.redisClient.isOpen) {
         DeveloperRateLimitService.redisClient.connect().catch((err) => {
-          console.error('[DeveloperRateLimitService] Failed to connect:', err);
+          logger.error('[DeveloperRateLimitService] Failed to connect:', err);
         });
       }
     }
@@ -85,7 +86,7 @@ export class DeveloperRateLimitService {
         retryAfterMs,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         '[DeveloperRateLimitService] Redis unavailable, failing open:',
         error,
       );
@@ -105,7 +106,7 @@ export class DeveloperRateLimitService {
       const client = DeveloperRateLimitService.getClient();
       await client.del(DeveloperRateLimitService.getKey(apiKeyId));
     } catch (error) {
-      console.error('[DeveloperRateLimitService] reset failed:', error);
+      logger.error('[DeveloperRateLimitService] reset failed:', error);
     }
   }
 }

@@ -4,6 +4,7 @@ import {
   TransactionStateMachine,
   TransactionEvent,
 } from '../state-machine/transaction.state-machine';
+import logger from '../utils/logger';
 
 /**
  * #81 #80 — Payment Webhook / Listener Service
@@ -46,7 +47,7 @@ export class WebhookService {
   static verifySignature(rawBody: string, signatureHeader: string): boolean {
     if (!WEBHOOK_SECRET) {
       // In production this should throw — for dev convenience we warn and pass.
-      console.warn(
+      logger.warn(
         '[WebhookService] WEBHOOK_SECRET not set — skipping verification',
       );
       return true;
@@ -121,7 +122,7 @@ export class WebhookService {
       // TransactionStateError means the tx is already in a terminal state —
       // this is expected for duplicate webhook deliveries, not a real error.
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      console.warn(`[WebhookService] State transition rejected: ${msg}`);
+      logger.warn(`[WebhookService] State transition rejected: ${msg}`);
       return {
         processed: false,
         message: msg,

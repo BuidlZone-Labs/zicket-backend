@@ -8,6 +8,7 @@ import {
   encodePaginationCursor,
   PaginationCursor,
 } from '../utils/pagination-cursor';
+import logger from '../utils/logger';
 
 export interface PaginatedTicketOrdersResponse {
   page: number;
@@ -278,7 +279,7 @@ export class TicketOrderService {
             );
           }
         } catch (waitlistError) {
-          console.error(
+          logger.error(
             'Failed to process waitlist after order cancellation/refund:',
             waitlistError,
           );

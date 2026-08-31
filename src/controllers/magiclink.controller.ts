@@ -8,6 +8,7 @@ import {
 import emailService from '../services/email.service';
 import { generateToken } from '../config/passport';
 import zkOrchestratorService from '../services/zk-orchestrator.service';
+import logger from '../utils/logger';
 
 export const requestMagicLinkController: RequestHandler = async (req, res) => {
   try {
@@ -44,14 +45,12 @@ export const requestMagicLinkController: RequestHandler = async (req, res) => {
     user.magicTokenExpires = tokenExpires;
     await user.save();
 
-    console.log(
-      `Magic link requested for ${email} from IP: ${req.ip} at ${new Date().toISOString()}`,
-    );
+    logger.info(`Magic link requested at ${new Date().toISOString()}`);
 
     try {
       await emailService.sendMagicLink(email, token);
     } catch (emailError: any) {
-      console.error('Failed to send magic link email:', emailError.message);
+      logger.error({ err: emailError }, 'Failed to send magic link email');
 
       user.magicToken = undefined;
       user.magicTokenExpires = undefined;
@@ -67,7 +66,7 @@ export const requestMagicLinkController: RequestHandler = async (req, res) => {
       message: 'Magic link sent to your email. Please check your inbox.',
     });
   } catch (error: any) {
-    console.error('Error in requestMagicLinkController:', error.message);
+    logger.error({ err: error }, 'Error in requestMagicLinkController');
     res.status(500).json({ message: 'An error occurred. Please try again.' });
   }
 };
@@ -107,15 +106,13 @@ export const verifyMagicLinkController: RequestHandler = async (req, res) => {
     try {
       await zkOrchestratorService.orchestrateForUser(user);
     } catch (error: any) {
-      console.error(
-        'zk orchestration failed during magic link verification:',
-        error.message || error,
+      logger.error(
+        { err: error },
+        'zk orchestration failed during magic link verification',
       );
     }
 
-    console.log(
-      `Magic link verified for ${user.email} from IP: ${req.ip} at ${new Date().toISOString()}`,
-    );
+    logger.info(`Magic link verified at ${new Date().toISOString()}`);
 
     const jwtToken = generateToken(user);
 
@@ -129,7 +126,7 @@ export const verifyMagicLinkController: RequestHandler = async (req, res) => {
       },
     });
   } catch (error: any) {
-    console.error('Error in verifyMagicLinkController:', error.message);
+    logger.error({ err: error }, 'Error in verifyMagicLinkController');
     res.status(500).json({ message: 'An error occurred. Please try again.' });
   }
 };

@@ -11,6 +11,7 @@ import {
 } from '../utils/pagination-cursor';
 
 import { CreateEventStepTwoInput } from '../validators/event.validator';
+import logger from '../utils/logger';
 
 export interface EventTicketResponse {
   title: string;
@@ -650,7 +651,7 @@ export class EventTicketService {
        */
       const completedOrders = ordersToCancel.filter((o) => o.status === 1);
       if (completedOrders.length > 0) {
-        console.log(
+        logger.info(
           `[EventCancellation] Triggering refunds for ${completedOrders.length} orders for event ${eventId}`,
         );
         /**
@@ -691,7 +692,7 @@ export class EventTicketService {
       try {
         await WaitlistService.cancelForEvent(eventId);
       } catch (waitlistError) {
-        console.error(
+        logger.error(
           'Failed to cancel waitlist entries for event ' + eventId + ':',
           waitlistError,
         );

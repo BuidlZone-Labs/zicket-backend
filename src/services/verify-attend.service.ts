@@ -14,6 +14,7 @@ import {
   AttendanceNullifierPepperError,
 } from '../utils/attendance-nullifier-digest';
 import { EventContractConfigError } from '../provider/event-contract.factory';
+import logger from '../utils/logger';
 
 export interface VerifyAttendSuccess {
   eventId: string;
@@ -95,7 +96,7 @@ export class VerifyAttendService {
       if (error instanceof EventContractConfigError) {
         throw error;
       }
-      console.error(
+      logger.error(
         '[VerifyAttendService] contract verify_and_attend failed:',
         error,
       );

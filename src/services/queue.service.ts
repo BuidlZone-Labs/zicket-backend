@@ -14,6 +14,7 @@ import {
   ExpireHoldPayload,
   QUEUE_NAMES,
 } from '../config/queue-jobs';
+import logger from '../utils/logger';
 
 /**
  * QueueService - Manages BullMQ queue instances
@@ -31,7 +32,7 @@ class QueueService {
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
-      console.log('QueueService already initialized');
+      logger.info('QueueService already initialized');
       return;
     }
 
@@ -51,9 +52,9 @@ class QueueService {
         ...queueConfig,
       });
       this.initialized = true;
-      console.log('QueueService initialized successfully');
+      logger.info('QueueService initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize QueueService:', error);
+      logger.error('Failed to initialize QueueService:', error);
       throw error;
     }
   }
@@ -79,7 +80,7 @@ class QueueService {
       },
     );
 
-    console.log(
+    logger.info(
       `Queued verification OTP email for ${email}, Job ID: ${job.id}`,
     );
     return job.id!;
@@ -106,7 +107,7 @@ class QueueService {
       },
     );
 
-    console.log(`Queued magic link email for ${email}, Job ID: ${job.id}`);
+    logger.info(`Queued magic link email for ${email}, Job ID: ${job.id}`);
     return job.id!;
   }
 
@@ -136,7 +137,7 @@ class QueueService {
       },
     );
 
-    console.log(
+    logger.info(
       `Queued email to ${to} with subject "${subject}", Job ID: ${job.id}`,
     );
     return job.id!;
@@ -158,7 +159,7 @@ class QueueService {
       },
     );
 
-    console.log(`Queued zkEmail hook for hashed email, Job ID: ${job.id}`);
+    logger.info(`Queued zkEmail hook for hashed email, Job ID: ${job.id}`);
     return job.id!;
   }
 
@@ -189,7 +190,7 @@ class QueueService {
       },
     );
 
-    console.log(
+    logger.info(
       `Queued ticket purchase notification for ${payload.userEmail}, Job ID: ${job.id}`,
     );
     return job.id!;
@@ -218,7 +219,7 @@ class QueueService {
       },
     );
 
-    console.log(
+    logger.info(
       `Queued ticket update notification for ${payload.userEmail}, Job ID: ${job.id}`,
     );
     return job.id!;
@@ -242,7 +243,7 @@ class QueueService {
       },
     );
 
-    console.log(
+    logger.info(
       `Queued event cancellation notification for ${payload.userEmail}, Job ID: ${job.id}`,
     );
     return job.id!;
@@ -271,7 +272,7 @@ class QueueService {
       },
     );
 
-    console.log(`Queued waitlist spot-available email, Job ID: ${job.id}`);
+    logger.info(`Queued waitlist spot-available email, Job ID: ${job.id}`);
     return job.id!;
   }
 
@@ -296,7 +297,7 @@ class QueueService {
       },
     );
 
-    console.log(
+    logger.info(
       `Queued waitlist hold expiry for ${waitlistId} in ${delayMs}ms, Job ID: ${job.id}`,
     );
     return job.id!;
@@ -336,7 +337,7 @@ class QueueService {
     if (this.emailWorker) {
       await this.emailWorker.close();
     }
-    console.log('QueueService closed');
+    logger.info('QueueService closed');
   }
 
   /**

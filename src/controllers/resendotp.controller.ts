@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import User from '../models/user';
 import { generateOTP } from '../utils/otp';
 import emailService from '../services/email.service';
+import logger from '../utils/logger';
 
 export const resendOtpController: RequestHandler = async (req, res, next) => {
   try {
@@ -28,7 +29,7 @@ export const resendOtpController: RequestHandler = async (req, res, next) => {
     try {
       await emailService.sendVerificationOtp(email, newOtp);
     } catch (emailError: any) {
-      console.error('Failed to send OTP email:', emailError?.message);
+      logger.error('Failed to send OTP email:', emailError?.message);
     }
 
     res.status(200).json({ message: 'OTP resent successfully' });

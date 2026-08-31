@@ -7,6 +7,7 @@ import {
   ProcessWebhookEventPayload,
 } from '../config/queue-jobs';
 import { WebhookService } from '../services/webhook.service';
+import logger from '../utils/logger';
 
 /**
  * #81 — Webhook Controller
@@ -61,7 +62,7 @@ export const handlePaymentWebhook: RequestHandler = async (req, res) => {
     // ACK immediately so the webhook provider doesn't retry
     res.status(200).json({ received: true });
   } catch (error) {
-    console.error('[WebhookController] Error:', error);
+    logger.error('[WebhookController] Error:', error);
     // Still return 200 to avoid provider flooding us with retries for
     // infrastructure errors — the job retry mechanism handles the rest
     res

@@ -7,6 +7,7 @@ import {
   REPEATABLE_JOBS,
 } from '../config/queue-jobs';
 import { ReconciliationService } from '../services/reconciliation.service';
+import logger from '../utils/logger';
 
 /**
  * #78 — Reconciliation Worker
@@ -46,11 +47,11 @@ export const reconciliationQueue = new Queue(QUEUE_NAMES.RECONCILIATION, {
       opts,
     );
 
-    console.log(
+    logger.info(
       `[ReconciliationWorker] Repeatable job registered — pattern: ${opts.repeat.pattern}`,
     );
   } catch (err) {
-    console.error(
+    logger.error(
       '[ReconciliationWorker] Failed to register repeatable job:',
       err,
     );
@@ -64,7 +65,7 @@ const reconciliationWorker = new Worker(
   async (job: Job<ReconcilePayload>) => {
     const { name, data } = job;
 
-    console.log(
+    logger.info(
       `[ReconciliationWorker] Starting run — triggeredBy: ${data.triggeredBy}`,
     );
 
@@ -74,7 +75,7 @@ const reconciliationWorker = new Worker(
 
         // Surface any errors through BullMQ's job result
         if (report.errors.length > 0) {
-          console.warn(
+          logger.warn(
             `[ReconciliationWorker] ${report.errors.length} error(s) during reconciliation`,
           );
         }
@@ -83,7 +84,7 @@ const reconciliationWorker = new Worker(
       }
 
       default:
-        console.warn(`[ReconciliationWorker] Unknown job type: ${name}`);
+        logger.warn(`[ReconciliationWorker] Unknown job type: ${name}`);
     }
   },
   {
@@ -97,7 +98,7 @@ const reconciliationWorker = new Worker(
 reconciliationWorker.on('completed', (job, result) => {
   const r = result as any;
   if (r) {
-    console.log(
+    logger.info(
       `[ReconciliationWorker] ✓ Run complete — scanned: ${r.scanned}, ` +
         `confirmed: ${r.confirmed}, failed: ${r.failed}, ` +
         `cancelledEvents: ${r.cancelledEventsSynced}, ` +
@@ -108,11 +109,11 @@ reconciliationWorker.on('completed', (job, result) => {
 });
 
 reconciliationWorker.on('failed', (job, err) => {
-  console.error(`[ReconciliationWorker] Job ${job?.id} failed: ${err.message}`);
+  logger.error(`[ReconciliationWorker] Job ${job?.id} failed: ${err.message}`);
 });
 
 reconciliationWorker.on('error', (err) => {
-  console.error('[ReconciliationWorker] Worker error:', err);
+  logger.error('[ReconciliationWorker] Worker error:', err);
 });
 
 export default reconciliationWorker;

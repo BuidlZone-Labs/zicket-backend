@@ -1,3 +1,7 @@
+import pino from 'pino';
+
+// ─── PII Sanitization ────────────────────────────────────────────────────────
+
 const EMAIL_RE = /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
 const WALLET_RE = /0x[a-fA-F0-9]{8,}/g;
 
@@ -31,7 +35,8 @@ function sanitizeObject(obj: any, seen = new WeakSet()): any {
     return {
       name: obj.name,
       message: sanitizeString(obj.message),
-      stack: obj.stack,
+      // Strip original stack — it may contain PII (emails, wallets)
+      stack: obj.stack ? sanitizeString(obj.stack) : undefined,
     };
   }
   if (Array.isArray(obj)) return obj.map((v) => sanitizeObject(v, seen));
@@ -51,53 +56,85 @@ function sanitizeObject(obj: any, seen = new WeakSet()): any {
   return String(obj);
 }
 
-function formatLog(level: string, args: IArguments | any[]) {
-  const timestamp = new Date().toISOString();
-  const payload = Array.isArray(args) ? args : Array.from(args as any);
-  const sanitized = payload.map((a: any) => sanitizeObject(a));
-  // If first arg is a string message, join it with rest for readability
-  let message = undefined as string | undefined;
-  if (typeof sanitized[0] === 'string') {
-    message = sanitized.shift();
-  }
-  const log = {
-    timestamp,
-    level,
-    message,
-    data: sanitized.length === 1 ? sanitized[0] : sanitized,
+// ─── Logger Instance ─────────────────────────────────────────────────────────
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
+  formatters: {
+    level(label: string) {
+      return { level: label };
+    },
+  },
+  serializers: {
+    err: pino.stdSerializers.err,
+    req: pino.stdSerializers.req,
+    res: pino.stdSerializers.res,
+  },
+  hooks: {
+    logMethod(args: any[], method: any) {
+      // Pino's standard contract: logger.method([mergingObject], [message], [...interpolationValues])
+      // When a string is passed as the first arg with no placeholders, extra trailing
+      // args (errors, objects) are silently dropped. Reorder so errors/objects become
+      // the first (mergingObject) arg and the string becomes the message.
+      if (args.length >= 2 && typeof args[0] === 'string') {
+        const message = args[0];
+        const rest = args.slice(1);
+        // If any remaining arg is an Error or object, promote it first
+        const hasStructurable = rest.some(
+          (a) => a instanceof Error || (typeof a === 'object' && a !== null),
+        );
+        if (hasStructurable) {
+          const merged: Record<string, any> = {};
+          const interpolationValues: any[] = [];
+          for (const arg of rest) {
+            if (arg instanceof Error) {
+              merged.err = arg;
+            } else if (typeof arg === 'object' && arg !== null) {
+              Object.assign(merged, arg);
+            } else {
+              interpolationValues.push(arg);
+            }
+          }
+          args = [merged, message, ...interpolationValues];
+        }
+      }
+      method.apply(this, args);
+    },
+  },
+});
+
+/**
+ * Wrapper that auto-sanitizes all arguments before passing to pino.
+ * Returns `any` to maintain console-like flexibility (no strict typing).
+ */
+function sanitizeLogMethod(fn: Function): any {
+  return (...args: any[]) => {
+    const sanitized = args.map((arg: any) => sanitizeObject(arg));
+    return fn.apply(logger, sanitized);
   };
-  return JSON.stringify(log);
 }
 
-const originalConsole = {
-  log: console.log.bind(console),
-  info: console.info.bind(console),
-  warn: console.warn.bind(console),
-  error: console.error.bind(console),
-  debug: (console as any).debug
-    ? (console as any).debug.bind(console)
-    : console.log.bind(console),
+const sanitizedLogger = {
+  info: sanitizeLogMethod(logger.info.bind(logger)),
+  warn: sanitizeLogMethod(logger.warn.bind(logger)),
+  error: sanitizeLogMethod(logger.error.bind(logger)),
+  debug: sanitizeLogMethod(logger.debug.bind(logger)),
+  fatal: sanitizeLogMethod(logger.fatal.bind(logger)),
+  child: (bindings: Record<string, unknown>) => {
+    const sanitizedBindings = sanitizeObject(bindings);
+    const child = logger.child(sanitizedBindings);
+    return {
+      info: sanitizeLogMethod(child.info.bind(child)),
+      warn: sanitizeLogMethod(child.warn.bind(child)),
+      error: sanitizeLogMethod(child.error.bind(child)),
+      debug: sanitizeLogMethod(child.debug.bind(child)),
+      fatal: sanitizeLogMethod(child.fatal.bind(child)),
+    };
+  },
 };
 
-// Override console methods with structured, sanitized output
-console.log = (...args: any[]) => {
-  originalConsole.log(formatLog('info', args));
-};
-
-console.info = (...args: any[]) => {
-  originalConsole.info(formatLog('info', args));
-};
-
-console.warn = (...args: any[]) => {
-  originalConsole.warn(formatLog('warn', args));
-};
-
-console.error = (...args: any[]) => {
-  originalConsole.error(formatLog('error', args));
-};
-
-(console as any).debug = (...args: any[]) => {
-  originalConsole.debug(formatLog('debug', args));
-};
-
+export { sanitizedLogger as logger };
 export { sanitizeObject, sanitizeString };
+export default sanitizedLogger;

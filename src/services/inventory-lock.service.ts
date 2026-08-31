@@ -1,5 +1,6 @@
 import Redis from 'redis';
 import { redisConfig } from '../config/queue';
+import logger from '../utils/logger';
 
 /**
  * #80 — Distributed Inventory Locking Service
@@ -39,13 +40,13 @@ export class InventoryLockService {
       InventoryLockService.redisClient = Redis.createClient(redisConfig);
 
       InventoryLockService.redisClient.on('error', (err) => {
-        console.error('[InventoryLockService] Redis error:', err);
+        logger.error('[InventoryLockService] Redis error:', err);
       });
 
       // Connect if not already connected
       if (!InventoryLockService.redisClient.isOpen) {
         InventoryLockService.redisClient.connect().catch((err) => {
-          console.error('[InventoryLockService] Failed to connect:', err);
+          logger.error('[InventoryLockService] Failed to connect:', err);
         });
       }
     }
@@ -103,7 +104,7 @@ export class InventoryLockService {
           );
         }
       } catch (error) {
-        console.error(
+        logger.error(
           `[InventoryLockService] Lock acquisition error for ${eventTicketId}:`,
           error,
         );
@@ -151,7 +152,7 @@ export class InventoryLockService {
 
       return result === 1;
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryLockService] Lock release error for ${eventTicketId}:`,
         error,
       );
@@ -192,7 +193,7 @@ export class InventoryLockService {
 
       return result === 1;
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryLockService] Lock extend error for ${eventTicketId}:`,
         error,
       );
@@ -244,7 +245,7 @@ export class InventoryLockService {
       const result = await client.exists(redisKey);
       return result === 1;
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryLockService] Check lock error for ${eventTicketId}:`,
         error,
       );
@@ -263,7 +264,7 @@ export class InventoryLockService {
       const result = await client.pTTL(redisKey);
       return result; // -1 if no TTL, -2 if key doesn't exist
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryLockService] Get TTL error for ${eventTicketId}:`,
         error,
       );

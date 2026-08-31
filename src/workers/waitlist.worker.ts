@@ -7,6 +7,7 @@ import {
   QUEUE_NAMES,
 } from '../config/queue-jobs';
 import WaitlistService from '../services/waitlist.service';
+import logger from '../utils/logger';
 
 /**
  * #168 - Processes delayed waitlist jobs (currently just EXPIRE_HOLD).
@@ -16,7 +17,7 @@ class WaitlistWorker {
 
   async initialize(): Promise<void> {
     if (this.worker) {
-      console.log('WaitlistWorker already initialized');
+      logger.info('WaitlistWorker already initialized');
       return;
     }
 
@@ -40,10 +41,10 @@ class WaitlistWorker {
     );
 
     this.worker.on('failed', (job, err) => {
-      console.error(`Waitlist job ${job?.id} failed:`, err.message);
+      logger.error(`Waitlist job ${job?.id} failed:`, err.message);
     });
 
-    console.log('WaitlistWorker initialized successfully');
+    logger.info('WaitlistWorker initialized successfully');
   }
 
   async close(): Promise<void> {

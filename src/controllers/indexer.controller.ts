@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import ContractEvent from '../models/contract-event';
+import logger from '../utils/logger';
 
 export const getEvents = async (req: Request, res: Response) => {
   try {
@@ -41,7 +42,7 @@ export const getEvents = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('[IndexerController] Error fetching events:', error);
+    logger.error('[IndexerController] Error fetching events:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch events' });
   }
 };

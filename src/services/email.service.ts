@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import queueService from './queue.service';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -28,12 +29,12 @@ class EmailService {
         options.html,
         options.text,
       );
-      console.log(
+      logger.info(
         `Email queued successfully for ${options.to}, Job ID: ${jobId}`,
       );
       return jobId;
     } catch (error: any) {
-      console.error('Error queuing email:', error.message);
+      logger.error('Error queuing email:', error.message);
       throw new Error('Failed to queue email');
     }
   }
@@ -44,10 +45,10 @@ class EmailService {
   async sendMagicLink(email: string, token: string): Promise<string> {
     try {
       const jobId = await queueService.enqueueMagicLink(email, token);
-      console.log(`Magic link email queued for ${email}, Job ID: ${jobId}`);
+      logger.info(`Magic link email queued for ${email}, Job ID: ${jobId}`);
       return jobId;
     } catch (error: any) {
-      console.error('Error queuing magic link:', error.message);
+      logger.error('Error queuing magic link:', error.message);
       throw new Error('Failed to queue magic link email');
     }
   }
@@ -58,12 +59,12 @@ class EmailService {
   async sendVerificationOtp(email: string, otp: number): Promise<string> {
     try {
       const jobId = await queueService.enqueueVerificationOtp(email, otp);
-      console.log(
+      logger.info(
         `Verification OTP email queued for ${email}, Job ID: ${jobId}`,
       );
       return jobId;
     } catch (error: any) {
-      console.error('Error queuing verification OTP:', error.message);
+      logger.error('Error queuing verification OTP:', error.message);
       throw new Error('Failed to queue verification OTP email');
     }
   }

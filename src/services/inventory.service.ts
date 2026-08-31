@@ -1,6 +1,7 @@
 import mongoose, { ClientSession } from 'mongoose';
 import EventTicket, { IEventTicket } from '../models/event-ticket';
 import InventoryLockService from './inventory-lock.service';
+import logger from '../utils/logger';
 
 /**
  * #80 — Inventory Management Service
@@ -105,7 +106,7 @@ export class InventoryService {
         eventTicket: updatedEvent,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryService] Reserve inventory error for ${eventTicketId}:`,
         error,
       );
@@ -232,7 +233,7 @@ export class InventoryService {
       // Validate: availableTickets should never exceed totalTickets
       if (updatedEvent.availableTickets > updatedEvent.totalTickets) {
         // This shouldn't happen if logic is correct, but let's log it
-        console.warn(
+        logger.warn(
           `[InventoryService] Available tickets (${updatedEvent.availableTickets}) exceeds total (${updatedEvent.totalTickets}) for ${eventTicketId}`,
         );
       }
@@ -241,7 +242,7 @@ export class InventoryService {
         success: true,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryService] Release inventory error for ${eventTicketId}:`,
         error,
       );
@@ -286,7 +287,7 @@ export class InventoryService {
       // Validate consistency: available + sold should equal total
       const total = event.availableTickets + event.soldTickets;
       if (total !== event.totalTickets) {
-        console.warn(
+        logger.warn(
           `[InventoryService] Inventory inconsistency for ${eventTicketId}: ` +
             `available(${event.availableTickets}) + sold(${event.soldTickets}) = ${total}, ` +
             `expected ${event.totalTickets}`,
@@ -297,7 +298,7 @@ export class InventoryService {
         success: true,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryService] Confirm inventory error for ${eventTicketId}:`,
         error,
       );
@@ -336,7 +337,7 @@ export class InventoryService {
         isAvailable: event.availableTickets > 0,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[InventoryService] Get inventory status error for ${eventTicketId}:`,
         error,
       );

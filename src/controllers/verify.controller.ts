@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import User from '../models/user';
 import zkOrchestratorService from '../services/zk-orchestrator.service';
+import logger from '../utils/logger';
 
 export const verifyAccountController: RequestHandler = async (
   req,
@@ -47,7 +48,7 @@ export const verifyAccountController: RequestHandler = async (
     try {
       await zkOrchestratorService.orchestrateForUser(user);
     } catch (error: any) {
-      console.error(
+      logger.error(
         'zk orchestration failed during account verification:',
         error.message || error,
       );

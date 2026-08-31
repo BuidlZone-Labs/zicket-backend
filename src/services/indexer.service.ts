@@ -1,6 +1,7 @@
 import { rpc, scValToNative } from '@stellar/stellar-sdk';
 import ContractEvent from '../models/contract-event';
 import IndexerState from '../models/indexer-state';
+import logger from '../utils/logger';
 
 export class IndexerService {
   private static instance: IndexerService;
@@ -24,6 +25,9 @@ export class IndexerService {
 
   async syncEvents() {
     if (!this.contractAddress || !this.rpcUrl) {
+      logger.warn(
+        '[Indexer] No INDEXER_CONTRACT_ADDRESS or SOROBAN_RPC_URL configured. Skipping sync.',
+      );
       return;
     }
 
@@ -53,6 +57,9 @@ export class IndexerService {
         let toLedger = fromLedger + this.maxLedgerRange - 1;
         if (toLedger > currentLedger) toLedger = currentLedger;
 
+        logger.info(
+          `[Indexer] Syncing events for ${this.contractAddress} from ledger ${fromLedger} to ${toLedger}`,
+        );
         let cursor: string | undefined = undefined;
         let hasMore = true;
 
@@ -150,6 +157,7 @@ export class IndexerService {
                 );
               } catch (err: any) {
                 if (err.code !== 11000) {
+                  logger.error('[Indexer] Error saving event:', err);
                   throw err;
                 }
               }
@@ -169,7 +177,9 @@ export class IndexerService {
 
         fromLedger = toLedger + 1;
       }
-    } catch (error) {}
+    } catch (error) {
+      logger.error('[Indexer] Sync failed:', error);
+    }
   }
 
   private async executeWithRetry<T>(
