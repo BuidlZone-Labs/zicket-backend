@@ -34,11 +34,7 @@ const options = {
         },
       },
     },
-    security: [
-      {
-        BearerAuth: [],
-      },
-    ],
+
   },
   apis: [
     'src/routes/**/*.ts', // Include all route files

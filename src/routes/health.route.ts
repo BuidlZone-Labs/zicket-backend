@@ -84,6 +84,24 @@ const router = express.Router();
  *                   type: string
  *                 message:
  *                   type: string
+ *                 details:
+ *                   type: object
+ *                   description: Full health metrics including component-level diagnostics
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                     timestamp:
+ *                       type: string
+ *                     uptime:
+ *                       type: number
+ *                     service:
+ *                       type: string
+ *                     database:
+ *                       type: object
+ *                     redis:
+ *                       type: object
+ *                     indexer:
+ *                       type: object
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -107,7 +125,6 @@ router.get('/', async (req: Request, res: Response) => {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
       message: 'Health check failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });

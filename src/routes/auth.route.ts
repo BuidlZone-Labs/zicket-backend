@@ -44,6 +44,7 @@ const authRoute = express.Router();
  *               password:
  *                 type: string
  *                 minLength: 8
+ *     security: []
  *     responses:
  *       201:
  *         description: User created successfully
@@ -81,6 +82,7 @@ authRoute.post(
  *                 format: email
  *               password:
  *                 type: string
+ *     security: []
  *     responses:
  *       200:
  *         description: Login successful, returns JWT token
@@ -117,6 +119,7 @@ authRoute.post(
  *                 type: string
  *               otp:
  *                 type: number
+ *     security: []
  *     responses:
  *       200:
  *         description: Account verified successfully
@@ -146,6 +149,7 @@ authRoute.post('/verify-account', getLimiter('otp'), verifyAccountController);
  *               email:
  *                 type: string
  *                 format: email
+ *     security: []
  *     responses:
  *       200:
  *         description: OTP resent successfully
@@ -175,6 +179,7 @@ authRoute.post('/resend-otp', getLimiter('otp'), resendOtpController);
  *               email:
  *                 type: string
  *                 format: email
+ *     security: []
  *     responses:
  *       200:
  *         description: Magic link sent to email
@@ -202,6 +207,7 @@ authRoute.post(
  *         required: true
  *         schema:
  *           type: string
+ *     security: []
  *     responses:
  *       200:
  *         description: Magic link verified, user authenticated
@@ -217,6 +223,7 @@ authRoute.get('/magic', verifyMagicLinkController);
  *     summary: Initiate Google OAuth authentication
  *     tags:
  *       - Authentication
+ *     security: []
  *     responses:
  *       302:
  *         description: Redirect to Google login

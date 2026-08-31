@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import Redis from 'redis';
 import { createRedisConnection } from '../config/queue';
 import IndexerState from '../models/indexer-state';
 
@@ -14,7 +13,6 @@ export interface HealthMetrics {
   database: {
     status: 'connected' | 'disconnected';
     responseTime?: number;
-    poolSize?: number;
     message?: string;
   };
   redis: {
@@ -37,7 +35,7 @@ export interface HealthMetrics {
 }
 
 class HealthService {
-  private redisClient: Redis.RedisClient | null = null;
+  private redisClient: ReturnType<typeof createRedisConnection> | null = null;
 
   /**
    * Initialize Redis client for health checks
@@ -45,6 +43,7 @@ class HealthService {
   async initializeRedis(): Promise<void> {
     if (!this.redisClient) {
       this.redisClient = createRedisConnection();
+      await this.redisClient.connect();
     }
   }
 
@@ -67,20 +66,16 @@ class HealthService {
       // Attempt a simple ping by checking connection stats
       const connectionTime = Date.now() - startTime;
 
-      // Get pool stats from the connection
-      const db = mongoose.connection.getClient();
-      const poolStats = db?.topology?.s?.pool;
-
       return {
         status: 'connected',
         responseTime: connectionTime,
-        poolSize: poolStats?.connectionCount || 0,
         message: 'MongoDB connected and operational',
       };
     } catch (error) {
+      console.error('Database health check error:', error);
       return {
         status: 'disconnected',
-        message: `Database check failed: ${error instanceof Error ? error.message : String(error)}`,
+        message: 'Database check failed',
       };
     }
   }
@@ -118,9 +113,10 @@ class HealthService {
         message: 'Redis PING returned unexpected response',
       };
     } catch (error) {
+      console.error('Redis health check error:', error);
       return {
         status: 'disconnected',
-        message: `Redis check failed: ${error instanceof Error ? error.message : String(error)}`,
+        message: 'Redis check failed',
       };
     }
   }
@@ -150,7 +146,7 @@ class HealthService {
 
       const lagPercentage = (laggedContracts / indexerStates.length) * 100;
 
-      if (lagPercentage > 50) {
+      if (lagPercentage >= 50) {
         return {
           status: 'lagging',
           laggedContracts,
@@ -166,9 +162,10 @@ class HealthService {
         message: `Indexer healthy. ${indexerStates.length} contracts indexed, ${laggedContracts} lagging`,
       };
     } catch (error) {
+      console.error('Indexer health check error:', error);
       return {
         status: 'unavailable',
-        message: `Indexer check failed: ${error instanceof Error ? error.message : String(error)}`,
+        message: 'Indexer check failed',
       };
     }
   }
